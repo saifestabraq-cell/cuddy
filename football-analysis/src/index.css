@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: theme("colors.ink.900");
+  color: theme("colors.mist.100");
+  font-family: theme("fontFamily.sans");
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Desktop-app feel: no text selection except where useful. */
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Subtle, elegant scrollbars. */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: theme("colors.ink.600");
+  border-radius: 9999px;
+  border: 2px solid theme("colors.ink.900");
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: theme("colors.ink.500");
+}
+
+@layer components {
+  .panel {
+    @apply bg-ink-800 border border-ink-500/60 rounded-2xl shadow-soft;
+  }
+  .card {
+    @apply bg-ink-700 border border-ink-500/50 rounded-xl;
+  }
+  .btn {
+    @apply px-3 py-1.5 rounded-xl text-sm text-mist-100 bg-ink-700 border border-ink-500/60
+           transition-colors duration-200 ease-smooth hover:bg-ink-600;
+  }
+  .btn-accent {
+    @apply px-3 py-1.5 rounded-xl text-sm font-medium text-ink-900 bg-teal-300
+           transition-all duration-200 ease-smooth hover:bg-teal-400 hover:shadow-glow;
+  }
+  .input {
+    @apply bg-ink-900/60 border border-ink-500/60 rounded-xl px-3 py-1.5 text-sm text-mist-100
+           outline-none focus:border-teal-400/70 transition-colors duration-200 ease-smooth;
+  }
+}

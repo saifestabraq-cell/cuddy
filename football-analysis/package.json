@@ -1,0 +1,38 @@
+{
+  "name": "football-analysis",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-assisted football match analysis — desktop app (Tauri + React + Python).",
+  "scripts": {
+    "dev:web": "vite",
+    "dev:api": "cd backend && .venv/Scripts/python -m app",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "app": "tauri dev",
+    "app:build": "tauri build"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-shell": "^2.2.0",
+    "framer-motion": "^11.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}

@@ -1,0 +1,15 @@
+# Phase 2 CV/ML dependencies. Installed into the same venv as requirements.txt.
+#
+# torch/torchvision must come from the PyTorch CUDA index, NOT PyPI:
+#   python -m pip install torch==2.5.1 torchvision==0.20.1 \
+#       --index-url https://download.pytorch.org/whl/cu124
+#   python -m pip install -r requirements-cv.txt
+#
+# (torch is listed here only for reference/reproducibility.)
+# torch==2.5.1+cu124
+# torchvision==0.20.1+cu124
+ultralytics==8.3.40
+supervision==0.25.1
+opencv-python-headless==4.10.0.84
+scikit-learn==1.6.0
+lapx==0.5.11

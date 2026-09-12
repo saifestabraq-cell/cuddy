@@ -1,0 +1,35 @@
+# Node
+node_modules/
+dist/
+*.log
+
+# Vite
+.vite/
+
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.env
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# ML model weights (downloaded on demand, not source)
+*.pt
+*.onnx
+*.engine
+
+# App data / media (never commit clips)
+data/
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.m4v
+*.webm
+
+# OS
+.DS_Store
+Thumbs.db

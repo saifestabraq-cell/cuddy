@@ -1,0 +1,107 @@
+# Architecture
+
+## Shape
+
+```
+┌─────────────────────────────────────────────┐
+│ Tauri shell (Rust)                           │
+│  ┌────────────────────────────────────────┐  │
+│  │ WebView — React + TS UI                 │  │
+│  │  timeline · tag pad · dashboards        │  │
+│  └───────────────┬────────────────────────┘  │
+│                  │ HTTP (127.0.0.1:8765)      │
+│  ┌───────────────▼────────────────────────┐  │
+│  │ Python sidecar — FastAPI                │  │
+│  │  events · videos · export · (CV later)  │  │
+│  │  SQLite (SQLModel)                       │  │
+│  └───────────────┬────────────────────────┘  │
+│                  │  GPU (Phase 2+)             │
+│            YOLO · tracking · homography        │
+└─────────────────────────────────────────────┘
+```
+
+The UI never touches the ML libraries directly — it speaks HTTP to the Python
+sidecar. This keeps the heavy Python/CV world isolated behind a clean API and
+lets the same backend be exercised from tests or a browser during development.
+
+## Data model
+
+- **Project** — a body of analysis work.
+- **Video** — an imported clip (referenced by absolute path in Phase 0).
+- **Category** — a coding button (name, colour, hotkey, lead/lag capture
+  window).
+- **Event** — a tagged moment: `start_ms`, `end_ms`, category, free-form
+  `descriptors`, plus `source` (`manual` | `ai`) and `confidence`.
+
+The **`source` field is the hinge** between the manual and AI workflows: a CV
+model inserts events with `source="ai"` and a confidence score; the analyst
+reviews and corrects them on the exact same timeline as manually coded events.
+
+## Manual ↔ AI unification
+
+Both paths write `Event` rows through the same endpoints. The UI tints AI events
+(dashed, accent colour) and exposes a review flow, but there is no separate
+"AI data" — corrected AI events are just events. This is what delivers the
+"reliable manual coding *and* AI automation" requirement without a fork.
+
+## Roadmap
+
+### Phase 0 — Foundation ✅
+Scaffold, design system, data model, video import + range-streamed playback,
+manual tag pad, timeline, dashboards, XML/CSV export. Wired end-to-end.
+
+### Phase 1 — Manual coding depth ✅
+Event edit panel (numeric + drag boundaries, label, notes, reviewed flag),
+structured descriptor groups + buttons attached to events, combined filtering
+(category · descriptor · source · text), highlight playlists (back-to-back
+presentation playback + selection export), and portable coding templates
+(save as JSON / apply to another project).
+
+### Phase 2a — CV detection layer ✅
+- Player + ball detection & tracking (Ultralytics YOLO + ByteTrack).
+- Team classification by kit-colour k-means clustering.
+- Background job system (`POST /videos/{id}/analyze` → `GET /jobs/{id}`), results
+  written to `tracks/<video_id>.json`.
+- Live detection overlay: a canvas over the video draws per-frame boxes tinted
+  by team (+ ball marker), synced to playback, toggleable.
+
+Scoped to the 4 GB GPU: `yolov8n`, 5 fps sampling, offline batch. Verified GPU
+inference on the RTX 3050 Ti.
+
+### Phase 2b — positional layer (next)
+- Manual 4-point pitch calibration → homography → pitch coordinates.
+- Per-player / per-team heatmaps, distances, speeds.
+- Heuristic auto-tagging (e.g. ball in final third) written as `source="ai"`
+  events for review on the shared timeline.
+
+### Phase 3 — Smart features
+Event auto-detection (shots/passes), xG estimate, natural-language query over
+events, automatic highlight generation.
+
+## Production sidecar packaging (deferred)
+
+In development the sidecar runs from the venv (`npm run dev:api`). For a
+distributable build, the Python backend is frozen into a single executable and
+bundled as a Tauri **external binary**:
+
+1. `pip install pyinstaller`
+2. `pyinstaller --onefile --name fa-sidecar backend/app/__main__.py`
+3. Copy the exe to `src-tauri/binaries/fa-sidecar-<target-triple>.exe`.
+4. Add to `tauri.conf.json`:
+   ```json
+   "bundle": { "externalBin": ["binaries/fa-sidecar"] }
+   ```
+5. `src-tauri/src/lib.rs` already spawns `fa-sidecar` on startup in release
+   builds via the shell plugin.
+
+Until then, release builds open the window and report "Engine offline" until a
+backend is reachable — the app degrades gracefully rather than crashing.
+
+## Design system
+
+Tokens live in `tailwind.config.js` and `src/index.css`:
+- Deep charcoal surfaces (`ink.900`–`ink.500`), never pure black.
+- Muted desaturated accents — teal (`#6EE7D6`) primary, violet (`#B7A6F0`) for
+  AI.
+- Gentle motion via framer-motion with a `cubic-bezier(0.22, 1, 0.36, 1)`
+  ease — no bounce.

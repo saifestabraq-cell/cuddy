@@ -1,0 +1,119 @@
+import { useRef, useState } from "react";
+import { useStore } from "../store";
+import { exportUrl, downloadText } from "../lib/api";
+import { pickVideoFile, isTauri, baseName } from "../lib/platform";
+import type { CodingTemplate } from "../lib/types";
+
+/** Video selector + import, coding-template save/apply, and export controls. */
+export default function VideoBar() {
+  const { videos, currentVideoId, selectVideo, registerVideo, saveTemplate, applyTemplate } =
+    useStore();
+  const [manualPath, setManualPath] = useState("");
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const doImport = async () => {
+    if (isTauri()) {
+      const path = await pickVideoFile();
+      if (path) await registerVideo(baseName(path), path);
+    } else {
+      setImporting((v) => !v);
+    }
+  };
+
+  const submitManual = async () => {
+    const p = manualPath.trim();
+    if (!p) return;
+    await registerVideo(baseName(p), p);
+    setManualPath("");
+    setImporting(false);
+  };
+
+  const doSaveTemplate = async () => {
+    const tmpl = await saveTemplate();
+    if (tmpl) downloadText(JSON.stringify(tmpl, null, 2), `${tmpl.name}.json`);
+  };
+
+  const onTemplateFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const tmpl = JSON.parse(await file.text()) as CodingTemplate;
+      await applyTemplate(tmpl);
+    } catch {
+      alert("Could not read that template file.");
+    }
+    e.target.value = "";
+  };
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <select
+        className="input min-w-[12rem]"
+        value={currentVideoId ?? ""}
+        onChange={(e) => selectVideo(Number(e.target.value))}
+        disabled={videos.length === 0}
+      >
+        {videos.length === 0 && <option value="">No videos</option>}
+        {videos.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.name}
+          </option>
+        ))}
+      </select>
+
+      <button className="btn-accent" onClick={doImport}>
+        Import video
+      </button>
+
+      {importing && !isTauri() && (
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            className="input w-80"
+            placeholder="Absolute path to a video file (dev mode)"
+            value={manualPath}
+            onChange={(e) => setManualPath(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submitManual()}
+          />
+          <button className="btn" onClick={submitManual}>
+            Add
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1" />
+
+      <button className="btn" onClick={doSaveTemplate} title="Download coding setup as JSON">
+        Save template
+      </button>
+      <button className="btn" onClick={() => fileRef.current?.click()}>
+        Apply template
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={onTemplateFile}
+      />
+
+      <a
+        className="btn"
+        href={currentVideoId ? exportUrl(currentVideoId, "xml") : undefined}
+        aria-disabled={!currentVideoId}
+        onClick={(e) => !currentVideoId && e.preventDefault()}
+      >
+        Export XML
+      </a>
+      <a
+        className="btn"
+        href={currentVideoId ? exportUrl(currentVideoId, "csv") : undefined}
+        aria-disabled={!currentVideoId}
+        onClick={(e) => !currentVideoId && e.preventDefault()}
+      >
+        Export CSV
+      </a>
+    </div>
+  );
+}
