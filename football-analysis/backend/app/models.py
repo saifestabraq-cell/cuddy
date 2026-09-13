@@ -110,6 +110,11 @@ class Event(SQLModel, table=True):
     confidence: Optional[float] = None
     # Set true once an analyst has reviewed an AI event.
     reviewed: bool = False
+    # Auto-detector subtype (e.g. "shot", "turnover", "counter") for events
+    # produced by the Phase 3 pipeline; None for manual or hand-triggered events.
+    # Lets re-analysis refresh only unreviewed auto events without touching the
+    # analyst's manual or accepted ones.
+    detector: Optional[str] = None
 
     created_at: datetime = Field(default_factory=_utcnow)
 

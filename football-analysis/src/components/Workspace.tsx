@@ -93,6 +93,22 @@ export default function Workspace() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") return;
+
+      // One-keystroke review of a selected, unreviewed AI event.
+      const sel = useStore.getState().selectedEvent();
+      if (sel && sel.source === "ai" && !sel.reviewed) {
+        if (e.key === "y" || e.key === "Y" || e.key === "Enter") {
+          e.preventDefault();
+          updateEvent(sel.id, { reviewed: true });
+          return;
+        }
+        if (e.key === "n" || e.key === "N") {
+          e.preventDefault();
+          useStore.getState().removeEvent(sel.id);
+          return;
+        }
+      }
+
       const vid = v();
       switch (e.key) {
         case " ":
