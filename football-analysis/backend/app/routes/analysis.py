@@ -18,13 +18,12 @@ from sqlmodel import Session, select
 
 from ..config import settings
 from ..cv.analytics import compute_analytics
-from ..cv.pipeline import analyze_video
 from ..cv.pitch import autotag_final_third, build_pitch_data
 from ..cv.shots import detect_shots
 from ..db import get_session
-from ..jobs import Job, get_job, start_job
 from ..llm import answer_question
 from ..models import Category, Event, Video
+from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
 
 router = APIRouter(tags=["analysis"])
@@ -47,40 +46,25 @@ def _shots_path(video_id: int) -> Path:
 
 
 @router.post("/videos/{video_id}/analyze")
-def start_analysis(
-    video_id: int,
-    target_fps: float = 5.0,
-    model: str = "yolov8n.pt",
-    session: Session = Depends(get_session),
-):
+def start_analysis(video_id: int, session: Session = Depends(get_session)):
+    """Start (or resume) the durable staged pipeline for this video."""
     video = session.get(Video, video_id)
     if not video:
         raise HTTPException(404, "Video not found")
-    if not Path(video.path).is_file():
-        raise HTTPException(410, "Underlying file is missing")
-
-    out_path = str(_tracks_path(video_id))
-    src = video.path
-
-    def target(job: Job) -> dict:
-        def progress(p: float, msg: str) -> None:
-            job.progress = p
-            job.message = msg
-
-        return analyze_video(
-            src, out_path, target_fps=target_fps, model_name=model, progress=progress
-        )
-
-    job = start_job("analyze", target, meta={"video_id": video_id})
-    return job.as_dict()
+    run = start_analysis_pipeline(session, video_id)
+    return run_as_dict(run)
 
 
 @router.get("/jobs/{job_id}")
-def job_status(job_id: str):
-    job = get_job(job_id)
-    if not job:
+def job_status(job_id: str, session: Session = Depends(get_session)):
+    try:
+        run_id = int(job_id)
+    except ValueError:
         raise HTTPException(404, "Job not found")
-    return job.as_dict()
+    run = get_run(session, run_id)
+    if not run:
+        raise HTTPException(404, "Job not found")
+    return run_as_dict(run)
 
 
 @router.get("/videos/{video_id}/tracks/exists")

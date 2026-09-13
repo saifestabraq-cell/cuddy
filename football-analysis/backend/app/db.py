@@ -19,10 +19,21 @@ engine = create_engine(
 
 
 def init_db() -> None:
-    """Create tables. Import models first so they register with SQLModel."""
+    """Bring the schema up to date via Alembic migrations.
+
+    Adopts an existing pre-Alembic DB at the baseline, then upgrades. Falls back
+    to ``create_all`` only if migrations cannot run (e.g. Alembic files missing
+    in a stripped build) so the app still starts.
+    """
     from . import models  # noqa: F401  (registers table metadata)
 
-    SQLModel.metadata.create_all(engine)
+    try:
+        from .migrations import run_migrations
+
+        run_migrations()
+    except Exception as exc:  # noqa: BLE001 - never block startup on migration setup
+        print(f"[db] migration run failed ({exc}); falling back to create_all")
+        SQLModel.metadata.create_all(engine)
 
 
 def get_session() -> Iterator[Session]:

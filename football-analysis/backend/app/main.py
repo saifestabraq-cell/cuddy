@@ -31,6 +31,10 @@ from .routes import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # Re-launch any analysis run left interrupted by a previous crash/restart.
+    from .pipeline import resume_incomplete
+
+    resume_incomplete()
     yield
 
 

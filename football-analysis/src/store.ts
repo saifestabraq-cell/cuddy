@@ -5,6 +5,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { api } from "./lib/api";
+import { pickVideoFile } from "./lib/platform";
 import type {
   AnalysisJob,
   Analytics,
@@ -63,6 +64,7 @@ interface AppState {
   currentProjectId: number | null;
   currentVideoId: number | null;
   selectedEventId: number | null;
+  videoMissing: boolean; // source file not found at its recorded path
 
   filter: Filter;
   playlist: number[]; // selected event ids for the highlight reel
@@ -105,6 +107,7 @@ interface AppState {
   registerVideo: (name: string, path: string) => Promise<Video | undefined>;
   selectVideo: (id: number) => Promise<void>;
   setVideoMeta: (id: number, meta: Partial<Video>) => Promise<void>;
+  relinkVideo: () => Promise<void>;
 
   loadEvents: () => Promise<void>;
   addEvent: (input: Parameters<typeof api.createEvent>[0]) => Promise<void>;
@@ -153,6 +156,7 @@ export const useStore = create<AppState>((set, get) => ({
   currentProjectId: null,
   currentVideoId: null,
   selectedEventId: null,
+  videoMissing: false,
   filter: EMPTY_FILTER,
   playlist: [],
   analysisJob: null,
@@ -277,6 +281,7 @@ export const useStore = create<AppState>((set, get) => ({
       calibrationPoints: [],
       analytics: null,
       shots: null,
+      videoMissing: false,
     });
     await Promise.all([
       get().loadEvents(),
@@ -285,6 +290,25 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadAnalytics(),
       get().loadShots(),
     ]);
+    // Managed-media check: flag if the source file has moved/renamed.
+    try {
+      const st = await api.videoStatus(id);
+      set({ videoMissing: !st.exists });
+    } catch {
+      /* leave as-is */
+    }
+  },
+
+  relinkVideo: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    const path = await pickVideoFile(); // native picker (Tauri); null in browser
+    if (!path) return;
+    const video = await api.relinkVideo(vid, path);
+    set({
+      videos: get().videos.map((v) => (v.id === vid ? video : v)),
+      videoMissing: false,
+    });
   },
 
   setVideoMeta: async (id, meta) => {
@@ -374,13 +398,18 @@ export const useStore = create<AppState>((set, get) => ({
     const job = await api.startAnalysis(vid, targetFps);
     set({ analysisJob: job });
 
-    // Poll until the job finishes.
+    // Poll until the job finishes. Surface partial results: as soon as the
+    // 'events' stage completes, load the tracks so the overlay appears before
+    // the later stages finish (progressive delivery).
     const poll = async () => {
       const current = get().analysisJob;
       if (!current || current.meta.video_id !== vid) return; // switched video
       try {
         const updated = await api.getJob(current.id);
         set({ analysisJob: updated });
+        if (updated.completed_stages?.includes("events") && !get().tracks) {
+          await get().loadTracks();
+        }
         if (updated.status === "done") {
           await get().loadTracks();
           return;

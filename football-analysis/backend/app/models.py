@@ -115,3 +115,24 @@ class Event(SQLModel, table=True):
 
     video: Optional[Video] = Relationship(back_populates="events")
     category: Optional[Category] = Relationship(back_populates="events")
+
+
+class AnalysisRun(SQLModel, table=True):
+    """Durable state for a staged analysis pipeline (triage -> events -> spatial).
+
+    Persisted to SQLite so a run survives a process restart: on startup any run
+    still marked running/pending is re-launched and skips the stages already in
+    ``completed_stages``.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    video_id: int = Field(foreign_key="video.id", index=True)
+    kind: str = "analyze"
+    status: str = "pending"  # pending | running | done | error
+    stage: str = ""  # stage currently running (or last run)
+    completed_stages: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    progress: float = 0.0
+    message: str = ""
+    error: Optional[str] = None
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)

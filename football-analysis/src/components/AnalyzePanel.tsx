@@ -4,6 +4,12 @@ import { useStore } from "../store";
 export const TEAM_COLORS = ["#6EE7D6", "#F0A6C0"]; // team 0, team 1
 export const BALL_COLOR = "#F2C879";
 
+const STAGE_LABELS: Record<string, string> = {
+  triage: "Triage",
+  events: "Detect",
+  spatial: "Spatial",
+};
+
 /** Runs CV analysis on the current video and controls the detection overlay. */
 export default function AnalyzePanel() {
   const currentVideo = useStore((s) => s.currentVideo());
@@ -63,6 +69,30 @@ export default function AnalyzePanel() {
             <span>{job?.message}</span>
             <span className="tabular-nums">{pct}%</span>
           </div>
+          {/* staged pipeline tracker */}
+          {job?.stages && (
+            <div className="flex items-center gap-1.5 mt-2">
+              {job.stages.map((st) => {
+                const done = job.completed_stages?.includes(st);
+                const active = job.stage === st;
+                return (
+                  <span
+                    key={st}
+                    className={`px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wide border ${
+                      done
+                        ? "text-teal-300 border-teal-300/40 bg-teal-300/10"
+                        : active
+                        ? "text-violet-300 border-violet-300/40 bg-violet-300/10"
+                        : "text-mist-500 border-ink-500/60"
+                    }`}
+                  >
+                    {done ? "✓ " : ""}
+                    {STAGE_LABELS[st] ?? st}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
