@@ -77,22 +77,23 @@ def run_as_dict(run: AnalysisRun) -> dict:
 # --------------------------------------------------------------------------- #
 
 def _stage_triage(video: Video, progress: StageProgress) -> None:
-    """Placeholder: treat the whole clip as one main-camera segment.
+    """Split footage into camera runs and label the main tactical camera."""
+    if not Path(video.path).is_file():
+        raise FileNotFoundError(
+            f"Source file missing: {video.path}. Relink the video and re-run."
+        )
+    from .cv.segmentation import segment_video, summarize  # heavy import, lazy
 
-    Marked ``placeholder`` so the UI can label it honestly until Phase 2 ships
-    real shot-boundary + main-camera classification.
-    """
-    progress(0.5, "Segmenting footage")
-    dur = video.duration_ms or 0
+    segments = segment_video(video.path, progress=lambda p, m: progress(p, m))
     data = {
         "video_id": video.id,
-        "placeholder": True,
-        "segments": [{"start_ms": 0, "end_ms": dur, "class": "main", "confidence": None}],
+        "placeholder": False,
+        "segments": segments,
+        "summary": summarize(segments),
     }
     p = segments_path(video.id)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(data))
-    progress(1.0, "Footage segmented")
 
 
 def _upsert_ai_events(video_id: int, candidates: list[dict]) -> None:

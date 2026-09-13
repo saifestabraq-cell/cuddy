@@ -162,6 +162,25 @@ export interface ShotsData {
   width: number;
 }
 
+export interface Segment {
+  start_ms: number;
+  end_ms: number;
+  class: string; // "main" | "other"
+  confidence: number | null;
+}
+
+export interface SegmentMap {
+  placeholder: boolean;
+  segments: Segment[];
+  summary?: {
+    segments: number;
+    main_segments: number;
+    main_ms: number;
+    total_ms: number;
+    main_fraction: number;
+  };
+}
+
 export interface QueryClip {
   event_id: number;
   start_ms: number;
