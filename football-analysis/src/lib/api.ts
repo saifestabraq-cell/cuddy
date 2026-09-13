@@ -12,6 +12,7 @@ import type {
   Project,
   ShotsData,
   TracksData,
+  ValidationResult,
   Video,
 } from "./types";
 
@@ -178,6 +179,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ question }),
     }),
+
+  // Validation harness (Phase 1): score AI events vs the manual reference
+  getValidation: (videoId: number) =>
+    request<ValidationResult>(`/videos/${videoId}/validation`),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */

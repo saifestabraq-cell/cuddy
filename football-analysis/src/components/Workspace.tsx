@@ -17,6 +17,7 @@ import PitchPanel from "./PitchPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import ShotsPanel from "./ShotsPanel";
 import AskPanel from "./AskPanel";
+import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
   const currentProject = useStore((s) => s.currentProject());
@@ -119,6 +120,7 @@ export default function Workspace() {
             onStop={stopPresentation}
           />
           <AskPanel />
+          <ValidationPanel />
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />
           )}
