@@ -162,6 +162,20 @@ export interface ShotsData {
   width: number;
 }
 
+export interface QueryClip {
+  event_id: number;
+  start_ms: number;
+  end_ms: number;
+  label: string;
+  reason: string;
+}
+
+export interface QueryResult {
+  summary: string;
+  clips: QueryClip[];
+  question: string;
+}
+
 export interface ValidationResult {
   video_id: number;
   events: {

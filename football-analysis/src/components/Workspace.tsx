@@ -17,6 +17,7 @@ import PitchPanel from "./PitchPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import ShotsPanel from "./ShotsPanel";
 import AskPanel from "./AskPanel";
+import QueryPanel from "./QueryPanel";
 import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
@@ -26,6 +27,7 @@ export default function Workspace() {
   const selectedEventId = useStore((s) => s.selectedEventId);
   const updateEvent = useStore((s) => s.updateEvent);
   const tracksFps = useStore((s) => s.tracks?.src_fps);
+  const requestSeekMs = useStore((s) => s.requestSeekMs);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playheadMs, setPlayheadMs] = useState(0);
@@ -40,6 +42,15 @@ export default function Workspace() {
     if (videoRef.current) videoRef.current.currentTime = ms / 1000;
     setPlayheadMs(ms);
   };
+
+  // Consume deep-link seek requests (e.g. clicking a clip in a query result).
+  useEffect(() => {
+    if (requestSeekMs != null) {
+      seek(requestSeekMs);
+      useStore.setState({ requestSeekMs: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestSeekMs]);
 
   const stopPresentation = () => {
     setPresenting(false);
@@ -228,6 +239,7 @@ export default function Workspace() {
             onPlay={playPlaylist}
             onStop={stopPresentation}
           />
+          <QueryPanel />
           <AskPanel />
           <ValidationPanel />
           {selectedEventId && (

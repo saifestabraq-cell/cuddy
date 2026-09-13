@@ -122,6 +122,11 @@ interface AppState {
 
   togglePlaylist: (id: number) => void;
   clearPlaylist: () => void;
+  setPlaylist: (ids: number[]) => void;
+
+  // Deep-link seek request (e.g. clicking a clip in a query result).
+  requestSeekMs: number | null;
+  requestSeek: (ms: number) => void;
 
   saveTemplate: () => Promise<CodingTemplate | undefined>;
   applyTemplate: (template: CodingTemplate) => Promise<void>;
@@ -159,6 +164,7 @@ export const useStore = create<AppState>((set, get) => ({
   videoMissing: false,
   filter: EMPTY_FILTER,
   playlist: [],
+  requestSeekMs: null,
   analysisJob: null,
   tracks: null,
   overlay: true,
@@ -374,6 +380,9 @@ export const useStore = create<AppState>((set, get) => ({
     });
   },
   clearPlaylist: () => set({ playlist: [] }),
+  setPlaylist: (ids) => set({ playlist: ids }),
+
+  requestSeek: (ms) => set({ requestSeekMs: ms }),
 
   saveTemplate: async () => {
     const pid = get().currentProjectId;
