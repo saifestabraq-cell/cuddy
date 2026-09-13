@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
+
+// Pressing the same coding button again within this window extends the
+// in-progress event to the current playhead instead of starting a new one.
+const EXTEND_WINDOW_MS = 12000;
 
 interface Props {
   playheadMs: number;
@@ -15,21 +19,33 @@ const SWATCHES = ["#6EE7D6", "#9B84E8", "#F0A6C0", "#F2C879", "#7FB4F0", "#8AE29
  * lead/lag window. Hotkeys fire the matching button while the video plays.
  */
 export default function TagPad({ playheadMs, disabled }: Props) {
-  const { categories, addCategory, removeCategory, addEvent, currentVideoId } =
+  const { categories, addCategory, removeCategory, addEvent, updateEvent, currentVideoId } =
     useStore();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(SWATCHES[0]);
+  // last event tagged per category, for second-press-extends
+  const lastTag = useRef<Record<number, { id: number; at: number }>>({});
 
-  const code = (categoryId: number, lead = 5000, lag = 3000) => {
+  const code = async (categoryId: number, lead = 5000, lag = 3000) => {
     if (!currentVideoId) return;
-    addEvent({
+    const prev = lastTag.current[categoryId];
+    const now = performance.now();
+    if (prev && now - prev.at < EXTEND_WINDOW_MS) {
+      // second press: extend the unfolding phase to the current playhead
+      await updateEvent(prev.id, { end_ms: Math.round(playheadMs + lag) });
+      lastTag.current[categoryId] = { id: prev.id, at: now };
+      return;
+    }
+    await addEvent({
       video_id: currentVideoId,
       category_id: categoryId,
       start_ms: Math.max(0, Math.round(playheadMs - lead)),
       end_ms: Math.round(playheadMs + lag),
       source: "manual",
     });
+    const newId = useStore.getState().selectedEventId;
+    if (newId) lastTag.current[categoryId] = { id: newId, at: now };
   };
 
   // Hotkey coding.

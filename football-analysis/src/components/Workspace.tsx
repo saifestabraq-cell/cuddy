@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../store";
 import { streamUrl } from "../lib/api";
 import type { MatchEvent } from "../lib/types";
@@ -24,6 +24,8 @@ export default function Workspace() {
   const currentVideo = useStore((s) => s.currentVideo());
   const setVideoMeta = useStore((s) => s.setVideoMeta);
   const selectedEventId = useStore((s) => s.selectedEventId);
+  const updateEvent = useStore((s) => s.updateEvent);
+  const tracksFps = useStore((s) => s.tracks?.src_fps);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playheadMs, setPlayheadMs] = useState(0);
@@ -71,6 +73,97 @@ export default function Workspace() {
       }
     }
   };
+
+  // Phase 4: keyboard transport + frame-accurate editing.
+  //  J = reverse, K/Space = pause/play, L = play (repeat toggles 2x),
+  //  , / . = step one frame, [ / ] = nudge selected event start/end by a frame
+  //  (hold Shift to nudge the other way).
+  useEffect(() => {
+    const fps = currentVideo?.fps || tracksFps || 25;
+    const frameSec = 1 / fps;
+    let reverse: number | null = null;
+    const stopReverse = () => {
+      if (reverse !== null) {
+        window.clearInterval(reverse);
+        reverse = null;
+      }
+    };
+    const v = () => videoRef.current;
+
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") return;
+      const vid = v();
+      switch (e.key) {
+        case " ":
+        case "k":
+        case "K":
+          if (!vid) return;
+          e.preventDefault();
+          stopReverse();
+          vid.paused ? vid.play() : vid.pause();
+          break;
+        case "l":
+        case "L":
+          if (!vid) return;
+          e.preventDefault();
+          stopReverse();
+          if (vid.paused) {
+            vid.playbackRate = 1;
+            vid.play();
+          } else {
+            vid.playbackRate = vid.playbackRate >= 2 ? 1 : 2;
+          }
+          break;
+        case "j":
+        case "J":
+          if (!vid) return;
+          e.preventDefault();
+          vid.pause();
+          if (reverse === null) {
+            reverse = window.setInterval(() => {
+              const vv = v();
+              if (vv) vv.currentTime = Math.max(0, vv.currentTime - frameSec * 2);
+            }, 1000 / 30);
+          }
+          break;
+        case ",":
+          if (!vid) return;
+          e.preventDefault();
+          stopReverse();
+          vid.pause();
+          vid.currentTime = Math.max(0, vid.currentTime - frameSec);
+          break;
+        case ".":
+          if (!vid) return;
+          e.preventDefault();
+          stopReverse();
+          vid.pause();
+          vid.currentTime = vid.currentTime + frameSec;
+          break;
+        case "[":
+        case "]": {
+          const ev = useStore.getState().selectedEvent();
+          if (!ev) return;
+          e.preventDefault();
+          const deltaMs = (e.shiftKey ? -1 : 1) * frameSec * 1000;
+          if (e.key === "[") {
+            updateEvent(ev.id, { start_ms: Math.max(0, Math.round(ev.start_ms + deltaMs)) });
+          } else {
+            updateEvent(ev.id, { end_ms: Math.round(ev.end_ms + deltaMs) });
+          }
+          break;
+        }
+        default:
+          return;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      stopReverse();
+    };
+  }, [currentVideo, tracksFps, updateEvent]);
 
   if (!currentProject) {
     return (
