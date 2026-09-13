@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuddy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #0B0C10;
+    --panel: #14161C;
+    --raised: #1B1E27;
+    --hairline: rgba(255,255,255,.08);
+    --hairline-strong: rgba(255,255,255,.14);
+    --text: #EAECF2;
+    --muted: #868D9E;
+    --faint: #5A6070;
+    --teal: #6EE7D6;
+    --teal-deep: #2BA593;
+    --violet: #B7A6F0;
+    --pink: #F0A6C0;
+    --pitch: #0F2A20;
+    --pitch-line: rgba(150,220,200,.28);
+    --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+    --body: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  /* ambient field: two low blooms of the two accents, painted on the ground */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(60% 50% at 82% 8%, rgba(110,231,214,.10), transparent 70%),
+      radial-gradient(50% 45% at 8% 92%, rgba(183,166,240,.09), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+
+  a { color: inherit; }
+  ::selection { background: rgba(110,231,214,.28); }
+
+  /* ---- nav ---- */
+  header.nav {
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: blur(10px);
+    background: rgba(11,12,16,.72);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-family: var(--display); font-weight: 800; letter-spacing: -.01em; font-size: 19px; }
+  .glyph {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--teal), var(--violet));
+    box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 6px 18px rgba(110,231,214,.18);
+  }
+  .brand small { font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: lowercase; }
+  .nav-links { display: flex; align-items: center; gap: 26px; font-size: 14px; color: var(--muted); }
+  .nav-links a { text-decoration: none; transition: color .2s ease; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    font-family: var(--body); font-weight: 600; font-size: 13.5px;
+    color: var(--ground); background: var(--teal);
+    padding: 8px 15px; border-radius: 10px; text-decoration: none;
+    transition: transform .18s ease, box-shadow .2s ease;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(110,231,214,.24); }
+  @media (max-width: 720px){ .nav-links a:not(.nav-cta){ display:none; } }
+
+  /* ---- hero ---- */
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; padding: 74px 0 64px; }
+  @media (max-width: 900px){ .hero { grid-template-columns: 1fr; gap: 36px; padding: 48px 0 40px; } }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--teal); border: 1px solid var(--hairline-strong);
+    padding: 6px 12px; border-radius: 999px; margin-bottom: 22px;
+  }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .35; } }
+
+  h1 {
+    font-family: var(--display); font-weight: 900; font-size: clamp(40px, 6vw, 68px);
+    line-height: .98; letter-spacing: -.025em; margin: 0 0 20px; text-wrap: balance;
+  }
+  h1 .grad { background: linear-gradient(100deg, var(--teal), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: clamp(16px, 1.6vw, 19px); color: var(--muted); max-width: 46ch; margin: 0 0 30px; }
+  .lede b { color: var(--text); font-weight: 600; }
+
+  .cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--body); font-weight: 600; font-size: 15px;
+    color: var(--ground); background: var(--teal);
+    padding: 13px 22px; border-radius: 12px; text-decoration: none;
+    transition: transform .18s ease, box-shadow .2s ease;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(110,231,214,.28); }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-weight: 500; font-size: 15px; color: var(--text); text-decoration: none;
+    padding: 13px 18px; border-radius: 12px; border: 1px solid var(--hairline-strong);
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .btn-ghost:hover { border-color: var(--teal); background: rgba(110,231,214,.06); }
+  .os-note { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-top: 16px; }
+
+  /* ---- hero pitch card ---- */
+  .stage {
+    position: relative; border: 1px solid var(--hairline); border-radius: 18px;
+    background: linear-gradient(180deg, var(--panel), #101219);
+    padding: 14px; box-shadow: 0 30px 60px rgba(0,0,0,.4);
+  }
+  .stage-bar { display: flex; align-items: center; gap: 7px; padding: 4px 6px 12px; }
+  .stage-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--raised); display: inline-block; }
+  .stage-bar span { margin-left: 8px; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .pitch-svg { width: 100%; height: auto; display: block; border-radius: 10px; }
+  .stage-tags { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 4px 4px; }
+  .tag { font-family: var(--mono); font-size: 11px; padding: 4px 9px; border-radius: 7px; border: 1px solid var(--hairline); color: var(--muted); }
+  .tag.t { color: var(--teal); border-color: rgba(110,231,214,.3); }
+  .tag.v { color: var(--violet); border-color: rgba(183,166,240,.3); }
+
+  /* ---- section scaffolding ---- */
+  section { padding: 64px 0; }
+  .sec-head { max-width: 62ch; margin-bottom: 40px; }
+  .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--teal-deep); }
+  h2 { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 3.4vw, 38px); letter-spacing: -.02em; line-height: 1.05; margin: 12px 0 14px; text-wrap: balance; }
+  .sec-head p { color: var(--muted); font-size: 16px; margin: 0; }
+
+  /* ---- feature grid ---- */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 860px){ .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px){ .grid { grid-template-columns: 1fr; } }
+  .feat {
+    border: 1px solid var(--hairline); border-radius: 14px; background: var(--panel);
+    padding: 22px 20px; display: flex; flex-direction: column; gap: 10px;
+    transition: border-color .2s ease, transform .2s ease;
+  }
+  .feat:hover { border-color: var(--hairline-strong); transform: translateY(-3px); }
+  .feat .ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: rgba(110,231,214,.08); border: 1px solid rgba(110,231,214,.2); }
+  .feat.ai .ico { background: rgba(183,166,240,.08); border-color: rgba(183,166,240,.22); }
+  .feat h3 { font-family: var(--display); font-weight: 700; font-size: 17px; margin: 2px 0 0; letter-spacing: -.01em; }
+  .feat p { color: var(--muted); font-size: 14px; margin: 0; }
+  .feat .meta { margin-top: auto; font-family: var(--mono); font-size: 11px; color: var(--faint); padding-top: 8px; }
+  .feat.ai .meta { color: var(--violet); opacity: .8; }
+
+  /* ---- pipeline ---- */
+  .pipe { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 820px){ .pipe { grid-template-columns: 1fr 1fr; } }
+  .step { border: 1px solid var(--hairline); border-radius: 12px; padding: 18px 16px; background: linear-gradient(180deg, var(--panel), #0f1117); }
+  .step .n { font-family: var(--mono); font-size: 12px; color: var(--teal); }
+  .step h4 { font-family: var(--display); font-weight: 700; font-size: 15px; margin: 10px 0 6px; }
+  .step p { color: var(--muted); font-size: 13px; margin: 0; }
+
+  /* ---- stat band ---- */
+  .band { border: 1px solid var(--hairline); border-radius: 16px; background: var(--panel); padding: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  @media (max-width: 700px){ .band { grid-template-columns: 1fr 1fr; gap: 24px; } }
+  .stat .v { font-family: var(--display); font-weight: 800; font-size: 34px; letter-spacing: -.02em; line-height: 1; }
+  .stat .v.teal { color: var(--teal); } .stat .v.violet { color: var(--violet); }
+  .stat .l { font-family: var(--mono); font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 9px; }
+
+  /* ---- download ---- */
+  .download { text-align: center; border: 1px solid var(--hairline-strong); border-radius: 20px; padding: 52px 30px; background: radial-gradient(120% 140% at 50% 0%, rgba(110,231,214,.08), transparent 60%), var(--panel); }
+  .download h2 { margin-top: 0; }
+  .download .lede { margin: 0 auto 26px; }
+  .download .cta-row { justify-content: center; }
+  .note { max-width: 60ch; margin: 24px auto 0; font-size: 13px; color: var(--faint); border-top: 1px solid var(--hairline); padding-top: 18px; }
+  .note code { font-family: var(--mono); color: var(--teal); font-size: 12px; }
+
+  /* ---- footer ---- */
+  footer { border-top: 1px solid var(--hairline); padding: 34px 0 48px; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--faint); font-size: 13px; }
+  .foot .mono { font-family: var(--mono); font-size: 12px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto; }
+  }
+</style>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand"><span class="glyph"></span> Cuddy <small>football analysis</small></div>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pipeline">How it works</a>
+      <a href="#download" class="nav-cta">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <span class="eyebrow"><span class="dot"></span> Desktop app · Windows · GPU-accelerated</span>
+        <h1>See the match<br>in <span class="grad">data.</span></h1>
+        <p class="lede">Cuddy turns match footage into analysis. Tag events by hand with the reliability of pro video-coding software — then let the AI <b>track players, split the teams, map heatmaps, estimate xG</b>, and answer questions in plain English.</p>
+        <div class="cta-row">
+          <a href="#download" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1v9m0 0 3.2-3.2M8 10 4.8 6.8M2 11.5v1A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Windows
+          </a>
+          <a href="#features" class="btn-ghost">Explore the features</a>
+        </div>
+        <p class="os-note">v0.1.0 · Windows 10/11 · installs in seconds</p>
+      </div>
+
+      <div class="stage" aria-label="Cuddy tactical analysis view">
+        <div class="stage-bar"><i></i><i></i><i></i><span>match · second half · 61:04</span></div>
+        <svg class="pitch-svg" viewBox="0 0 560 360" role="img" aria-label="Top-down pitch showing a team heatmap, shot markers sized by expected goals, and player tracking boxes">
+          <defs>
+            <radialGradient id="heat" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(110,231,214,.55)"/>
+              <stop offset="55%" stop-color="rgba(110,231,214,.18)"/>
+              <stop offset="100%" stop-color="rgba(110,231,214,0)"/>
+            </radialGradient>
+            <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#123326"/>
+              <stop offset="100%" stop-color="#0d2419"/>
+            </linearGradient>
+          </defs>
+          <!-- pitch -->
+          <rect x="8" y="8" width="544" height="344" rx="10" fill="url(#grass)" stroke="var(--pitch-line)"/>
+          <line x1="280" y1="8" x2="280" y2="352" stroke="var(--pitch-line)"/>
+          <circle cx="280" cy="180" r="46" fill="none" stroke="var(--pitch-line)"/>
+          <circle cx="280" cy="180" r="3" fill="var(--pitch-line)"/>
+          <rect x="8" y="96" width="78" height="168" fill="none" stroke="var(--pitch-line)"/>
+          <rect x="474" y="96" width="78" height="168" fill="none" stroke="var(--pitch-line)"/>
+          <rect x="8" y="140" width="30" height="80" fill="none" stroke="var(--pitch-line)"/>
+          <rect x="522" y="140" width="30" height="80" fill="none" stroke="var(--pitch-line)"/>
+          <!-- heatmap blooms (attacking right) -->
+          <ellipse cx="410" cy="150" rx="120" ry="95" fill="url(#heat)"/>
+          <ellipse cx="360" cy="235" rx="80" ry="60" fill="url(#heat)" opacity=".7"/>
+          <!-- pass lines -->
+          <g stroke="rgba(234,236,242,.22)" stroke-dasharray="3 4">
+            <line x1="150" y1="210" x2="300" y2="150"/>
+            <line x1="300" y1="150" x2="430" y2="120"/>
+            <line x1="430" y1="120" x2="470" y2="185"/>
+          </g>
+          <!-- shot markers sized by xG (violet) -->
+          <g>
+            <circle cx="470" cy="185" r="22" fill="rgba(183,166,240,.28)" stroke="var(--violet)"/>
+            <circle cx="440" cy="150" r="13" fill="rgba(183,166,240,.22)" stroke="var(--violet)"/>
+            <circle cx="420" cy="230" r="9" fill="rgba(183,166,240,.2)" stroke="var(--violet)"/>
+            <text x="470" y="150" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--violet)" text-anchor="middle">xG 0.31</text>
+          </g>
+          <!-- tracking boxes -->
+          <g font-family="JetBrains Mono, monospace" font-size="9">
+            <rect x="300" y="140" width="16" height="34" fill="none" stroke="var(--teal)" stroke-width="1.5"/>
+            <rect x="300" y="130" width="14" height="10" fill="var(--teal)"/><text x="303" y="138" fill="#0B0C10">9</text>
+            <rect x="150" y="196" width="16" height="34" fill="none" stroke="var(--teal)" stroke-width="1.5"/>
+            <rect x="150" y="186" width="14" height="10" fill="var(--teal)"/><text x="153" y="194" fill="#0B0C10">4</text>
+            <rect x="352" y="215" width="16" height="34" fill="none" stroke="var(--pink)" stroke-width="1.5"/>
+            <rect x="352" y="205" width="14" height="10" fill="var(--pink)"/><text x="355" y="213" fill="#0B0C10">6</text>
+          </g>
+          <!-- ball -->
+          <circle cx="430" cy="120" r="4.5" fill="#F2C879" stroke="#0B0C10"/>
+        </svg>
+        <div class="stage-tags">
+          <span class="tag t">Team A · possession 61%</span>
+          <span class="tag v">3 shots · xG 0.74</span>
+          <span class="tag">final third · left</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section id="features">
+      <div class="sec-head">
+        <span class="kicker">What it does</span>
+        <h2>Manual precision, meet machine speed.</h2>
+        <p>Every AI-detected moment lands on the same timeline you hand-correct — automation you can trust because you can edit it.</p>
+      </div>
+      <div class="grid">
+        <article class="feat">
+          <span class="ico"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2" y="3" width="13" height="11" rx="2" stroke="#6EE7D6" stroke-width="1.4"/><path d="M2 11h13" stroke="#6EE7D6" stroke-width="1.4"/><circle cx="5" cy="12.5" r="1" fill="#6EE7D6"/></svg></span>
+          <h3>Video coding</h3>
+          <p>Customisable tag buttons with hotkeys, a linked timeline, descriptors, filters and highlight playlists.</p>
+          <span class="meta">SportsCode XML · CSV export</span>
+        </article>
+        <article class="feat ai">
+          <span class="ico"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="5.5" cy="6" r="2.2" stroke="#B7A6F0" stroke-width="1.4"/><circle cx="11.5" cy="10" r="2.2" stroke="#B7A6F0" stroke-width="1.4"/><path d="M7.4 7.2 9.6 8.8" stroke="#B7A6F0" stroke-width="1.4"/></svg></span>
+          <h3>Detection &amp; tracking</h3>
+          <p>YOLO + ByteTrack follow every player and the ball, with a live overlay drawn over your video.</p>
+          <span class="meta">runs on your GPU</span>
+        </article>
+        <article class="feat ai">
+          <span class="ico"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M3 12c2-5 3-6 5.5-6S13 7 15 5" stroke="#B7A6F0" stroke-width="1.4" stroke-linecap="round"/><circle cx="8.5" cy="6" r="1.4" fill="#B7A6F0"/></svg></span>
+          <h3>Team &amp; kit ID</h3>
+          <p>Unsupervised colour clustering splits players into Team A and Team B — no training, no labels.</p>
+          <span class="meta">k-means on jersey colour</span>
+        </article>
+        <article class="feat">
+          <span class="ico"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="2.5" width="12" height="12" rx="2" stroke="#6EE7D6" stroke-width="1.4"/><circle cx="10" cy="6" r="2.6" fill="rgba(110,231,214,.4)"/><circle cx="6" cy="10" r="1.7" fill="rgba(110,231,214,.28)"/></svg></span>
+          <h3>Pitch heatmaps</h3>
+          <p>Click four corners to calibrate; Cuddy maps positions onto a 105 × 68 m pitch for per-team heatmaps and distance.</p>
+          <span class="meta">homography · metres covered</span>
+        </article>
+        <article class="feat ai">
+          <span class="ico"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 14V3M2 14h13" stroke="#B7A6F0" stroke-width="1.4" stroke-linecap="round"/><circle cx="6" cy="9" r="1.8" stroke="#B7A6F0" stroke-width="1.3"/><circle cx="11" cy="6" r="2.6" stroke="#B7A6F0" stroke-width="1.3"/></svg></span>
+          <h3>Shots &amp; xG</h3>
+          <p>Fast balls toward goal become shots, scored by a transparent distance-and-angle xG model on a shot map.</p>
+          <span class="meta">possession · passing · turnovers</span>
+        </article>
+        <article class="feat ai">
+          <span class="ico"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M3 4h11v7H8l-3 2.5V11H3z" stroke="#B7A6F0" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+          <h3>Ask in plain English</h3>
+          <p>“Which team created more xG?” Cuddy answers from the match data, grounded in your events and stats.</p>
+          <span class="meta">powered by Claude</span>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section id="pipeline">
+      <div class="sec-head">
+        <span class="kicker">The workflow</span>
+        <h2>From clip to insight in five steps.</h2>
+        <p>Each stage writes into a shared model, so manual tags and AI output live side by side.</p>
+      </div>
+      <div class="pipe">
+        <div class="step"><div class="n">01</div><h4>Import</h4><p>Drop in your clip or a public dataset match.</p></div>
+        <div class="step"><div class="n">02</div><h4>Analyse</h4><p>Detect &amp; track players and the ball on the GPU.</p></div>
+        <div class="step"><div class="n">03</div><h4>Calibrate</h4><p>Click the four pitch corners once for real coordinates.</p></div>
+        <div class="step"><div class="n">04</div><h4>Read</h4><p>Heatmaps, distances, xG, possession and passing.</p></div>
+        <div class="step"><div class="n">05</div><h4>Ask</h4><p>Query the match in plain language, review, export.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section>
+      <div class="band">
+        <div class="stat"><div class="v teal">2 pillars</div><div class="l">manual + AI, one timeline</div></div>
+        <div class="stat"><div class="v">105×68</div><div class="l">metres · true pitch space</div></div>
+        <div class="stat"><div class="v violet">xG</div><div class="l">distance · angle model</div></div>
+        <div class="stat"><div class="v teal">100%</div><div class="l">local · your footage stays yours</div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section id="download">
+      <div class="download">
+        <span class="kicker">Get Cuddy</span>
+        <h2>Download the desktop app.</h2>
+        <p class="lede">A single Windows installer. Tag a match in minutes; layer the AI on when you want it.</p>
+        <div class="cta-row">
+          <a href="https://github.com/saifestabraq-cell/cuddy/releases/download/v0.1.0/Cuddy_0.1.0_x64-setup.exe" class="btn-primary" data-download>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1v9m0 0 3.2-3.2M8 10 4.8 6.8M2 11.5v1A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Windows
+          </a>
+          <a href="https://github.com/saifestabraq-cell/cuddy" class="btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2 .5-2.5-.9-2.5-.9-.3-.9-.8-1.1-.8-1.1-.7-.4 0-.4 0-.4.7 0 1.1.8 1.1.8.6 1.1 1.7.8 2.1.6 0-.5.2-.8.4-1-1.6-.2-3.3-.8-3.3-3.6 0-.8.3-1.5.8-2 0-.2-.4-1 .1-2 0 0 .6-.2 2 .8a7 7 0 0 1 3.6 0c1.4-1 2-.8 2-.8.5 1 .1 1.8.1 2 .5.5.8 1.2.8 2 0 2.8-1.7 3.4-3.3 3.6.3.2.5.7.5 1.4v2c0 .2.1.5.5.4A8 8 0 0 0 8 .2Z"/></svg>
+            View source
+          </a>
+        </div>
+        <p class="note">
+          Windows 10/11 · ~22&nbsp;MB. The lean installer runs manual coding, the timeline, export and the Ask feature out of the box; the CV features (detection, heatmaps, xG) use your local Python&nbsp;+&nbsp;GPU environment. Natural-language queries need an <code>ANTHROPIC_API_KEY</code> set in the backend.
+        </p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="brand" style="font-size:16px;"><span class="glyph" style="width:22px;height:22px;"></span> Cuddy</div>
+    <span class="mono">Tauri · React · FastAPI · YOLO · Claude</span>
+    <span>Built for match analysts and the curious.</span>
+  </div>
+</footer>
+</body>
+</html>
