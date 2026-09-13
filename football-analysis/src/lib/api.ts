@@ -10,6 +10,7 @@ import type {
   MatchEvent,
   PitchData,
   Project,
+  QueryResult,
   ShotsData,
   TracksData,
   ValidationResult,
@@ -176,6 +177,11 @@ export const api = {
   // Natural-language query (Phase 3c)
   ask: (videoId: number, question: string) =>
     request<{ answer: string; question: string }>(`/videos/${videoId}/ask`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
+  query: (videoId: number, question: string) =>
+    request<QueryResult>(`/videos/${videoId}/query`, {
       method: "POST",
       body: JSON.stringify({ question }),
     }),

@@ -21,7 +21,7 @@ from ..cv.analytics import compute_analytics
 from ..cv.pitch import autotag_final_third, build_pitch_data
 from ..cv.shots import detect_shots
 from ..db import get_session
-from ..llm import answer_question
+from ..llm import answer_question, query_clips
 from ..models import Category, Event, Video
 from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
@@ -290,6 +290,53 @@ def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_sessi
     except Exception as exc:  # noqa: BLE001 - surface the LLM error to the client
         raise HTTPException(502, f"LLM request failed: {type(exc).__name__}: {exc}") from exc
     return {"answer": answer, "question": payload.question}
+
+
+# --- Phase 5: clip-returning natural-language query ---
+
+
+@router.post("/videos/{video_id}/query")
+def query_video(video_id: int, payload: AskRequest, session: Session = Depends(get_session)):
+    """Return a playable reel (event clips) + a one-line grounded summary."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(
+            400,
+            "ANTHROPIC_API_KEY is not set on the backend. Set it and restart to "
+            "use natural-language queries.",
+        )
+    cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
+    events = session.exec(
+        select(Event).where(Event.video_id == video_id).order_by(Event.start_ms)
+    ).all()
+
+    def code_of(e: Event) -> str:
+        return (cats.get(e.category_id) if e.category_id else None) or e.label or "Event"
+
+    ev_list = [
+        {
+            "id": e.id, "code": code_of(e),
+            "start_s": round(e.start_ms / 1000, 1), "end_s": round(e.end_ms / 1000, 1),
+            "source": e.source, "descriptors": e.descriptors,
+        }
+        for e in events
+    ]
+    try:
+        result = query_clips(payload.question, json.dumps(ev_list))
+    except Exception as exc:  # noqa: BLE001 - surface the LLM error
+        raise HTTPException(502, f"LLM request failed: {type(exc).__name__}: {exc}") from exc
+
+    by_id = {e.id: e for e in events}
+    clips = []
+    for c in result.get("clips", []):
+        ev = by_id.get(c.get("event_id"))
+        if ev:
+            clips.append({
+                "event_id": ev.id, "start_ms": ev.start_ms, "end_ms": ev.end_ms,
+                "label": code_of(ev), "reason": str(c.get("reason", "")),
+            })
+    return {"summary": result.get("summary", ""), "clips": clips, "question": payload.question}
 
 
 # --- Phase 1: validation harness (score AI events vs the manual reference) ---
