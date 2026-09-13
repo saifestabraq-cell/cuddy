@@ -147,8 +147,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     };
 
     return (
-      <div className="panel overflow-hidden flex flex-col">
-        <div className="relative bg-black aspect-video">
+      <div className="panel overflow-hidden flex flex-col shrink-0">
+        <div className="relative bg-black aspect-video w-full">
           {src ? (
             <>
               <video
