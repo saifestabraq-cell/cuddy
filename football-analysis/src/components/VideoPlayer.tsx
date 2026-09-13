@@ -216,6 +216,12 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           <span className="text-sm tabular-nums text-mist-200">
             {fmtClockPrecise(time)}
           </span>
+          <span
+            className="text-[10px] text-mist-500 hidden md:inline"
+            title="J reverse · K/Space pause-play · L play (repeat = 2x) · , . step frame · [ ] nudge selected event (Shift for the other way)"
+          >
+            J K L · , . frame · [ ] nudge
+          </span>
           <div className="flex-1" />
           {[-5, -1, 1, 5].map((sec) => (
             <button
