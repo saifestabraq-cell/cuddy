@@ -106,6 +106,13 @@ class SelectionExport(BaseModel):
     event_ids: list[int]
 
 
+class CalibrateRequest(BaseModel):
+    # Four image points in pixel coords, ordered TL, TR, BR, BL.
+    img_points: list[list[float]]
+    length: float = 105.0
+    width: float = 68.0
+
+
 class EventUpdate(BaseModel):
     category_id: Optional[int] = None
     label: Optional[str] = None

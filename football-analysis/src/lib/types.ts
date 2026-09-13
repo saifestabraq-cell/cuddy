@@ -113,6 +113,18 @@ export interface TracksData {
   frames: TrackFrame[];
 }
 
+export interface PitchData {
+  length: number;
+  width: number;
+  bins_x: number;
+  bins_y: number;
+  heatmaps: { "0": number[][]; "1": number[][] };
+  team_distance_m: { "0": number; "1": number };
+  track_distance_m: Record<string, number>;
+  ball_positions: number[][]; // [t_ms, X, Y]
+  img_points: number[][];
+}
+
 export interface AnalysisJob {
   id: string;
   kind: string;

@@ -77,8 +77,11 @@ minutes; subsequent runs are fast.
   k-means team classification, run as a background job with progress, and a
   live detection overlay (player boxes tinted by team, ball marker) drawn over
   the video. GPU-accelerated (verified on the RTX 3050 Ti).
+- **Phase 2b complete** — manual 4-point pitch calibration → homography →
+  per-team position heatmaps + distances, and heuristic auto-tagging (ball in
+  a final third) as reviewable AI events on the timeline.
 
-Phase 2b (manual pitch calibration → homography/heatmaps, auto-tagging) and
-Phase 3 are described in [docs/architecture.md](docs/architecture.md).
+Phase 3 (event auto-detection, xG, natural-language query) is described in
+[docs/architecture.md](docs/architecture.md).
 
 > The CV stack is a separate install — see [docs/setup.md](docs/setup.md#cv--ml-dependencies-phase-2).

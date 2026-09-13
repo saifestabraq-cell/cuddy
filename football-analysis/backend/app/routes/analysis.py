@@ -17,15 +17,21 @@ from sqlmodel import Session
 
 from ..config import settings
 from ..cv.pipeline import analyze_video
+from ..cv.pitch import autotag_final_third, build_pitch_data
 from ..db import get_session
 from ..jobs import Job, get_job, start_job
-from ..models import Video
+from ..models import Event, Video
+from ..schemas import CalibrateRequest
 
 router = APIRouter(tags=["analysis"])
 
 
 def _tracks_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}.json"
+
+
+def _pitch_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_pitch.json"
 
 
 @router.post("/videos/{video_id}/analyze")
@@ -88,3 +94,52 @@ def tracks_summary(video_id: int):
     return {k: v for k, v in data.items() if k != "frames"} | {
         "n_frames": len(data.get("frames", []))
     }
+
+
+# --- Phase 2b: pitch calibration / heatmaps / auto-tagging ---
+
+
+@router.post("/videos/{video_id}/calibrate")
+def calibrate(video_id: int, payload: CalibrateRequest):
+    """Compute homography from 4 image points and build heatmaps + distances."""
+    tracks_path = _tracks_path(video_id)
+    if not tracks_path.is_file():
+        raise HTTPException(400, "Analyse the video before calibrating")
+    tracks = json.loads(tracks_path.read_text())
+    try:
+        pitch = build_pitch_data(
+            tracks, payload.img_points, payload.length, payload.width
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    _pitch_path(video_id).write_text(json.dumps(pitch))
+    return pitch
+
+
+@router.get("/videos/{video_id}/pitch")
+def get_pitch(video_id: int):
+    path = _pitch_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No calibration for this video yet")
+    return json.loads(path.read_text())
+
+
+@router.post("/videos/{video_id}/autotag")
+def autotag(video_id: int, session: Session = Depends(get_session)):
+    """Generate reviewable AI events (ball in a final third) from the pitch data."""
+    path = _pitch_path(video_id)
+    if not path.is_file():
+        raise HTTPException(400, "Calibrate the pitch before auto-tagging")
+    pitch = json.loads(path.read_text())
+    suggestions = autotag_final_third(pitch)
+
+    created = 0
+    for s in suggestions:
+        session.add(Event(
+            video_id=video_id, category_id=None, label=s["label"],
+            start_ms=s["start_ms"], end_ms=s["end_ms"],
+            source="ai", confidence=0.5,
+        ))
+        created += 1
+    session.commit()
+    return {"created": created}

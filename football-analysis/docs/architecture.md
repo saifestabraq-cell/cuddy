@@ -68,11 +68,16 @@ presentation playback + selection export), and portable coding templates
 Scoped to the 4 GB GPU: `yolov8n`, 5 fps sampling, offline batch. Verified GPU
 inference on the RTX 3050 Ti.
 
-### Phase 2b — positional layer (next)
-- Manual 4-point pitch calibration → homography → pitch coordinates.
-- Per-player / per-team heatmaps, distances, speeds.
-- Heuristic auto-tagging (e.g. ball in final third) written as `source="ai"`
-  events for review on the shared timeline.
+### Phase 2b — positional layer ✅
+- Manual 4-point pitch calibration (click the corners on the video) →
+  homography (`cv2.getPerspectiveTransform`) → pitch metres.
+- Per-team position heatmaps rendered on a top-down pitch, plus per-team
+  distance covered (with a speed filter to reject tracking jumps).
+- Heuristic auto-tagging (ball in a final third) written as `source="ai"`
+  events on the shared timeline for review.
+
+Endpoints: `POST /videos/{id}/calibrate`, `GET /videos/{id}/pitch`,
+`POST /videos/{id}/autotag`.
 
 ### Phase 3 — Smart features
 Event auto-detection (shots/passes), xG estimate, natural-language query over

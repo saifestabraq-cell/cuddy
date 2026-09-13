@@ -10,6 +10,8 @@ interface Props {
   onMeta: (meta: { duration_ms: number; width: number; height: number }) => void;
 }
 
+const CALIB_LABELS = ["TL", "TR", "BR", "BL"];
+
 /** Nearest track frame to a timestamp (binary search over sorted frames). */
 function nearestFrame(frames: TrackFrame[], ms: number): TrackFrame | null {
   if (!frames.length) return null;
@@ -34,9 +36,15 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
 
     const tracks = useStore((s) => s.tracks);
     const overlay = useStore((s) => s.overlay);
+    const calibrationMode = useStore((s) => s.calibrationMode);
+    const calibrationPoints = useStore((s) => s.calibrationPoints);
+    const addCalibrationPoint = useStore((s) => s.addCalibrationPoint);
 
     const el = () =>
       (ref as React.MutableRefObject<HTMLVideoElement | null>)?.current ?? null;
+
+    const nativeW = tracks?.width ?? 1;
+    const nativeH = tracks?.height ?? 1;
 
     const draw = useCallback(
       (ms: number) => {
@@ -49,43 +57,70 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
         if (canvas.width !== cw) canvas.width = cw;
         if (canvas.height !== ch) canvas.height = ch;
         ctx.clearRect(0, 0, cw, ch);
-        if (!overlay || !tracks) return;
 
-        const frame = nearestFrame(tracks.frames, ms);
-        if (!frame) return;
-        const sx = cw / tracks.width;
-        const sy = ch / tracks.height;
-        ctx.lineWidth = 2;
-        ctx.font = "11px Inter, system-ui, sans-serif";
-
-        for (const d of frame.dets) {
-          const isBall = d.cls === 32;
-          const color = isBall
-            ? BALL_COLOR
-            : TEAM_COLORS[d.team] ?? "#8A90A0";
-          const x = d.x * sx;
-          const y = d.y * sy;
-          const w = d.w * sx;
-          const h = d.h * sy;
-          if (isBall) {
-            ctx.beginPath();
-            ctx.arc(x + w / 2, y + h / 2, Math.max(5, w / 2), 0, Math.PI * 2);
-            ctx.strokeStyle = color;
-            ctx.stroke();
-          } else {
-            ctx.strokeStyle = color;
-            ctx.strokeRect(x, y, w, h);
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y - 12, 18, 12);
-            ctx.fillStyle = "#0E0F13";
-            ctx.fillText(String(d.id), x + 3, y - 2);
+        // detection overlay
+        if (overlay && tracks) {
+          const frame = nearestFrame(tracks.frames, ms);
+          if (frame) {
+            const sx = cw / tracks.width;
+            const sy = ch / tracks.height;
+            ctx.lineWidth = 2;
+            ctx.font = "11px Inter, system-ui, sans-serif";
+            for (const d of frame.dets) {
+              const isBall = d.cls === 32;
+              const color = isBall ? BALL_COLOR : TEAM_COLORS[d.team] ?? "#8A90A0";
+              const x = d.x * sx;
+              const y = d.y * sy;
+              const w = d.w * sx;
+              const h = d.h * sy;
+              if (isBall) {
+                ctx.beginPath();
+                ctx.arc(x + w / 2, y + h / 2, Math.max(5, w / 2), 0, Math.PI * 2);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+              } else {
+                ctx.strokeStyle = color;
+                ctx.strokeRect(x, y, w, h);
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y - 12, 18, 12);
+                ctx.fillStyle = "#0E0F13";
+                ctx.fillText(String(d.id), x + 3, y - 2);
+              }
+            }
           }
         }
+
+        // calibration markers
+        if (calibrationMode && calibrationPoints.length) {
+          const sx = cw / nativeW;
+          const sy = ch / nativeH;
+          ctx.strokeStyle = "#6EE7D6";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          calibrationPoints.forEach(([px, py], i) => {
+            const dx = px * sx;
+            const dy = py * sy;
+            if (i === 0) ctx.moveTo(dx, dy);
+            else ctx.lineTo(dx, dy);
+          });
+          if (calibrationPoints.length === 4) ctx.closePath();
+          ctx.stroke();
+          calibrationPoints.forEach(([px, py], i) => {
+            const dx = px * sx;
+            const dy = py * sy;
+            ctx.fillStyle = "#6EE7D6";
+            ctx.beginPath();
+            ctx.arc(dx, dy, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#0E0F13";
+            ctx.font = "10px Inter, system-ui, sans-serif";
+            ctx.fillText(CALIB_LABELS[i] ?? String(i + 1), dx - 7, dy - 9);
+          });
+        }
       },
-      [overlay, tracks],
+      [overlay, tracks, calibrationMode, calibrationPoints, nativeW, nativeH],
     );
 
-    // Redraw when overlay/tracks change (even while paused).
     useEffect(() => {
       const v = el();
       draw(v ? v.currentTime * 1000 : 0);
@@ -102,6 +137,13 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
       if (!v) return;
       if (v.paused) v.play();
       else v.pause();
+    };
+
+    const onCalibClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const nx = ((e.clientX - rect.left) / rect.width) * nativeW;
+      const ny = ((e.clientY - rect.top) / rect.height) * nativeH;
+      addCalibrationPoint(nx, ny);
     };
 
     return (
@@ -134,6 +176,13 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
                 ref={canvasRef}
                 className="absolute inset-0 w-full h-full pointer-events-none"
               />
+              {calibrationMode && (
+                <div
+                  className="absolute inset-0 cursor-crosshair"
+                  onClick={onCalibClick}
+                  title="Click the pitch corners: TL, TR, BR, BL"
+                />
+              )}
             </>
           ) : (
             <div className="absolute inset-0 grid place-items-center text-mist-400 text-sm">

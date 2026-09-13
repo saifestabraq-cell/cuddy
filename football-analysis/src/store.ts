@@ -12,6 +12,7 @@ import type {
   DescriptorGroup,
   Filter,
   MatchEvent,
+  PitchData,
   Project,
   TracksData,
   Video,
@@ -69,6 +70,11 @@ interface AppState {
   tracks: TracksData | null;
   overlay: boolean;
 
+  // Phase 2b: pitch calibration
+  calibrationMode: boolean;
+  calibrationPoints: number[][];
+  pitch: PitchData | null;
+
   // derived getters (return existing references, safe in selectors)
   currentProject: () => Project | undefined;
   currentVideo: () => Video | undefined;
@@ -112,6 +118,13 @@ interface AppState {
   analyzeVideo: (targetFps?: number) => Promise<void>;
   loadTracks: () => Promise<void>;
   setOverlay: (on: boolean) => void;
+
+  setCalibrationMode: (on: boolean) => void;
+  addCalibrationPoint: (x: number, y: number) => void;
+  clearCalibrationPoints: () => void;
+  calibratePitch: (length: number, width: number) => Promise<void>;
+  loadPitch: () => Promise<void>;
+  runAutotag: () => Promise<number>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -129,6 +142,9 @@ export const useStore = create<AppState>((set, get) => ({
   analysisJob: null,
   tracks: null,
   overlay: true,
+  calibrationMode: false,
+  calibrationPoints: [],
+  pitch: null,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -238,8 +254,11 @@ export const useStore = create<AppState>((set, get) => ({
       playlist: [],
       tracks: null,
       analysisJob: null,
+      pitch: null,
+      calibrationMode: false,
+      calibrationPoints: [],
     });
-    await Promise.all([get().loadEvents(), get().loadTracks()]);
+    await Promise.all([get().loadEvents(), get().loadTracks(), get().loadPitch()]);
   },
 
   setVideoMeta: async (id, meta) => {
@@ -364,6 +383,46 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setOverlay: (on) => set({ overlay: on }),
+
+  setCalibrationMode: (on) =>
+    set({ calibrationMode: on, calibrationPoints: on ? [] : get().calibrationPoints }),
+
+  addCalibrationPoint: (x, y) => {
+    const pts = get().calibrationPoints;
+    if (pts.length >= 4) return;
+    set({ calibrationPoints: [...pts, [x, y]] });
+  },
+
+  clearCalibrationPoints: () => set({ calibrationPoints: [] }),
+
+  calibratePitch: async (length, width) => {
+    const vid = get().currentVideoId;
+    const pts = get().calibrationPoints;
+    if (!vid || pts.length !== 4) return;
+    const pitch = await api.calibrate(vid, pts, length, width);
+    set({ pitch, calibrationMode: false });
+  },
+
+  loadPitch: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ pitch: null });
+      return;
+    }
+    try {
+      set({ pitch: await api.getPitch(vid) });
+    } catch {
+      set({ pitch: null });
+    }
+  },
+
+  runAutotag: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return 0;
+    const { created } = await api.autotag(vid);
+    await get().loadEvents();
+    return created;
+  },
 }));
 
 /** Memoized filtered-events selector — stable across renders. */

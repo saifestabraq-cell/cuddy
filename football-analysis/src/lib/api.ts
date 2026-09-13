@@ -7,6 +7,7 @@ import type {
   Descriptor,
   DescriptorGroup,
   MatchEvent,
+  PitchData,
   Project,
   TracksData,
   Video,
@@ -137,6 +138,16 @@ export const api = {
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+
+  // Pitch calibration / heatmaps / auto-tag (Phase 2b)
+  calibrate: (videoId: number, imgPoints: number[][], length = 105, width = 68) =>
+    request<PitchData>(`/videos/${videoId}/calibrate`, {
+      method: "POST",
+      body: JSON.stringify({ img_points: imgPoints, length, width }),
+    }),
+  getPitch: (videoId: number) => request<PitchData>(`/videos/${videoId}/pitch`),
+  autotag: (videoId: number) =>
+    request<{ created: number }>(`/videos/${videoId}/autotag`, { method: "POST" }),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */
