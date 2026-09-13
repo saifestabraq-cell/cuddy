@@ -9,11 +9,12 @@ GET  /videos/{id}/tracks/exists -> lightweight check
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from ..config import settings
 from ..cv.analytics import compute_analytics
@@ -22,8 +23,9 @@ from ..cv.pitch import autotag_final_third, build_pitch_data
 from ..cv.shots import detect_shots
 from ..db import get_session
 from ..jobs import Job, get_job, start_job
-from ..models import Event, Video
-from ..schemas import CalibrateRequest
+from ..llm import answer_question
+from ..models import Category, Event, Video
+from ..schemas import AskRequest, CalibrateRequest
 
 router = APIRouter(tags=["analysis"])
 
@@ -246,3 +248,61 @@ def tag_shots(
         created += 1
     session.commit()
     return {"created": created}
+
+
+# --- Phase 3c: natural-language query (Claude API) ---
+
+
+def _build_context(video_id: int, session: Session) -> str:
+    """Compact JSON of the match's data for grounding the LLM answer."""
+    cats = {c.id: c.name for c in session.exec(select(Category)).all()}
+    events = session.exec(
+        select(Event).where(Event.video_id == video_id).order_by(Event.start_ms)
+    ).all()
+    ctx: dict = {
+        "events": [
+            {
+                "code": cats.get(e.category_id) or e.label or "Event",
+                "start_s": round(e.start_ms / 1000, 1),
+                "end_s": round(e.end_ms / 1000, 1),
+                "descriptors": e.descriptors,
+                "source": e.source,
+            }
+            for e in events
+        ],
+        "n_events": len(events),
+    }
+    ap = _analytics_path(video_id)
+    if ap.is_file():
+        a = json.loads(ap.read_text())
+        ctx["possession_pct"] = a.get("possession_pct")
+        ctx["passes"] = a.get("passes")
+        ctx["turnovers"] = a.get("turnovers")
+    pp = _pitch_path(video_id)
+    if pp.is_file():
+        ctx["team_distance_m"] = json.loads(pp.read_text()).get("team_distance_m")
+    sp = _shots_path(video_id)
+    if sp.is_file():
+        s = json.loads(sp.read_text())
+        ctx["team_xg"] = s.get("team_xg")
+        ctx["team_shots"] = s.get("team_shots")
+    ctx["teams"] = {"0": "Team A", "1": "Team B"}
+    return json.dumps(ctx)
+
+
+@router.post("/videos/{video_id}/ask")
+def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_session)):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(
+            400,
+            "ANTHROPIC_API_KEY is not set on the backend. Set it in the "
+            "environment and restart the API to enable natural-language queries.",
+        )
+    context = _build_context(video_id, session)
+    try:
+        answer = answer_question(payload.question, context)
+    except Exception as exc:  # noqa: BLE001 - surface the LLM error to the client
+        raise HTTPException(502, f"LLM request failed: {type(exc).__name__}: {exc}") from exc
+    return {"answer": answer, "question": payload.question}

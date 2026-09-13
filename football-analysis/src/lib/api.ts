@@ -164,6 +164,13 @@ export const api = {
   getShots: (videoId: number) => request<ShotsData>(`/videos/${videoId}/shots`),
   tagShots: (videoId: number) =>
     request<{ created: number }>(`/videos/${videoId}/tag-shots`, { method: "POST" }),
+
+  // Natural-language query (Phase 3c)
+  ask: (videoId: number, question: string) =>
+    request<{ answer: string; question: string }>(`/videos/${videoId}/ask`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */

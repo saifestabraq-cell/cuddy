@@ -113,6 +113,10 @@ class CalibrateRequest(BaseModel):
     width: float = 68.0
 
 
+class AskRequest(BaseModel):
+    question: str
+
+
 class EventUpdate(BaseModel):
     category_id: Optional[int] = None
     label: Optional[str] = None

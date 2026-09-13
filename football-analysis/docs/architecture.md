@@ -85,13 +85,17 @@ Endpoints: `POST /videos/{id}/calibrate`, `GET /videos/{id}/pitch`,
 - Turnovers can be tagged as `source="ai"` events for review.
 - Endpoints: `POST/GET /videos/{id}/analytics`, `POST /videos/{id}/tag-turnovers`.
 
-### Phase 3b — Shots & simple xG (next)
-Heuristic shot detection (ball velocity toward goal) → distance/angle xG
-estimate → shot map + xG totals.
+### Phase 3b — Shots & simple xG ✅
+Heuristic shot detection (fast ball toward a goal) → transparent distance/angle
+logistic xG estimate → shot map (markers sized by xG) + per-team xG/shot totals.
+Endpoints: `POST/GET /videos/{id}/shots`, `POST /videos/{id}/tag-shots`.
 
-### Phase 3c — Natural-language query (planned, Claude API)
-Ask plain-English questions over the match's events/stats. Uses the Anthropic
-API (needs `ANTHROPIC_API_KEY`).
+### Phase 3c — Natural-language query ✅ (Claude API)
+Ask plain-English questions over the match's events/stats; the backend builds a
+compact JSON context and calls the Anthropic API (`app/llm.py`, model
+`claude-opus-5`, override with `FA_LLM_MODEL`). Needs `ANTHROPIC_API_KEY` in the
+backend environment; without it the endpoint returns a clear 400.
+Endpoint: `POST /videos/{id}/ask`.
 
 ## Production sidecar packaging (deferred)
 

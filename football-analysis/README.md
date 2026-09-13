@@ -84,8 +84,15 @@ minutes; subsequent runs are fast.
 - **Phase 3a complete** — possession & passing analytics: nearest-player ball
   assignment → team possession %, pass network, turnovers, with turnovers
   taggable as reviewable AI events.
+- **Phase 3b complete** — shot detection + a simple distance/angle xG estimate:
+  shot map (markers sized by xG) and per-team xG/shot totals.
+- **Phase 3c complete** — natural-language query over the match data via the
+  Claude API. Set `ANTHROPIC_API_KEY` in the backend environment to enable it
+  (optional `FA_LLM_MODEL`, default `claude-opus-5`).
 
-Phase 3b (shots + simple xG) and 3c (natural-language query via the Claude API)
-are described in [docs/architecture.md](docs/architecture.md).
+Cuddy now spans Phases 0 → 3 — a full manual-coding tool plus AI
+detection/tracking/teams, positional heatmaps, possession/passing/shot
+analytics, and natural-language querying. See
+[docs/architecture.md](docs/architecture.md).
 
 > The CV stack is a separate install — see [docs/setup.md](docs/setup.md#cv--ml-dependencies-phase-2).

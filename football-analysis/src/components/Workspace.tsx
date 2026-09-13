@@ -16,6 +16,7 @@ import PlaylistBar from "./PlaylistBar";
 import PitchPanel from "./PitchPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import ShotsPanel from "./ShotsPanel";
+import AskPanel from "./AskPanel";
 
 export default function Workspace() {
   const currentProject = useStore((s) => s.currentProject());
@@ -117,6 +118,7 @@ export default function Workspace() {
             onPlay={playPlaylist}
             onStop={stopPresentation}
           />
+          <AskPanel />
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />
           )}
