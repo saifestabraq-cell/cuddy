@@ -138,6 +138,23 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
         </div>
       )}
 
+      {ev.source === "ai" && !ev.reviewed && (
+        <div className="card p-2.5 mb-3 flex items-center gap-2 border-violet-400/30">
+          <span className="text-xs text-violet-300 flex-1">
+            AI suggestion — confirm or reject
+          </span>
+          <button
+            className="btn-accent"
+            onClick={() => updateEvent(ev.id, { reviewed: true })}
+          >
+            Confirm (Y)
+          </button>
+          <button className="btn" onClick={() => removeEvent(ev.id)}>
+            Reject (N)
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-xs text-mist-300">
           <input

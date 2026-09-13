@@ -409,9 +409,11 @@ export const useStore = create<AppState>((set, get) => ({
         set({ analysisJob: updated });
         if (updated.completed_stages?.includes("events") && !get().tracks) {
           await get().loadTracks();
+          await get().loadEvents(); // surface the auto-detected candidate events
         }
         if (updated.status === "done") {
           await get().loadTracks();
+          await get().loadEvents();
           return;
         }
         if (updated.status === "error") return;

@@ -95,8 +95,35 @@ def _stage_triage(video: Video, progress: StageProgress) -> None:
     progress(1.0, "Footage segmented")
 
 
+def _upsert_ai_events(video_id: int, candidates: list[dict]) -> None:
+    """Replace unreviewed auto-detected events with a fresh set; leave the
+    analyst's manual and already-reviewed events untouched."""
+    from sqlmodel import Session, select
+
+    from .models import Event
+
+    with Session(engine) as session:
+        prior = session.exec(
+            select(Event).where(
+                Event.video_id == video_id,
+                Event.source == "ai",
+                Event.reviewed == False,  # noqa: E712 - SQL boolean comparison
+                Event.detector != None,  # noqa: E711 - SQL NULL comparison
+            )
+        ).all()
+        for e in prior:
+            session.delete(e)
+        for c in candidates:
+            session.add(Event(
+                video_id=video_id, category_id=None, label=c["label"],
+                start_ms=c["start_ms"], end_ms=c["end_ms"],
+                source="ai", confidence=c["confidence"], detector=c["detector"],
+            ))
+        session.commit()
+
+
 def _stage_events(video: Video, progress: StageProgress) -> None:
-    """Real detection + tracking + team clustering (writes the tracks JSON)."""
+    """Detection + tracking (writes tracks) then candidate-event detection."""
     if not Path(video.path).is_file():
         raise FileNotFoundError(
             f"Source file missing: {video.path}. Relink the video and re-run."
@@ -107,8 +134,15 @@ def _stage_events(video: Video, progress: StageProgress) -> None:
         video.path,
         str(tracks_path(video.id)),
         target_fps=5.0,
-        progress=lambda p, m: progress(p, m),
+        progress=lambda p, m: progress(p * 0.9, m),  # detection = first 90%
     )
+    progress(0.92, "Detecting events")
+    from .cv.events import detect_events
+
+    tracks = json.loads(tracks_path(video.id).read_text())
+    candidates = detect_events(tracks)
+    _upsert_ai_events(video.id, candidates)
+    progress(1.0, f"Found {len(candidates)} candidate events")
 
 
 def _stage_spatial(video: Video, progress: StageProgress) -> None:
