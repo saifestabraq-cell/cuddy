@@ -143,6 +143,25 @@ export interface Analytics {
   n_touches: number;
 }
 
+export interface Shot {
+  t_ms: number;
+  X: number;
+  Y: number;
+  goal: "left" | "right";
+  team: number;
+  distance_m: number;
+  angle_rad: number;
+  xg: number;
+}
+
+export interface ShotsData {
+  shots: Shot[];
+  team_xg: { "0": number; "1": number };
+  team_shots: { "0": number; "1": number };
+  length: number;
+  width: number;
+}
+
 export interface AnalysisJob {
   id: string;
   kind: string;

@@ -19,6 +19,7 @@ from ..config import settings
 from ..cv.analytics import compute_analytics
 from ..cv.pipeline import analyze_video
 from ..cv.pitch import autotag_final_third, build_pitch_data
+from ..cv.shots import detect_shots
 from ..db import get_session
 from ..jobs import Job, get_job, start_job
 from ..models import Event, Video
@@ -37,6 +38,10 @@ def _pitch_path(video_id: int) -> Path:
 
 def _analytics_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_analytics.json"
+
+
+def _shots_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_shots.json"
 
 
 @router.post("/videos/{video_id}/analyze")
@@ -188,6 +193,55 @@ def tag_turnovers(
             video_id=video_id, category_id=None, label=label,
             start_ms=max(0, t - window_ms), end_ms=t + window_ms,
             source="ai", confidence=0.5,
+        ))
+        created += 1
+    session.commit()
+    return {"created": created}
+
+
+# --- Phase 3b: shots & xG ---
+
+
+@router.post("/videos/{video_id}/shots")
+def compute_shots(video_id: int):
+    tracks_path = _tracks_path(video_id)
+    pitch_path = _pitch_path(video_id)
+    if not tracks_path.is_file():
+        raise HTTPException(400, "Analyse the video first")
+    if not pitch_path.is_file():
+        raise HTTPException(400, "Calibrate the pitch before detecting shots")
+    tracks = json.loads(tracks_path.read_text())
+    pitch = json.loads(pitch_path.read_text())
+    result = detect_shots(tracks, pitch)
+    _shots_path(video_id).write_text(json.dumps(result))
+    return result
+
+
+@router.get("/videos/{video_id}/shots")
+def get_shots(video_id: int):
+    path = _shots_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No shots computed for this video yet")
+    return json.loads(path.read_text())
+
+
+@router.post("/videos/{video_id}/tag-shots")
+def tag_shots(
+    video_id: int, window_ms: int = 2500, session: Session = Depends(get_session)
+):
+    path = _shots_path(video_id)
+    if not path.is_file():
+        raise HTTPException(400, "Detect shots before tagging them")
+    data = json.loads(path.read_text())
+    created = 0
+    for s in data.get("shots", []):
+        t = s["t_ms"]
+        team = "A" if s["team"] == 0 else "B" if s["team"] == 1 else "?"
+        label = f"Shot (Team {team}, xG {s['xg']:.2f})"
+        session.add(Event(
+            video_id=video_id, category_id=None, label=label,
+            start_ms=max(0, t - window_ms), end_ms=t + window_ms,
+            source="ai", confidence=round(min(0.99, 0.4 + s["xg"]), 2),
         ))
         created += 1
     session.commit()

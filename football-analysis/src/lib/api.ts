@@ -10,6 +10,7 @@ import type {
   MatchEvent,
   PitchData,
   Project,
+  ShotsData,
   TracksData,
   Video,
 } from "./types";
@@ -156,6 +157,13 @@ export const api = {
   getAnalytics: (videoId: number) => request<Analytics>(`/videos/${videoId}/analytics`),
   tagTurnovers: (videoId: number) =>
     request<{ created: number }>(`/videos/${videoId}/tag-turnovers`, { method: "POST" }),
+
+  // Shots & xG (Phase 3b)
+  computeShots: (videoId: number) =>
+    request<ShotsData>(`/videos/${videoId}/shots`, { method: "POST" }),
+  getShots: (videoId: number) => request<ShotsData>(`/videos/${videoId}/shots`),
+  tagShots: (videoId: number) =>
+    request<{ created: number }>(`/videos/${videoId}/tag-shots`, { method: "POST" }),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */

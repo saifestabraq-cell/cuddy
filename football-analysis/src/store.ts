@@ -15,6 +15,7 @@ import type {
   MatchEvent,
   PitchData,
   Project,
+  ShotsData,
   TracksData,
   Video,
 } from "./lib/types";
@@ -79,6 +80,9 @@ interface AppState {
   // Phase 3a: possession & passing
   analytics: Analytics | null;
 
+  // Phase 3b: shots & xG
+  shots: ShotsData | null;
+
   // derived getters (return existing references, safe in selectors)
   currentProject: () => Project | undefined;
   currentVideo: () => Video | undefined;
@@ -133,6 +137,10 @@ interface AppState {
   computeAnalytics: () => Promise<void>;
   loadAnalytics: () => Promise<void>;
   tagTurnovers: () => Promise<number>;
+
+  computeShots: () => Promise<void>;
+  loadShots: () => Promise<void>;
+  tagShots: () => Promise<number>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -154,6 +162,7 @@ export const useStore = create<AppState>((set, get) => ({
   calibrationPoints: [],
   pitch: null,
   analytics: null,
+  shots: null,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -267,12 +276,14 @@ export const useStore = create<AppState>((set, get) => ({
       calibrationMode: false,
       calibrationPoints: [],
       analytics: null,
+      shots: null,
     });
     await Promise.all([
       get().loadEvents(),
       get().loadTracks(),
       get().loadPitch(),
       get().loadAnalytics(),
+      get().loadShots(),
     ]);
   },
 
@@ -462,6 +473,33 @@ export const useStore = create<AppState>((set, get) => ({
     const vid = get().currentVideoId;
     if (!vid) return 0;
     const { created } = await api.tagTurnovers(vid);
+    await get().loadEvents();
+    return created;
+  },
+
+  computeShots: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    set({ shots: await api.computeShots(vid) });
+  },
+
+  loadShots: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ shots: null });
+      return;
+    }
+    try {
+      set({ shots: await api.getShots(vid) });
+    } catch {
+      set({ shots: null });
+    }
+  },
+
+  tagShots: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return 0;
+    const { created } = await api.tagShots(vid);
     await get().loadEvents();
     return created;
   },
