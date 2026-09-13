@@ -8,6 +8,7 @@ dist/
 
 # Python
 backend/.venv/
+backend/.venv-cpu/
 __pycache__/
 *.pyc
 .env
