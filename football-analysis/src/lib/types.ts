@@ -171,4 +171,8 @@ export interface AnalysisJob {
   result: Record<string, unknown> | null;
   error: string | null;
   meta: Record<string, unknown>;
+  // Staged pipeline (durable): current stage + completed set + full ordered list.
+  stage?: string;
+  completed_stages?: string[];
+  stages?: string[];
 }

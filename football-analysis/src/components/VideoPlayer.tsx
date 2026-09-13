@@ -39,6 +39,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     const calibrationMode = useStore((s) => s.calibrationMode);
     const calibrationPoints = useStore((s) => s.calibrationPoints);
     const addCalibrationPoint = useStore((s) => s.addCalibrationPoint);
+    const videoMissing = useStore((s) => s.videoMissing);
+    const relinkVideo = useStore((s) => s.relinkVideo);
 
     const el = () =>
       (ref as React.MutableRefObject<HTMLVideoElement | null>)?.current ?? null;
@@ -182,6 +184,22 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
                   onClick={onCalibClick}
                   title="Click the pitch corners: TL, TR, BR, BL"
                 />
+              )}
+              {videoMissing && (
+                <div className="absolute inset-0 grid place-items-center bg-ink-900/92 text-center p-4">
+                  <div className="max-w-xs">
+                    <div className="text-mist-100 text-sm font-medium mb-1">
+                      Source file not found
+                    </div>
+                    <p className="text-mist-400 text-xs mb-3 leading-relaxed">
+                      The video moved or was renamed. Your coded events and
+                      analysis are safe — relink the file to keep working.
+                    </p>
+                    <button className="btn-accent" onClick={relinkVideo}>
+                      Relink file
+                    </button>
+                  </div>
+                </div>
               )}
             </>
           ) : (

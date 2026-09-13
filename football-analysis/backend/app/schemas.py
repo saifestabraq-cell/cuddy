@@ -29,6 +29,10 @@ class VideoMetaUpdate(BaseModel):
     height: Optional[int] = None
 
 
+class RelinkRequest(BaseModel):
+    path: str
+
+
 class CategoryCreate(BaseModel):
     project_id: int
     name: str

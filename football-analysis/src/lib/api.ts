@@ -62,6 +62,13 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(meta),
     }),
+  videoStatus: (id: number) =>
+    request<{ exists: boolean; path: string }>(`/videos/${id}/status`),
+  relinkVideo: (id: number, path: string) =>
+    request<Video>(`/videos/${id}/relink`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
   deleteVideo: (id: number) =>
     request<void>(`/videos/${id}`, { method: "DELETE" }),
 

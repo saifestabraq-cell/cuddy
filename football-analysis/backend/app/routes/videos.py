@@ -17,7 +17,7 @@ from sqlmodel import Session, select
 
 from ..db import get_session
 from ..models import Video
-from ..schemas import VideoCreate, VideoMetaUpdate
+from ..schemas import RelinkRequest, VideoCreate, VideoMetaUpdate
 
 router = APIRouter(prefix="/videos", tags=["videos"])
 
@@ -62,6 +62,37 @@ def update_video_meta(
         raise HTTPException(404, "Video not found")
     for key, value in payload.model_dump(exclude_none=True).items():
         setattr(video, key, value)
+    session.add(video)
+    session.commit()
+    session.refresh(video)
+    return video
+
+
+@router.get("/{video_id}/status")
+def video_status(video_id: int, session: Session = Depends(get_session)):
+    """Whether the source file is still present at its recorded path.
+
+    Derived artifacts (tracks, pitch, analytics, shots, segments) are keyed by
+    video id, so they stay associated even when the source file moves — only
+    playback/analysis need the file, which the relink flow restores.
+    """
+    video = session.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+    return {"exists": Path(video.path).is_file(), "path": video.path}
+
+
+@router.post("/{video_id}/relink", response_model=Video)
+def relink_video(
+    video_id: int, payload: RelinkRequest, session: Session = Depends(get_session)
+):
+    """Point the video at a moved/renamed source file without losing its data."""
+    video = session.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+    if not Path(payload.path).is_file():
+        raise HTTPException(400, f"File not found: {payload.path}")
+    video.path = payload.path
     session.add(video)
     session.commit()
     session.refresh(video)
