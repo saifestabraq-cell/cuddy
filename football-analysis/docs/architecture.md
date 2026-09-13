@@ -79,9 +79,19 @@ inference on the RTX 3050 Ti.
 Endpoints: `POST /videos/{id}/calibrate`, `GET /videos/{id}/pitch`,
 `POST /videos/{id}/autotag`.
 
-### Phase 3 — Smart features
-Event auto-detection (shots/passes), xG estimate, natural-language query over
-events, automatic highlight generation.
+### Phase 3a — Possession & passing ✅
+- Nearest-player ball assignment per frame → possession %, pass network
+  (who→whom), turnovers. Heuristic; quality depends on ball tracking.
+- Turnovers can be tagged as `source="ai"` events for review.
+- Endpoints: `POST/GET /videos/{id}/analytics`, `POST /videos/{id}/tag-turnovers`.
+
+### Phase 3b — Shots & simple xG (next)
+Heuristic shot detection (ball velocity toward goal) → distance/angle xG
+estimate → shot map + xG totals.
+
+### Phase 3c — Natural-language query (planned, Claude API)
+Ask plain-English questions over the match's events/stats. Uses the Anthropic
+API (needs `ANTHROPIC_API_KEY`).
 
 ## Production sidecar packaging (deferred)
 

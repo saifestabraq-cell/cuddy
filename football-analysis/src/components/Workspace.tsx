@@ -14,6 +14,7 @@ import EventList from "./EventList";
 import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
 import PitchPanel from "./PitchPanel";
+import AnalyticsPanel from "./AnalyticsPanel";
 
 export default function Workspace() {
   const currentProject = useStore((s) => s.currentProject());
@@ -97,6 +98,7 @@ export default function Workspace() {
           />
           <AnalyzePanel />
           <PitchPanel />
+          <AnalyticsPanel />
           <Timeline
             durationMs={durationMs || currentVideo?.duration_ms || 0}
             playheadMs={playheadMs}

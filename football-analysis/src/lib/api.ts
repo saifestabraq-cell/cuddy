@@ -2,6 +2,7 @@
 
 import type {
   AnalysisJob,
+  Analytics,
   Category,
   CodingTemplate,
   Descriptor,
@@ -148,6 +149,13 @@ export const api = {
   getPitch: (videoId: number) => request<PitchData>(`/videos/${videoId}/pitch`),
   autotag: (videoId: number) =>
     request<{ created: number }>(`/videos/${videoId}/autotag`, { method: "POST" }),
+
+  // Possession & passing analytics (Phase 3a)
+  computeAnalytics: (videoId: number) =>
+    request<Analytics>(`/videos/${videoId}/analytics`, { method: "POST" }),
+  getAnalytics: (videoId: number) => request<Analytics>(`/videos/${videoId}/analytics`),
+  tagTurnovers: (videoId: number) =>
+    request<{ created: number }>(`/videos/${videoId}/tag-turnovers`, { method: "POST" }),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */

@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { api } from "./lib/api";
 import type {
   AnalysisJob,
+  Analytics,
   Category,
   CodingTemplate,
   DescriptorGroup,
@@ -75,6 +76,9 @@ interface AppState {
   calibrationPoints: number[][];
   pitch: PitchData | null;
 
+  // Phase 3a: possession & passing
+  analytics: Analytics | null;
+
   // derived getters (return existing references, safe in selectors)
   currentProject: () => Project | undefined;
   currentVideo: () => Video | undefined;
@@ -125,6 +129,10 @@ interface AppState {
   calibratePitch: (length: number, width: number) => Promise<void>;
   loadPitch: () => Promise<void>;
   runAutotag: () => Promise<number>;
+
+  computeAnalytics: () => Promise<void>;
+  loadAnalytics: () => Promise<void>;
+  tagTurnovers: () => Promise<number>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -145,6 +153,7 @@ export const useStore = create<AppState>((set, get) => ({
   calibrationMode: false,
   calibrationPoints: [],
   pitch: null,
+  analytics: null,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -257,8 +266,14 @@ export const useStore = create<AppState>((set, get) => ({
       pitch: null,
       calibrationMode: false,
       calibrationPoints: [],
+      analytics: null,
     });
-    await Promise.all([get().loadEvents(), get().loadTracks(), get().loadPitch()]);
+    await Promise.all([
+      get().loadEvents(),
+      get().loadTracks(),
+      get().loadPitch(),
+      get().loadAnalytics(),
+    ]);
   },
 
   setVideoMeta: async (id, meta) => {
@@ -420,6 +435,33 @@ export const useStore = create<AppState>((set, get) => ({
     const vid = get().currentVideoId;
     if (!vid) return 0;
     const { created } = await api.autotag(vid);
+    await get().loadEvents();
+    return created;
+  },
+
+  computeAnalytics: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    set({ analytics: await api.computeAnalytics(vid) });
+  },
+
+  loadAnalytics: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ analytics: null });
+      return;
+    }
+    try {
+      set({ analytics: await api.getAnalytics(vid) });
+    } catch {
+      set({ analytics: null });
+    }
+  },
+
+  tagTurnovers: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return 0;
+    const { created } = await api.tagTurnovers(vid);
     await get().loadEvents();
     return created;
   },

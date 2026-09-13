@@ -125,6 +125,24 @@ export interface PitchData {
   img_points: number[][];
 }
 
+export interface PassEdge {
+  team: number;
+  from: number;
+  to: number;
+  count: number;
+}
+
+export interface Analytics {
+  possession_pct: { "0": number; "1": number };
+  held_frames: { "0": number; "1": number };
+  passes: { "0": number; "1": number };
+  turnovers: number;
+  pass_edges: PassEdge[];
+  pass_events: { t_ms: number; team: number; from: number; to: number }[];
+  turnover_events: { t_ms: number; from_team: number; to_team: number }[];
+  n_touches: number;
+}
+
 export interface AnalysisJob {
   id: string;
   kind: string;

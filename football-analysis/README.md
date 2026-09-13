@@ -81,7 +81,11 @@ minutes; subsequent runs are fast.
   per-team position heatmaps + distances, and heuristic auto-tagging (ball in
   a final third) as reviewable AI events on the timeline.
 
-Phase 3 (event auto-detection, xG, natural-language query) is described in
-[docs/architecture.md](docs/architecture.md).
+- **Phase 3a complete** — possession & passing analytics: nearest-player ball
+  assignment → team possession %, pass network, turnovers, with turnovers
+  taggable as reviewable AI events.
+
+Phase 3b (shots + simple xG) and 3c (natural-language query via the Claude API)
+are described in [docs/architecture.md](docs/architecture.md).
 
 > The CV stack is a separate install — see [docs/setup.md](docs/setup.md#cv--ml-dependencies-phase-2).

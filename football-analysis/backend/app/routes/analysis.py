@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session
 
 from ..config import settings
+from ..cv.analytics import compute_analytics
 from ..cv.pipeline import analyze_video
 from ..cv.pitch import autotag_final_third, build_pitch_data
 from ..db import get_session
@@ -32,6 +33,10 @@ def _tracks_path(video_id: int) -> Path:
 
 def _pitch_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_pitch.json"
+
+
+def _analytics_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_analytics.json"
 
 
 @router.post("/videos/{video_id}/analyze")
@@ -138,6 +143,50 @@ def autotag(video_id: int, session: Session = Depends(get_session)):
         session.add(Event(
             video_id=video_id, category_id=None, label=s["label"],
             start_ms=s["start_ms"], end_ms=s["end_ms"],
+            source="ai", confidence=0.5,
+        ))
+        created += 1
+    session.commit()
+    return {"created": created}
+
+
+# --- Phase 3a: possession & passing analytics ---
+
+
+@router.post("/videos/{video_id}/analytics")
+def compute_video_analytics(video_id: int):
+    tracks_path = _tracks_path(video_id)
+    if not tracks_path.is_file():
+        raise HTTPException(400, "Analyse the video before computing analytics")
+    tracks = json.loads(tracks_path.read_text())
+    result = compute_analytics(tracks)
+    _analytics_path(video_id).write_text(json.dumps(result))
+    return result
+
+
+@router.get("/videos/{video_id}/analytics")
+def get_video_analytics(video_id: int):
+    path = _analytics_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No analytics for this video yet")
+    return json.loads(path.read_text())
+
+
+@router.post("/videos/{video_id}/tag-turnovers")
+def tag_turnovers(
+    video_id: int, window_ms: int = 2000, session: Session = Depends(get_session)
+):
+    path = _analytics_path(video_id)
+    if not path.is_file():
+        raise HTTPException(400, "Compute analytics before tagging turnovers")
+    data = json.loads(path.read_text())
+    created = 0
+    for ev in data.get("turnover_events", []):
+        t = ev["t_ms"]
+        label = f"Turnover (Team {'A' if ev['from_team'] == 0 else 'B'} lost ball)"
+        session.add(Event(
+            video_id=video_id, category_id=None, label=label,
+            start_ms=max(0, t - window_ms), end_ms=t + window_ms,
             source="ai", confidence=0.5,
         ))
         created += 1
