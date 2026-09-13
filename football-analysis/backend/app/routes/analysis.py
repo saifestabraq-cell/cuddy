@@ -290,3 +290,20 @@ def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_sessi
     except Exception as exc:  # noqa: BLE001 - surface the LLM error to the client
         raise HTTPException(502, f"LLM request failed: {type(exc).__name__}: {exc}") from exc
     return {"answer": answer, "question": payload.question}
+
+
+# --- Phase 1: validation harness (score AI events vs the manual reference) ---
+
+
+@router.get("/videos/{video_id}/validation")
+def validate_video(video_id: int, session: Session = Depends(get_session)):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    from validation.service import build_validation, write_report  # sibling package
+
+    result = build_validation(video_id, session)
+    try:
+        write_report(result)
+    except Exception:  # noqa: BLE001 - report persistence is best-effort
+        pass
+    return result

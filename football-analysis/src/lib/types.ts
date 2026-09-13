@@ -162,6 +162,25 @@ export interface ShotsData {
   width: number;
 }
 
+export interface ValidationResult {
+  video_id: number;
+  events: {
+    reference: number;
+    predicted: number;
+    tp: number;
+    fp: number;
+    fn: number;
+    precision: number;
+    recall: number;
+    f1: number;
+    boundary_error_ms: number;
+    boundary_adjustments: number;
+    corrections_required: number;
+  };
+  xg: { n: number; goals: number; sum_xg: number; brier: number } | null;
+  report: string;
+}
+
 export interface AnalysisJob {
   id: string;
   kind: string;
