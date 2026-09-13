@@ -80,6 +80,15 @@ def get_tracks(video_id: int):
     return FileResponse(path, media_type="application/json")
 
 
+@router.get("/videos/{video_id}/segments")
+def get_segments(video_id: int):
+    """Triage output: the camera-run segment map (main vs other)."""
+    path = settings.tracks_dir / f"{video_id}_segments.json"
+    if not path.is_file():
+        raise HTTPException(404, "No segmentation for this video yet")
+    return json.loads(path.read_text())
+
+
 @router.get("/videos/{video_id}/tracks/summary")
 def tracks_summary(video_id: int):
     """Lightweight summary without the (potentially large) per-frame data."""

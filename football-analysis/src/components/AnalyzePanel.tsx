@@ -15,6 +15,7 @@ export default function AnalyzePanel() {
   const currentVideo = useStore((s) => s.currentVideo());
   const job = useStore((s) => s.analysisJob);
   const tracks = useStore((s) => s.tracks);
+  const segments = useStore((s) => s.segments);
   const overlay = useStore((s) => s.overlay);
   const analyzeVideo = useStore((s) => s.analyzeVideo);
   const setOverlay = useStore((s) => s.setOverlay);
@@ -55,6 +56,21 @@ export default function AnalyzePanel() {
           </span>
         )}
       </div>
+
+      {segments?.summary && (
+        <div className="mt-2 flex items-center gap-3 text-xs text-mist-400">
+          <span>
+            Footage:{" "}
+            <span className="text-teal-300">
+              {Math.round(segments.summary.main_fraction * 100)}% main camera
+            </span>
+          </span>
+          <span>
+            {segments.summary.segments} segment
+            {segments.summary.segments === 1 ? "" : "s"}
+          </span>
+        </div>
+      )}
 
       {running && (
         <div className="mt-3">

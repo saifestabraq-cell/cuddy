@@ -16,6 +16,7 @@ import type {
   MatchEvent,
   PitchData,
   Project,
+  SegmentMap,
   ShotsData,
   TracksData,
   Video,
@@ -73,6 +74,7 @@ interface AppState {
   analysisJob: AnalysisJob | null;
   tracks: TracksData | null;
   overlay: boolean;
+  segments: SegmentMap | null; // triage: main-camera vs filler
 
   // Phase 2b: pitch calibration
   calibrationMode: boolean;
@@ -133,6 +135,7 @@ interface AppState {
 
   analyzeVideo: (targetFps?: number) => Promise<void>;
   loadTracks: () => Promise<void>;
+  loadSegments: () => Promise<void>;
   setOverlay: (on: boolean) => void;
 
   setCalibrationMode: (on: boolean) => void;
@@ -168,6 +171,7 @@ export const useStore = create<AppState>((set, get) => ({
   analysisJob: null,
   tracks: null,
   overlay: true,
+  segments: null,
   calibrationMode: false,
   calibrationPoints: [],
   pitch: null,
@@ -287,11 +291,13 @@ export const useStore = create<AppState>((set, get) => ({
       calibrationPoints: [],
       analytics: null,
       shots: null,
+      segments: null,
       videoMissing: false,
     });
     await Promise.all([
       get().loadEvents(),
       get().loadTracks(),
+      get().loadSegments(),
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
@@ -416,6 +422,9 @@ export const useStore = create<AppState>((set, get) => ({
       try {
         const updated = await api.getJob(current.id);
         set({ analysisJob: updated });
+        if (updated.completed_stages?.includes("triage") && !get().segments) {
+          await get().loadSegments(); // surface the filler-removed timeline early
+        }
         if (updated.completed_stages?.includes("events") && !get().tracks) {
           await get().loadTracks();
           await get().loadEvents(); // surface the auto-detected candidate events
@@ -445,6 +454,19 @@ export const useStore = create<AppState>((set, get) => ({
       set({ tracks: exists ? await api.getTracks(vid) : null });
     } catch {
       set({ tracks: null });
+    }
+  },
+
+  loadSegments: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ segments: null });
+      return;
+    }
+    try {
+      set({ segments: await api.getSegments(vid) });
+    } catch {
+      set({ segments: null });
     }
   },
 

@@ -11,6 +11,7 @@ import type {
   PitchData,
   Project,
   QueryResult,
+  SegmentMap,
   ShotsData,
   TracksData,
   ValidationResult,
@@ -149,6 +150,8 @@ export const api = {
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  getSegments: (videoId: number) =>
+    request<SegmentMap>(`/videos/${videoId}/segments`),
 
   // Pitch calibration / heatmaps / auto-tag (Phase 2b)
   calibrate: (videoId: number, imgPoints: number[][], length = 105, width = 68) =>
