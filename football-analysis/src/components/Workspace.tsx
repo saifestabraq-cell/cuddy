@@ -17,8 +17,7 @@ import PlaylistBar from "./PlaylistBar";
 import PitchPanel from "./PitchPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import ShotsPanel from "./ShotsPanel";
-import AskPanel from "./AskPanel";
-import QueryPanel from "./QueryPanel";
+import AIPanel from "./AIPanel";
 import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
@@ -28,6 +27,7 @@ export default function Workspace() {
   const selectedEventId = useStore((s) => s.selectedEventId);
   const updateEvent = useStore((s) => s.updateEvent);
   const tracksFps = useStore((s) => s.tracks?.src_fps);
+  const analyzed = useStore((s) => s.tracks != null);
   const requestSeekMs = useStore((s) => s.requestSeekMs);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -221,10 +221,14 @@ export default function Workspace() {
             }}
           />
           <AnalyzePanel />
-          <MatchInfoPanel />
-          <PitchPanel />
-          <AnalyticsPanel />
-          <ShotsPanel />
+          {analyzed && (
+            <>
+              <MatchInfoPanel />
+              <PitchPanel />
+              <AnalyticsPanel />
+              <ShotsPanel />
+            </>
+          )}
           <Timeline
             durationMs={durationMs || currentVideo?.duration_ms || 0}
             playheadMs={playheadMs}
@@ -241,9 +245,8 @@ export default function Workspace() {
             onPlay={playPlaylist}
             onStop={stopPresentation}
           />
-          <QueryPanel />
-          <AskPanel />
-          <ValidationPanel />
+          <AIPanel />
+          {analyzed && <ValidationPanel />}
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />
           )}
