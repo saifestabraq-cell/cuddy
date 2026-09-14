@@ -33,6 +33,10 @@ COLLECT_ALL = [
     "cv2",
     "supervision",
     "sklearn",
+    # Alembic drives migrations via `from alembic import command` and loads its
+    # ddl/operations/script submodules dynamically; a couple of explicit hidden
+    # imports miss them, so collect the whole package (submodules + templates).
+    "alembic",
 ]
 
 datas = [
@@ -59,7 +63,8 @@ hiddenimports = [
     "uvicorn.protocols.websockets.auto",
     "uvicorn.lifespan.on",
     "anthropic",
-    "alembic",
+    "alembic.command",
+    "alembic.config",
     "alembic.runtime.migration",
     "sqlmodel",
     "sqlalchemy.dialects.sqlite",

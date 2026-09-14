@@ -46,7 +46,8 @@ pub fn run() {
             // so no cuddy-backend.exe is left running after Cuddy quits.
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 let state = window.state::<BackendProcess>();
-                if let Some(child) = state.0.lock().unwrap().take() {
+                let child = state.0.lock().unwrap().take();
+                if let Some(child) = child {
                     let _ = child.kill();
                 }
             }

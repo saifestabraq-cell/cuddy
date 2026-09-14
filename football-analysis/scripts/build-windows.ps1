@@ -93,6 +93,13 @@ if (-not $SkipBackend) {
     & $py -m pip install pyinstaller==6.11.1 --quiet
     if ($LASTEXITCODE -ne 0) { throw "Backend dependency installation failed." }
 
+    # Verify the critical imports actually resolve. --quiet can mask a partial
+    # install; a missing package (e.g. alembic) otherwise produces a
+    # silently-broken exe whose migrations fall back to create_all at runtime.
+    Write-Host "  Verifying backend dependencies import..."
+    & $py -c "from alembic import command, config; import torch, cv2, ultralytics, anthropic, sqlmodel, fastapi, uvicorn"
+    if ($LASTEXITCODE -ne 0) { throw "Backend dependency verification failed — a required package did not install." }
+
     # ---- 4. Build cuddy-backend.exe ---------------------------------------
     Write-Step "Building cuddy-backend.exe (PyInstaller — several minutes)"
     Push-Location $backend
