@@ -191,9 +191,10 @@ export const useStore = create<AppState>((set, get) => ({
       set({ health: "online", healthAttempts: 0 });
     } catch {
       const attempts = get().healthAttempts + 1;
-      // Give the sidecar ~20s (its heavy CV imports take time to unpack/load)
-      // before declaring it failed rather than still starting.
-      set({ health: attempts > 12 ? "failed" : "offline", healthAttempts: attempts });
+      // Give the sidecar ~60s before declaring failure: on first launch the
+      // onefile exe unpacks its ~430MB CV bundle to temp and cold-imports torch,
+      // which measured ~24s here and is slower on modest disks/hardware.
+      set({ health: attempts > 40 ? "failed" : "offline", healthAttempts: attempts });
     }
   },
 

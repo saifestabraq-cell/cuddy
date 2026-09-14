@@ -48,6 +48,19 @@ pub fn run() {
                 let state = window.state::<BackendProcess>();
                 let child = state.0.lock().unwrap().take();
                 if let Some(child) = child {
+                    // PyInstaller's onefile bootloader (the process Tauri spawns)
+                    // re-launches itself as a child that actually runs uvicorn.
+                    // child.kill() reaps only the bootloader, orphaning the real
+                    // backend — so kill the whole process tree by PID first.
+                    #[cfg(windows)]
+                    {
+                        use std::os::windows::process::CommandExt;
+                        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/F", "/T", "/PID", &child.pid().to_string()])
+                            .creation_flags(CREATE_NO_WINDOW)
+                            .status();
+                    }
                     let _ = child.kill();
                 }
             }
