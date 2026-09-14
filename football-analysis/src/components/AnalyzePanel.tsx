@@ -22,6 +22,7 @@ export default function AnalyzePanel() {
 
   const running = job?.status === "running" || job?.status === "pending";
   const pct = Math.round((job?.progress ?? 0) * 100);
+  const eta = etaLabel(job?.elapsed_ms, job?.progress);
 
   return (
     <div className="panel p-3">
@@ -81,9 +82,12 @@ export default function AnalyzePanel() {
               transition={{ ease: "linear", duration: 0.3 }}
             />
           </div>
-          <div className="text-xs text-mist-400 mt-1 flex justify-between">
-            <span>{job?.message}</span>
-            <span className="tabular-nums">{pct}%</span>
+          <div className="text-xs text-mist-400 mt-1 flex justify-between gap-2">
+            <span className="truncate">{job?.message}</span>
+            <span className="tabular-nums shrink-0 flex items-center gap-2">
+              {eta && <span className="text-mist-500">{eta}</span>}
+              <span className="text-mist-200">{pct}%</span>
+            </span>
           </div>
           {/* staged pipeline tracker */}
           {job?.stages && (
@@ -125,6 +129,18 @@ export default function AnalyzePanel() {
       )}
     </div>
   );
+}
+
+/** Rough time-remaining estimate from elapsed time and fractional progress. */
+function etaLabel(elapsedMs?: number, progress?: number): string | null {
+  if (!elapsedMs || !progress || progress <= 0.03 || progress >= 1) return null;
+  const totalMs = elapsedMs / progress;
+  const remainMs = Math.max(0, totalMs - elapsedMs);
+  const s = Math.round(remainMs / 1000);
+  if (s < 60) return `~${s}s left`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem ? `~${m}m ${rem}s left` : `~${m}m left`;
 }
 
 function Legend({ color, label }: { color: string; label: string }) {

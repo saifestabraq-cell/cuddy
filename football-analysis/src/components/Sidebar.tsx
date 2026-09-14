@@ -34,7 +34,7 @@ export default function Sidebar() {
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="px-1"
+          className="px-1 flex flex-col gap-2 overflow-hidden"
         >
           <input
             autoFocus
@@ -47,6 +47,16 @@ export default function Sidebar() {
               if (e.key === "Escape") setAdding(false);
             }}
           />
+          {name.trim() && (
+            <motion.button
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="btn-accent w-full justify-center"
+              onClick={submit}
+            >
+              Start project
+            </motion.button>
+          )}
         </motion.div>
       )}
 

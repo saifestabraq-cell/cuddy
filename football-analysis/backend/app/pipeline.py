@@ -68,8 +68,20 @@ def run_as_dict(run: AnalysisRun) -> dict:
         "message": run.message,
         "error": run.error,
         "result": None,
+        "elapsed_ms": _elapsed_ms(run),
         "meta": {"video_id": run.video_id},
     }
+
+
+def _elapsed_ms(run: AnalysisRun) -> int:
+    """Wall-clock ms since the run started (for a frontend ETA estimate)."""
+    end = run.updated_at if run.status in ("done", "error") else datetime.now(timezone.utc)
+    start = run.created_at
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=timezone.utc)
+    return max(0, int((end - start).total_seconds() * 1000))
 
 
 # --------------------------------------------------------------------------- #

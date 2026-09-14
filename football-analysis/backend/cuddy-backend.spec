@@ -46,12 +46,14 @@ datas = [
 binaries = []
 hiddenimports = [
     "app.main",
+    "app.user_settings",
     "app.routes.analysis",
     "app.routes.categories",
     "app.routes.descriptors",
     "app.routes.events",
     "app.routes.export",
     "app.routes.projects",
+    "app.routes.settings",
     "app.routes.templates",
     "app.routes.videos",
     "validation.harness",

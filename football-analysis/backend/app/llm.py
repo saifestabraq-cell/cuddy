@@ -1,12 +1,29 @@
 """Natural-language query over a match's data via the Anthropic API (Phase 3c).
 
-Reads ANTHROPIC_API_KEY from the environment. The model defaults to
-``claude-opus-5`` and can be overridden with FA_LLM_MODEL.
+The API key comes from the user settings store (or the ANTHROPIC_API_KEY
+environment variable); the model defaults to ``claude-opus-5`` and can be
+overridden in settings or via FA_LLM_MODEL.
 """
 
 from __future__ import annotations
 
-import os
+from . import user_settings
+
+
+class MissingApiKey(RuntimeError):
+    """Raised when no Anthropic API key is configured."""
+
+
+def _client():
+    from anthropic import Anthropic
+
+    key = user_settings.get_anthropic_key()
+    if not key:
+        raise MissingApiKey(
+            "No Anthropic API key configured. Add one in Settings to use AI chat."
+        )
+    return Anthropic(api_key=key)
+
 
 SYSTEM = (
     "You are a football (soccer) match-analysis assistant. Answer the user's "
@@ -19,10 +36,8 @@ SYSTEM = (
 
 def answer_question(question: str, context_json: str) -> str:
     """Ask Claude the question grounded in the match data JSON."""
-    from anthropic import Anthropic
-
-    client = Anthropic()  # picks up ANTHROPIC_API_KEY
-    model = os.environ.get("FA_LLM_MODEL", "claude-opus-5")
+    client = _client()
+    model = user_settings.get_model()
     message = client.messages.create(
         model=model,
         max_tokens=1024,
@@ -56,10 +71,8 @@ def query_clips(question: str, events_json: str) -> dict:
     one-line grounded summary. Context is the structured event record only."""
     import json as _json
 
-    from anthropic import Anthropic
-
-    client = Anthropic()
-    model = os.environ.get("FA_LLM_MODEL", "claude-opus-5")
+    client = _client()
+    model = user_settings.get_model()
     message = client.messages.create(
         model=model,
         max_tokens=1500,

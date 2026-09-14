@@ -23,6 +23,7 @@ from .routes import (
     events,
     export,
     projects,
+    settings as settings_routes,
     templates,
     videos,
 )
@@ -79,3 +80,4 @@ app.include_router(events.router)
 app.include_router(export.router)
 app.include_router(templates.router)
 app.include_router(analysis.router)
+app.include_router(settings_routes.router)

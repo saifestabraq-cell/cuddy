@@ -9,13 +9,13 @@ GET  /videos/{id}/tracks/exists -> lightweight check
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 
+from .. import user_settings
 from ..config import settings
 from ..cv.analytics import compute_analytics
 from ..cv.pitch import autotag_final_third, build_pitch_data
@@ -287,11 +287,10 @@ def _build_context(video_id: int, session: Session) -> str:
 def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_session)):
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not user_settings.has_key():
         raise HTTPException(
             400,
-            "ANTHROPIC_API_KEY is not set on the backend. Set it in the "
-            "environment and restart the API to enable natural-language queries.",
+            "No Anthropic API key configured. Add one in Settings to use AI chat.",
         )
     context = _build_context(video_id, session)
     try:
@@ -309,11 +308,10 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
     """Return a playable reel (event clips) + a one-line grounded summary."""
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not user_settings.has_key():
         raise HTTPException(
             400,
-            "ANTHROPIC_API_KEY is not set on the backend. Set it and restart to "
-            "use natural-language queries.",
+            "No Anthropic API key configured. Add one in Settings to use AI chat.",
         )
     cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
     events = session.exec(

@@ -154,6 +154,15 @@ interface AppState {
   computeShots: () => Promise<void>;
   loadShots: () => Promise<void>;
   tagShots: () => Promise<number>;
+
+  // AI settings (Anthropic API key)
+  apiKeySet: boolean;
+  keySource: "env" | "stored" | "none";
+  settingsOpen: boolean;
+  refreshSettings: () => Promise<void>;
+  saveApiKey: (key: string, model?: string) => Promise<void>;
+  openSettings: () => void;
+  closeSettings: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -180,6 +189,9 @@ export const useStore = create<AppState>((set, get) => ({
   pitch: null,
   analytics: null,
   shots: null,
+  apiKeySet: false,
+  keySource: "none",
+  settingsOpen: false,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -199,6 +211,21 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   resetHealthCheck: () => set({ health: "checking", healthAttempts: 0 }),
+
+  refreshSettings: async () => {
+    try {
+      const s = await api.getSettings();
+      set({ apiKeySet: s.anthropic_api_key_set, keySource: s.key_source });
+    } catch {
+      /* backend not ready yet; leave defaults */
+    }
+  },
+  saveApiKey: async (key: string, model?: string) => {
+    const s = await api.saveSettings({ anthropic_api_key: key, model });
+    set({ apiKeySet: s.anthropic_api_key_set, keySource: s.key_source });
+  },
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
 
   loadProjects: async () => {
     const projects = await api.listProjects();

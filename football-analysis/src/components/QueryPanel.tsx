@@ -18,6 +18,8 @@ const SUGGESTIONS = [
  */
 export default function QueryPanel() {
   const videoId = useStore((s) => s.currentVideoId);
+  const apiKeySet = useStore((s) => s.apiKeySet);
+  const openSettings = useStore((s) => s.openSettings);
   const requestSeek = useStore((s) => s.requestSeek);
   const selectEvent = useStore((s) => s.selectEvent);
   const setPlaylist = useStore((s) => s.setPlaylist);
@@ -55,6 +57,16 @@ export default function QueryPanel() {
       <span className="text-xs uppercase tracking-wider text-mist-400">
         Find clips
       </span>
+
+      {!apiKeySet && (
+        <button
+          onClick={openSettings}
+          className="mt-2 w-full text-left card px-3 py-2 text-xs text-mist-300 hover:bg-ink-600 transition-colors flex items-center gap-2"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+          Add your Anthropic API key in Settings to search clips with AI.
+        </button>
+      )}
 
       <div className="flex items-center gap-2 mt-2">
         <input

@@ -17,8 +17,13 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("event") as batch:
-        batch.add_column(sa.Column("detector", sa.String, nullable=True))
+    # Idempotent: skip if the column is already present (e.g. a DB created by the
+    # old create_all whose Event model already had this field).
+    insp = sa.inspect(op.get_bind())
+    columns = {c["name"] for c in insp.get_columns("event")}
+    if "detector" not in columns:
+        with op.batch_alter_table("event") as batch:
+            batch.add_column(sa.Column("detector", sa.String, nullable=True))
 
 
 def downgrade() -> None:

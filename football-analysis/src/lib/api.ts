@@ -12,6 +12,7 @@ import type {
   Project,
   QueryResult,
   SegmentMap,
+  SettingsStatus,
   ShotsData,
   TracksData,
   ValidationResult,
@@ -192,6 +193,14 @@ export const api = {
   // Validation harness (Phase 1): score AI events vs the manual reference
   getValidation: (videoId: number) =>
     request<ValidationResult>(`/videos/${videoId}/validation`),
+
+  // User settings (Anthropic API key / model)
+  getSettings: () => request<SettingsStatus>("/settings"),
+  saveSettings: (input: { anthropic_api_key?: string; model?: string }) =>
+    request<SettingsStatus>("/settings", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */

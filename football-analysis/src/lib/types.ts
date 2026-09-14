@@ -227,4 +227,12 @@ export interface AnalysisJob {
   stage?: string;
   completed_stages?: string[];
   stages?: string[];
+  // Wall-clock ms since the run started (for an ETA estimate).
+  elapsed_ms?: number;
+}
+
+export interface SettingsStatus {
+  anthropic_api_key_set: boolean;
+  model: string;
+  key_source: "env" | "stored" | "none";
 }

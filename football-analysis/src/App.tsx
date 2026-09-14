@@ -4,6 +4,7 @@ import { useStore } from "./store";
 import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
 import Workspace from "./components/Workspace";
+import SettingsPanel from "./components/SettingsPanel";
 
 const STAGE_MESSAGE: Record<string, string> = {
   checking: "Starting Cuddy Engine…",
@@ -11,7 +12,8 @@ const STAGE_MESSAGE: Record<string, string> = {
 };
 
 export default function App() {
-  const { checkHealth, loadProjects, health, resetHealthCheck } = useStore();
+  const { checkHealth, loadProjects, health, resetHealthCheck, refreshSettings } =
+    useStore();
 
   useEffect(() => {
     // Poll health until online, then load projects. Stops polling once the
@@ -22,7 +24,7 @@ export default function App() {
       await checkHealth();
       if (cancelled) return;
       if (useStore.getState().health === "online") {
-        await loadProjects();
+        await Promise.all([loadProjects(), refreshSettings()]);
       }
     };
     boot();
@@ -34,7 +36,7 @@ export default function App() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [checkHealth, loadProjects]);
+  }, [checkHealth, loadProjects, refreshSettings]);
 
   const retry = () => {
     resetHealthCheck();
@@ -110,6 +112,7 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+      <SettingsPanel />
     </div>
   );
 }
