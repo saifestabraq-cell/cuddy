@@ -9,11 +9,12 @@ from __future__ import annotations
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from .config import settings
 
 
-def setup_logging(level: int = logging.INFO) -> "Path | None":  # type: ignore[name-defined]
+def setup_logging(level: int = logging.INFO) -> "Path | None":
     """Attach a rotating file handler (and keep console output). Returns the log
     path, or None if the file handler could not be created."""
     settings.ensure_dirs()

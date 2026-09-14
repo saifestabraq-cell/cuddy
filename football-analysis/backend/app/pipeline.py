@@ -75,6 +75,8 @@ def run_as_dict(run: AnalysisRun) -> dict:
 
 def _elapsed_ms(run: AnalysisRun) -> int:
     """Wall-clock ms since the run started (for a frontend ETA estimate)."""
+    from datetime import datetime, timezone
+
     end = run.updated_at if run.status in ("done", "error") else datetime.now(timezone.utc)
     start = run.created_at
     if start.tzinfo is None:
