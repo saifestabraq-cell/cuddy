@@ -8,7 +8,9 @@ export default function SettingsPanel() {
   const close = useStore((s) => s.closeSettings);
   const apiKeySet = useStore((s) => s.apiKeySet);
   const keySource = useStore((s) => s.keySource);
+  const apifootballKeySet = useStore((s) => s.apifootballKeySet);
   const saveApiKey = useStore((s) => s.saveApiKey);
+  const saveApiFootballKey = useStore((s) => s.saveApiFootballKey);
   const refreshSettings = useStore((s) => s.refreshSettings);
 
   const [key, setKey] = useState("");
@@ -16,14 +18,37 @@ export default function SettingsPanel() {
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  const [fbKey, setFbKey] = useState("");
+  const [fbBusy, setFbBusy] = useState(false);
+  const [fbSaved, setFbSaved] = useState(false);
+  const [fbErr, setFbErr] = useState<string | null>(null);
+
   useEffect(() => {
     if (open) {
       setKey("");
       setSaved(false);
       setErr(null);
+      setFbKey("");
+      setFbSaved(false);
+      setFbErr(null);
       refreshSettings();
     }
   }, [open, refreshSettings]);
+
+  const saveFootball = async () => {
+    if (!fbKey.trim()) return;
+    setFbBusy(true);
+    setFbErr(null);
+    try {
+      await saveApiFootballKey(fbKey.trim());
+      setFbSaved(true);
+      setFbKey("");
+    } catch (e) {
+      setFbErr(e instanceof Error ? e.message : "Could not save the key.");
+    } finally {
+      setFbBusy(false);
+    }
+  };
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && close();
@@ -74,10 +99,56 @@ export default function SettingsPanel() {
                 ×
               </button>
             </div>
+
+            {/* Match data — API-Football (the primary data source) */}
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    apifootballKeySet ? "bg-teal-400" : "bg-mist-500"
+                  }`}
+                />
+                <label className="text-xs font-medium text-mist-200">
+                  Match data — API-Football
+                </label>
+              </div>
+              <p className="text-[11px] text-mist-400 mb-2 leading-relaxed">
+                Real scores, lineups, formations and team stats. Get a free key at{" "}
+                <span className="text-mist-300">api-sports.io</span> (dashboard →
+                API key). Stored locally.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="password"
+                  className="input flex-1"
+                  placeholder={apifootballKeySet ? "•••••• (configured)" : "your api-sports key"}
+                  value={fbKey}
+                  onChange={(e) => {
+                    setFbKey(e.target.value);
+                    setFbSaved(false);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && saveFootball()}
+                />
+                <button
+                  className="btn-accent"
+                  disabled={fbBusy || !fbKey.trim()}
+                  onClick={saveFootball}
+                >
+                  {fbBusy ? "Saving…" : apifootballKeySet ? "Update" : "Save"}
+                </button>
+              </div>
+              {fbSaved && (
+                <span className="text-xs text-teal-300 mt-1 inline-block">Saved ✓</span>
+              )}
+              {fbErr && <span className="text-xs text-signal-live mt-1 inline-block">{fbErr}</span>}
+            </div>
+
+            <div className="border-t border-ink-500/50 my-4" />
+
             <p className="text-xs text-mist-400 mb-4 leading-relaxed">
-              AI chat and clip search use the Anthropic API. Your key is stored
-              locally on this machine and is only sent to Anthropic — never to
-              anyone else.
+              <span className="text-mist-200">AI chat (optional).</span> Natural-language
+              questions use the Anthropic API — a separate paid key (your Claude
+              subscription does not apply). Stored locally, only sent to Anthropic.
             </p>
 
             <div className="flex items-center gap-2 mb-3 text-xs">

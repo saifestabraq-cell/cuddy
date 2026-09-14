@@ -7,6 +7,7 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  MatchData,
   MatchEvent,
   MatchInfo,
   PitchData,
@@ -204,9 +205,22 @@ export const api = {
       body: JSON.stringify({ question: description }),
     }),
 
-  // User settings (Anthropic API key / model)
+  // Real match data (API-Football)
+  getMatchData: (videoId: number) =>
+    request<MatchData | null>(`/videos/${videoId}/match-data`),
+  fetchMatchData: (videoId: number, description: string) =>
+    request<MatchData>(`/videos/${videoId}/match-data`, {
+      method: "POST",
+      body: JSON.stringify({ question: description }),
+    }),
+
+  // User settings (API keys / model)
   getSettings: () => request<SettingsStatus>("/settings"),
-  saveSettings: (input: { anthropic_api_key?: string; model?: string }) =>
+  saveSettings: (input: {
+    anthropic_api_key?: string;
+    model?: string;
+    apifootball_key?: string;
+  }) =>
     request<SettingsStatus>("/settings", {
       method: "POST",
       body: JSON.stringify(input),

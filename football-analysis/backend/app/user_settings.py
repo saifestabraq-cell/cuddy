@@ -50,22 +50,41 @@ def get_model() -> str:
     return os.environ.get("FA_LLM_MODEL") or load().get("model") or "claude-opus-5"
 
 
-def set_values(*, anthropic_api_key: str | None = None, model: str | None = None) -> None:
+def get_apifootball_key() -> str | None:
+    """API-Football (api-sports.io) key for real match data."""
+    env = os.environ.get("APIFOOTBALL_KEY")
+    if env:
+        return env
+    key = load().get("apifootball_key")
+    return key or None
+
+
+def _set_key(data: dict, field: str, value: str | None) -> None:
+    if value is None:
+        return
+    stripped = value.strip()
+    if stripped:
+        data[field] = stripped
+    else:
+        data.pop(field, None)
+
+
+def set_values(
+    *,
+    anthropic_api_key: str | None = None,
+    model: str | None = None,
+    apifootball_key: str | None = None,
+) -> None:
     data = load()
-    if anthropic_api_key is not None:
-        stripped = anthropic_api_key.strip()
-        if stripped:
-            data["anthropic_api_key"] = stripped
-        else:
-            data.pop("anthropic_api_key", None)
-    if model is not None:
-        stripped = model.strip()
-        if stripped:
-            data["model"] = stripped
-        else:
-            data.pop("model", None)
+    _set_key(data, "anthropic_api_key", anthropic_api_key)
+    _set_key(data, "model", model)
+    _set_key(data, "apifootball_key", apifootball_key)
     save(data)
 
 
 def has_key() -> bool:
     return bool(get_anthropic_key())
+
+
+def has_apifootball_key() -> bool:
+    return bool(get_apifootball_key())

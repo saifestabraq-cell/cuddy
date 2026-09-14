@@ -13,6 +13,7 @@ import type {
   CodingTemplate,
   DescriptorGroup,
   Filter,
+  MatchData,
   MatchEvent,
   MatchInfo,
   PitchData,
@@ -156,20 +157,29 @@ interface AppState {
   loadShots: () => Promise<void>;
   tagShots: () => Promise<number>;
 
-  // AI settings (Anthropic API key)
+  // Settings (API keys)
   apiKeySet: boolean;
   keySource: "env" | "stored" | "none";
+  apifootballKeySet: boolean;
   settingsOpen: boolean;
   refreshSettings: () => Promise<void>;
   saveApiKey: (key: string, model?: string) => Promise<void>;
+  saveApiFootballKey: (key: string) => Promise<void>;
   openSettings: () => void;
   closeSettings: () => void;
 
-  // Match info (AI-estimated score + formations)
+  // Match info (AI-estimated score + formations — legacy LLM path)
   matchInfo: MatchInfo | null;
   matchInfoLoading: boolean;
   loadMatchInfo: () => Promise<void>;
   lookupMatchInfo: (description: string) => Promise<void>;
+
+  // Real match data (API-Football)
+  matchData: MatchData | null;
+  matchDataLoading: boolean;
+  matchDataError: string | null;
+  loadMatchData: () => Promise<void>;
+  fetchMatchData: (description: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -198,9 +208,13 @@ export const useStore = create<AppState>((set, get) => ({
   shots: null,
   apiKeySet: false,
   keySource: "none",
+  apifootballKeySet: false,
   settingsOpen: false,
   matchInfo: null,
   matchInfoLoading: false,
+  matchData: null,
+  matchDataLoading: false,
+  matchDataError: null,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -224,7 +238,11 @@ export const useStore = create<AppState>((set, get) => ({
   refreshSettings: async () => {
     try {
       const s = await api.getSettings();
-      set({ apiKeySet: s.anthropic_api_key_set, keySource: s.key_source });
+      set({
+        apiKeySet: s.anthropic_api_key_set,
+        keySource: s.key_source,
+        apifootballKeySet: s.apifootball_key_set,
+      });
     } catch {
       /* backend not ready yet; leave defaults */
     }
@@ -233,8 +251,41 @@ export const useStore = create<AppState>((set, get) => ({
     const s = await api.saveSettings({ anthropic_api_key: key, model });
     set({ apiKeySet: s.anthropic_api_key_set, keySource: s.key_source });
   },
+  saveApiFootballKey: async (key: string) => {
+    const s = await api.saveSettings({ apifootball_key: key });
+    set({ apifootballKeySet: s.apifootball_key_set });
+  },
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+
+  loadMatchData: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ matchData: null });
+      return;
+    }
+    try {
+      const data = await api.getMatchData(vid);
+      if (get().currentVideoId === vid) set({ matchData: data });
+    } catch {
+      if (get().currentVideoId === vid) set({ matchData: null });
+    }
+  },
+  fetchMatchData: async (description: string) => {
+    const vid = get().currentVideoId;
+    if (!vid || !description.trim()) return;
+    set({ matchDataLoading: true, matchDataError: null });
+    try {
+      const data = await api.fetchMatchData(vid, description.trim());
+      if (get().currentVideoId === vid) set({ matchData: data });
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ matchDataError: e instanceof Error ? e.message : "Lookup failed" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ matchDataLoading: false });
+    }
+  },
 
   loadMatchInfo: async () => {
     const vid = get().currentVideoId;
@@ -366,6 +417,8 @@ export const useStore = create<AppState>((set, get) => ({
       shots: null,
       segments: null,
       matchInfo: null,
+      matchData: null,
+      matchDataError: null,
       videoMissing: false,
     });
     await Promise.all([
@@ -375,7 +428,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
-      get().loadMatchInfo(),
+      get().loadMatchData(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {
@@ -507,16 +560,16 @@ export const useStore = create<AppState>((set, get) => ({
         if (updated.status === "done") {
           await get().loadTracks();
           await get().loadEvents();
-          // Best-effort: look up the match score + formations once, using the
-          // project name to identify the game. Only when a key is configured
-          // and nothing has been looked up yet. Presented as an AI estimate.
-          if (get().apiKeySet && !get().matchInfo) {
+          // Best-effort: pull real match data (score, formations, stats) from
+          // API-Football using the project name to identify the game. Only when
+          // a key is configured and nothing has been fetched yet.
+          if (get().apifootballKeySet && !get().matchData) {
             const project = get().currentProject();
             if (project) {
               get()
-                .lookupMatchInfo(project.name)
+                .fetchMatchData(project.name)
                 .catch(() => {
-                  /* non-fatal; the panel lets the user look it up manually */
+                  /* non-fatal; the dashboard lets the user look it up manually */
                 });
             }
           }

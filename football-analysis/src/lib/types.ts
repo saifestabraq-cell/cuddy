@@ -235,6 +235,36 @@ export interface SettingsStatus {
   anthropic_api_key_set: boolean;
   model: string;
   key_source: "env" | "stored" | "none";
+  apifootball_key_set: boolean;
+}
+
+export interface MatchTeam {
+  id: number | null;
+  name: string | null;
+  logo: string | null;
+  formation: string | null;
+  start_xi: string[];
+  stats: Record<string, string | number | null>;
+}
+
+export interface MatchDataEvent {
+  minute: number | null;
+  team: string | null;
+  player: string | null;
+  type: string | null;
+  detail: string | null;
+}
+
+/** Real match data from API-Football (validated, not CV/LLM-derived). */
+export interface MatchData {
+  query: string;
+  fixture_id: number | null;
+  competition: string | null;
+  date: string | null;
+  score: string | null;
+  home: MatchTeam;
+  away: MatchTeam;
+  events: MatchDataEvent[];
 }
 
 /** AI-estimated match facts (knowledge-based lookup — presented as an estimate). */

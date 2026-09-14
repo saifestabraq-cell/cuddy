@@ -18,11 +18,13 @@ class SettingsStatus(BaseModel):
     anthropic_api_key_set: bool
     model: str
     key_source: str  # "env" | "stored" | "none"
+    apifootball_key_set: bool
 
 
 class SettingsUpdate(BaseModel):
     anthropic_api_key: str | None = None
     model: str | None = None
+    apifootball_key: str | None = None
 
 
 def _status() -> SettingsStatus:
@@ -38,6 +40,7 @@ def _status() -> SettingsStatus:
         anthropic_api_key_set=user_settings.has_key(),
         model=user_settings.get_model(),
         key_source=source,
+        apifootball_key_set=user_settings.has_apifootball_key(),
     )
 
 
@@ -51,5 +54,6 @@ def update_settings(payload: SettingsUpdate) -> SettingsStatus:
     user_settings.set_values(
         anthropic_api_key=payload.anthropic_api_key,
         model=payload.model,
+        apifootball_key=payload.apifootball_key,
     )
     return _status()

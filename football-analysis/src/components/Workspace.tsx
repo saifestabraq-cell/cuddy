@@ -8,7 +8,7 @@ import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
 import TagPad from "./TagPad";
 import AnalyzePanel from "./AnalyzePanel";
-import MatchInfoPanel from "./MatchInfoPanel";
+import StatsDashboard from "./StatsDashboard";
 import DescriptorManager from "./DescriptorManager";
 import Dashboard from "./Dashboard";
 import EventList from "./EventList";
@@ -223,7 +223,6 @@ export default function Workspace() {
           <AnalyzePanel />
           {analyzed && (
             <>
-              <MatchInfoPanel />
               <PitchPanel />
               <AnalyticsPanel />
               <ShotsPanel />
@@ -240,6 +239,7 @@ export default function Workspace() {
 
         {/* right: playlist + edit + dashboard + events */}
         <div className="flex flex-col gap-3 min-h-0">
+          <StatsDashboard />
           <PlaylistBar
             presenting={presenting}
             onPlay={playPlaylist}

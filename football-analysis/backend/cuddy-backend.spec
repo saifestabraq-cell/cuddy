@@ -47,6 +47,7 @@ binaries = []
 hiddenimports = [
     "app.main",
     "app.user_settings",
+    "app.providers.apifootball",
     "app.routes.analysis",
     "app.routes.categories",
     "app.routes.descriptors",

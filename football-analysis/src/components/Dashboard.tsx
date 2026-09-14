@@ -7,7 +7,7 @@ export default function Dashboard() {
   const events = useStore((s) => s.events);
   const categories = useStore((s) => s.categories);
   const project = useStore((s) => s.currentProject());
-  const info = useStore((s) => s.matchInfo);
+  const info = useStore((s) => s.matchData);
 
   const stats = useMemo(() => {
     const byCat = new Map<number, number>();
@@ -24,11 +24,11 @@ export default function Dashboard() {
 
   const shareOnX = () => {
     const lines: string[] = [];
-    if (info?.score && (info.home_team || info.away_team)) {
+    if (info?.score && (info.home.name || info.away.name)) {
       lines.push(
-        `${info.home_team ?? "Home"} ${info.score} ${info.away_team ?? "Away"}`.trim(),
+        `${info.home.name ?? "Home"} ${info.score} ${info.away.name ?? "Away"}`.trim(),
       );
-      const formations = [info.home_formation, info.away_formation].filter(Boolean);
+      const formations = [info.home.formation, info.away.formation].filter(Boolean);
       if (formations.length) lines.push(`Formations: ${formations.join(" vs ")}`);
     } else if (project) {
       lines.push(`${project.name} — match analysis`);

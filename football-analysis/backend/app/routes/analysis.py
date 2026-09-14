@@ -49,6 +49,10 @@ def _match_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_match.json"
 
 
+def _matchdata_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_matchdata.json"
+
+
 @router.post("/videos/{video_id}/analyze")
 def start_analysis(video_id: int, session: Session = Depends(get_session)):
     """Start (or resume) the durable staged pipeline for this video."""
@@ -400,6 +404,49 @@ def lookup_match_info(
     except OSError:
         pass
     return report
+
+
+# --- Real match data from API-Football (score, formations, lineups, stats) ---
+
+
+@router.get("/videos/{video_id}/match-data")
+def get_match_data(video_id: int, session: Session = Depends(get_session)):
+    """Return previously-fetched real match data, or null if none saved."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _matchdata_path(video_id)
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return None
+
+
+@router.post("/videos/{video_id}/match-data")
+def fetch_match_data(
+    video_id: int, payload: MatchInfoRequest, session: Session = Depends(get_session)
+):
+    """Look up real match data (lineups, formations, stats, events) from
+    API-Football for the described fixture and persist it."""
+    from ..providers import apifootball
+
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    description = payload.question.strip()
+    if not description:
+        raise HTTPException(400, "Provide a match description (e.g. 'Chelsea vs Arsenal').")
+    try:
+        data = apifootball.fetch_match(description)
+    except apifootball.ProviderError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - surface unexpected provider errors
+        raise HTTPException(502, f"Match-data lookup failed: {type(exc).__name__}: {exc}") from exc
+    try:
+        _matchdata_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+    return data
 
 
 # --- Phase 1: validation harness (score AI events vs the manual reference) ---
