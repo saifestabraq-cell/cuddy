@@ -90,7 +90,7 @@ def _elapsed_ms(run: AnalysisRun) -> int:
 # Stage implementations
 # --------------------------------------------------------------------------- #
 
-def _stage_triage(video: Video, progress: StageProgress) -> None:
+def _stage_triage(video: Video, progress: StageProgress, session: Session) -> None:
     """Split footage into camera runs and label the main tactical camera."""
     if not Path(video.path).is_file():
         raise FileNotFoundError(
@@ -110,34 +110,36 @@ def _stage_triage(video: Video, progress: StageProgress) -> None:
     p.write_text(json.dumps(data))
 
 
-def _upsert_ai_events(video_id: int, candidates: list[dict]) -> None:
+def _upsert_ai_events(video_id: int, candidates: list[dict], session: Session) -> None:
     """Replace unreviewed auto-detected events with a fresh set; leave the
-    analyst's manual and already-reviewed events untouched."""
-    from sqlmodel import Session, select
+    analyst's manual and already-reviewed events untouched.
 
+    Uses the pipeline run's own session — opening a second connection here
+    deadlocks against the progress-update writes on SQLite ("database is
+    locked") even under WAL.
+    """
     from .models import Event
 
-    with Session(engine) as session:
-        prior = session.exec(
-            select(Event).where(
-                Event.video_id == video_id,
-                Event.source == "ai",
-                Event.reviewed == False,  # noqa: E712 - SQL boolean comparison
-                Event.detector != None,  # noqa: E711 - SQL NULL comparison
-            )
-        ).all()
-        for e in prior:
-            session.delete(e)
-        for c in candidates:
-            session.add(Event(
-                video_id=video_id, category_id=None, label=c["label"],
-                start_ms=c["start_ms"], end_ms=c["end_ms"],
-                source="ai", confidence=c["confidence"], detector=c["detector"],
-            ))
-        session.commit()
+    prior = session.exec(
+        select(Event).where(
+            Event.video_id == video_id,
+            Event.source == "ai",
+            Event.reviewed == False,  # noqa: E712 - SQL boolean comparison
+            Event.detector != None,  # noqa: E711 - SQL NULL comparison
+        )
+    ).all()
+    for e in prior:
+        session.delete(e)
+    for c in candidates:
+        session.add(Event(
+            video_id=video_id, category_id=None, label=c["label"],
+            start_ms=c["start_ms"], end_ms=c["end_ms"],
+            source="ai", confidence=c["confidence"], detector=c["detector"],
+        ))
+    session.commit()
 
 
-def _stage_events(video: Video, progress: StageProgress) -> None:
+def _stage_events(video: Video, progress: StageProgress, session: Session) -> None:
     """Detection + tracking (writes tracks) then candidate-event detection."""
     if not Path(video.path).is_file():
         raise FileNotFoundError(
@@ -156,16 +158,17 @@ def _stage_events(video: Video, progress: StageProgress) -> None:
 
     tracks = json.loads(tracks_path(video.id).read_text())
     candidates = detect_events(tracks)
-    _upsert_ai_events(video.id, candidates)
+    _upsert_ai_events(video.id, candidates, session)
     progress(1.0, f"Found {len(candidates)} candidate events")
 
 
-def _stage_spatial(video: Video, progress: StageProgress) -> None:
+def _stage_spatial(video: Video, progress: StageProgress, session: Session) -> None:
     """Placeholder: spatial registration is Phase 7. Skipped for now."""
     progress(1.0, "Spatial layer skipped (Phase 7)")
 
 
-STAGE_FNS: dict[str, Callable[[Video, StageProgress], None]] = {
+StageFn = Callable[[Video, "StageProgress", Session], None]
+STAGE_FNS: dict[str, StageFn] = {
     "triage": _stage_triage,
     "events": _stage_events,
     "spatial": _stage_spatial,
@@ -210,7 +213,7 @@ def _run_pipeline(run_id: int) -> None:
                     _touch(run, session)
 
             try:
-                STAGE_FNS[stage](video, progress)
+                STAGE_FNS[stage](video, progress, session)
             except Exception as exc:  # noqa: BLE001 - surface stage failure to client
                 run.status = "error"
                 run.error = f"{type(exc).__name__}: {exc}"
