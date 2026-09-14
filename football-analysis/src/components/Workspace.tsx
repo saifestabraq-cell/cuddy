@@ -8,6 +8,7 @@ import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
 import TagPad from "./TagPad";
 import AnalyzePanel from "./AnalyzePanel";
+import MatchInfoPanel from "./MatchInfoPanel";
 import DescriptorManager from "./DescriptorManager";
 import Dashboard from "./Dashboard";
 import EventList from "./EventList";
@@ -220,6 +221,7 @@ export default function Workspace() {
             }}
           />
           <AnalyzePanel />
+          <MatchInfoPanel />
           <PitchPanel />
           <AnalyticsPanel />
           <ShotsPanel />

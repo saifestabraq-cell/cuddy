@@ -21,7 +21,7 @@ from ..cv.analytics import compute_analytics
 from ..cv.pitch import autotag_final_third, build_pitch_data
 from ..cv.shots import detect_shots
 from ..db import get_session
-from ..llm import answer_question, query_clips
+from ..llm import answer_question, match_report, query_clips
 from ..models import Category, Event, Video
 from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
@@ -43,6 +43,10 @@ def _analytics_path(video_id: int) -> Path:
 
 def _shots_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_shots.json"
+
+
+def _match_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_match.json"
 
 
 @router.post("/videos/{video_id}/analyze")
@@ -344,6 +348,58 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
                 "label": code_of(ev), "reason": str(c.get("reason", "")),
             })
     return {"summary": result.get("summary", ""), "clips": clips, "question": payload.question}
+
+
+# --- Match info: AI-estimated final score + formations (knowledge-based) ---
+
+
+class MatchInfoRequest(AskRequest):
+    """`question` carries the match description, e.g. "Chelsea vs Arsenal, PL"."""
+
+
+@router.get("/videos/{video_id}/match-info")
+def get_match_info(video_id: int, session: Session = Depends(get_session)):
+    """Return a previously-looked-up match report, or nulls if none saved."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _match_path(video_id)
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return None
+
+
+@router.post("/videos/{video_id}/match-info")
+def lookup_match_info(
+    video_id: int, payload: MatchInfoRequest, session: Session = Depends(get_session)
+):
+    """Ask the LLM to identify the match and report its score + formations.
+
+    The result is an AI estimate (bounded by the model's knowledge) — the UI
+    presents it as such and lets the analyst correct it.
+    """
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    if not user_settings.has_key():
+        raise HTTPException(
+            400,
+            "No Anthropic API key configured. Add one in Settings to look up match info.",
+        )
+    description = payload.question.strip()
+    if not description:
+        raise HTTPException(400, "Provide a match description (e.g. 'Chelsea vs Arsenal').")
+    try:
+        report = match_report(description)
+    except Exception as exc:  # noqa: BLE001 - surface the LLM error
+        raise HTTPException(502, f"LLM request failed: {type(exc).__name__}: {exc}") from exc
+    report["query"] = description
+    try:
+        _match_path(video_id).write_text(json.dumps(report, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+    return report
 
 
 # --- Phase 1: validation harness (score AI events vs the manual reference) ---

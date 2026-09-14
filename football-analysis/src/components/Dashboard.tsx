@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 import { useStore } from "../store";
+import { openExternal } from "../lib/platform";
 
 /** Live counts derived from the coded events — the seed of a full dashboard. */
 export default function Dashboard() {
   const events = useStore((s) => s.events);
   const categories = useStore((s) => s.categories);
+  const project = useStore((s) => s.currentProject());
+  const info = useStore((s) => s.matchInfo);
 
   const stats = useMemo(() => {
     const byCat = new Map<number, number>();
@@ -19,11 +22,41 @@ export default function Dashboard() {
     return { byCat, manual, ai, max };
   }, [events]);
 
+  const shareOnX = () => {
+    const lines: string[] = [];
+    if (info?.score && (info.home_team || info.away_team)) {
+      lines.push(
+        `${info.home_team ?? "Home"} ${info.score} ${info.away_team ?? "Away"}`.trim(),
+      );
+      const formations = [info.home_formation, info.away_formation].filter(Boolean);
+      if (formations.length) lines.push(`Formations: ${formations.join(" vs ")}`);
+    } else if (project) {
+      lines.push(`${project.name} — match analysis`);
+    }
+    lines.push(
+      `${events.length} events coded${stats.ai ? ` (${stats.ai} AI-assisted)` : ""}.`,
+    );
+    lines.push("Analysed with Cuddy ⚽ #footballanalysis");
+    const text = lines.join("\n");
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    openExternal(url);
+  };
+
   return (
     <div className="panel p-3">
-      <span className="text-xs uppercase tracking-wider text-mist-400 px-1">
-        Dashboard
-      </span>
+      <div className="flex items-center justify-between px-1">
+        <span className="text-xs uppercase tracking-wider text-mist-400">
+          Dashboard
+        </span>
+        <button
+          onClick={shareOnX}
+          title="Share this project on X"
+          className="flex items-center gap-1.5 text-xs text-mist-300 hover:text-mist-100 border border-ink-500/60 hover:border-ink-400 rounded-lg px-2 py-1 transition-colors"
+        >
+          <XLogo />
+          Share
+        </button>
+      </div>
 
       <div className="grid grid-cols-3 gap-2 mt-3">
         <Stat label="Events" value={events.length} />
@@ -56,6 +89,14 @@ export default function Dashboard() {
         })}
       </div>
     </div>
+  );
+}
+
+function XLogo() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
   );
 }
 

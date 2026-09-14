@@ -54,6 +54,61 @@ def answer_question(question: str, context_json: str) -> str:
     ).strip()
 
 
+MATCH_SYSTEM = (
+    "You identify a football (soccer) match and report its final score and each "
+    "team's starting formation from your own knowledge. You are given a short "
+    "description (team names, and possibly a competition or date). "
+    "Respond with ONLY a JSON object: "
+    '{"home_team": <str|null>, "away_team": <str|null>, '
+    '"score": <str|null e.g. "2-1">, "home_formation": <str|null e.g. "4-3-3">, '
+    '"away_formation": <str|null>, "competition": <str|null>, "date": <str|null>, '
+    '"confidence": <number 0-1>, "notes": <str>}. '
+    "Only fill fields you are genuinely confident about from a specific, real "
+    "match; otherwise use null and lower the confidence. NEVER invent a score or "
+    "formation — an honest null is required when unsure. If the description does "
+    "not clearly identify one specific match, set confidence to 0 and explain in "
+    "notes."
+)
+
+
+def match_report(description: str) -> dict:
+    """Look up a match's final score and both formations from the description.
+
+    Best-effort and knowledge-bound: returns nulls with low confidence rather
+    than fabricating. The caller must present the result as an AI estimate.
+    """
+    import json as _json
+
+    client = _client()
+    model = user_settings.get_model()
+    message = client.messages.create(
+        model=model,
+        max_tokens=600,
+        system=MATCH_SYSTEM,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Match description: {description}\n\nReturn only the JSON object."
+                ),
+            }
+        ],
+    )
+    text = "".join(
+        b.text for b in message.content if getattr(b, "type", None) == "text"
+    ).strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        text = text[text.find("{") : text.rfind("}") + 1]
+    try:
+        data = _json.loads(text)
+    except (ValueError, TypeError):
+        return {"confidence": 0, "notes": "Could not identify the match.", "score": None}
+    if not isinstance(data, dict):
+        return {"confidence": 0, "notes": "Could not identify the match.", "score": None}
+    return data
+
+
 QUERY_SYSTEM = (
     "You are a football (soccer) match-analysis assistant. You are given a JSON "
     "list of coded events (each with an id, code, start_s, end_s, source and "

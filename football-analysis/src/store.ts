@@ -14,6 +14,7 @@ import type {
   DescriptorGroup,
   Filter,
   MatchEvent,
+  MatchInfo,
   PitchData,
   Project,
   SegmentMap,
@@ -163,6 +164,12 @@ interface AppState {
   saveApiKey: (key: string, model?: string) => Promise<void>;
   openSettings: () => void;
   closeSettings: () => void;
+
+  // Match info (AI-estimated score + formations)
+  matchInfo: MatchInfo | null;
+  matchInfoLoading: boolean;
+  loadMatchInfo: () => Promise<void>;
+  lookupMatchInfo: (description: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -192,6 +199,8 @@ export const useStore = create<AppState>((set, get) => ({
   apiKeySet: false,
   keySource: "none",
   settingsOpen: false,
+  matchInfo: null,
+  matchInfoLoading: false,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -226,6 +235,30 @@ export const useStore = create<AppState>((set, get) => ({
   },
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+
+  loadMatchInfo: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ matchInfo: null });
+      return;
+    }
+    try {
+      set({ matchInfo: await api.getMatchInfo(vid) });
+    } catch {
+      set({ matchInfo: null });
+    }
+  },
+  lookupMatchInfo: async (description: string) => {
+    const vid = get().currentVideoId;
+    if (!vid || !description.trim()) return;
+    set({ matchInfoLoading: true });
+    try {
+      const info = await api.lookupMatchInfo(vid, description.trim());
+      set({ matchInfo: info });
+    } finally {
+      set({ matchInfoLoading: false });
+    }
+  },
 
   loadProjects: async () => {
     const projects = await api.listProjects();
@@ -328,6 +361,7 @@ export const useStore = create<AppState>((set, get) => ({
       analytics: null,
       shots: null,
       segments: null,
+      matchInfo: null,
       videoMissing: false,
     });
     await Promise.all([
@@ -337,6 +371,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
+      get().loadMatchInfo(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {
@@ -468,6 +503,19 @@ export const useStore = create<AppState>((set, get) => ({
         if (updated.status === "done") {
           await get().loadTracks();
           await get().loadEvents();
+          // Best-effort: look up the match score + formations once, using the
+          // project name to identify the game. Only when a key is configured
+          // and nothing has been looked up yet. Presented as an AI estimate.
+          if (get().apiKeySet && !get().matchInfo) {
+            const project = get().currentProject();
+            if (project) {
+              get()
+                .lookupMatchInfo(project.name)
+                .catch(() => {
+                  /* non-fatal; the panel lets the user look it up manually */
+                });
+            }
+          }
           return;
         }
         if (updated.status === "error") return;
