@@ -12,12 +12,11 @@ from .config import settings
 settings.ensure_dirs()
 
 # check_same_thread=False lets the engine be shared across FastAPI's threadpool.
-# timeout is SQLite's busy timeout in seconds: a writer waits for the lock
-# instead of failing immediately with "database is locked".
+# The busy timeout is set once, via the PRAGMA in the connect hook below.
 engine = create_engine(
     f"sqlite:///{settings.db_path}",
     echo=False,
-    connect_args={"check_same_thread": False, "timeout": 30},
+    connect_args={"check_same_thread": False},
 )
 
 

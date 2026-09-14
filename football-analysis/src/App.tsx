@@ -20,17 +20,26 @@ export default function App() {
     // sidecar is declared "failed" (see checkHealth's attempt budget) so a
     // genuinely dead backend doesn't spin forever; Retry restarts polling.
     let cancelled = false;
-    const boot = async () => {
+    let loaded = false;
+    // Load projects + settings the first time health becomes online — whether
+    // that's the initial check or a later poll. In the packaged app the sidecar
+    // takes 24-60s to start, so the first checkHealth almost always fails; if we
+    // only loaded on that first attempt the app would show "Engine ready" with
+    // an empty sidebar and no stored key applied.
+    const loadOnce = async () => {
+      if (loaded || cancelled) return;
+      loaded = true;
+      await Promise.all([loadProjects(), refreshSettings()]);
+    };
+    const tick = async () => {
       await checkHealth();
       if (cancelled) return;
-      if (useStore.getState().health === "online") {
-        await Promise.all([loadProjects(), refreshSettings()]);
-      }
+      if (useStore.getState().health === "online") await loadOnce();
     };
-    boot();
+    tick();
     const interval = setInterval(() => {
       const h = useStore.getState().health;
-      if (h !== "online" && h !== "failed") checkHealth();
+      if (h !== "online" && h !== "failed") tick();
     }, 1500);
     return () => {
       cancelled = true;

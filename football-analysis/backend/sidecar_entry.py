@@ -16,7 +16,7 @@ import traceback
 
 from app.logging_setup import setup_logging
 
-log_path = setup_logging()
+setup_logging()
 log = logging.getLogger("cuddy.entry")
 
 
@@ -29,7 +29,11 @@ def main() -> int:
     host = os.getenv("CUDDY_HOST", settings.host)
     port = int(os.getenv("CUDDY_PORT", str(settings.port)))
     log.info("Starting Cuddy backend on http://%s:%s", host, port)
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    # log_config=None: keep the handlers setup_logging() installed (which write
+    # to backend.log). Uvicorn otherwise re-runs its own dictConfig on start,
+    # replacing them with stderr-only handlers, so its startup/port-conflict
+    # messages would never reach the log file the user is told to check.
+    uvicorn.run(app, host=host, port=port, log_level="info", log_config=None)
     return 0
 
 

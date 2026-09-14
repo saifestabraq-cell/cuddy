@@ -30,9 +30,17 @@ pub fn run() {
                 use tauri_plugin_shell::ShellExt;
                 match _app.shell().sidecar("cuddy-backend") {
                     Ok(cmd) => match cmd.spawn() {
-                        Ok((_rx, child)) => {
+                        Ok((mut rx, child)) => {
                             let state = _app.state::<BackendProcess>();
                             *state.0.lock().unwrap() = Some(child);
+                            // Drain the child's stdout/stderr events. If this
+                            // receiver is dropped, nobody empties the OS pipes;
+                            // once the ~4KB Windows pipe buffer fills (uvicorn
+                            // logs a line per request) the backend blocks on its
+                            // next write and the app freezes as "Engine offline".
+                            tauri::async_runtime::spawn(async move {
+                                while rx.recv().await.is_some() {}
+                            });
                         }
                         Err(err) => eprintln!("Failed to spawn Cuddy backend: {err}"),
                     },

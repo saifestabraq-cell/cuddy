@@ -91,7 +91,7 @@ export default function MatchInfoPanel() {
           <div className="flex items-center justify-end text-[11px]">
             <button
               className="text-mist-400 hover:text-teal-300 transition-colors"
-              onClick={() => run(currentProject?.name ?? info.query ?? "")}
+              onClick={() => run(info.query ?? currentProject?.name ?? "")}
               disabled={loading}
             >
               Refresh

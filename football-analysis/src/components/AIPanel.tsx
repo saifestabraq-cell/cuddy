@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
 import { api } from "../lib/api";
@@ -43,9 +43,14 @@ export default function AIPanel() {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Monotonic token: results from a superseded request (mode switch or a newer
+  // submit) are dropped so an in-flight Ask answer never lands under Find clips.
+  const reqId = useRef(0);
 
   const switchMode = (m: Mode) => {
     if (m === mode) return;
+    reqId.current += 1;
+    setBusy(false);
     setMode(m);
     setAnswer(null);
     setResult(null);
@@ -54,21 +59,24 @@ export default function AIPanel() {
 
   const run = async (q: string) => {
     if (!videoId || !q.trim()) return;
+    const myId = (reqId.current += 1);
+    const myMode = mode;
     setBusy(true);
     setErr(null);
     setAnswer(null);
     setResult(null);
     try {
-      if (mode === "ask") {
+      if (myMode === "ask") {
         const res = await api.ask(videoId, q.trim());
-        setAnswer(res.answer);
+        if (reqId.current === myId) setAnswer(res.answer);
       } else {
-        setResult(await api.query(videoId, q.trim()));
+        const res = await api.query(videoId, q.trim());
+        if (reqId.current === myId) setResult(res);
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Request failed");
+      if (reqId.current === myId) setErr(e instanceof Error ? e.message : "Request failed");
     } finally {
-      setBusy(false);
+      if (reqId.current === myId) setBusy(false);
     }
   };
 

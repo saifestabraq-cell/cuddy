@@ -243,9 +243,11 @@ export const useStore = create<AppState>((set, get) => ({
       return;
     }
     try {
-      set({ matchInfo: await api.getMatchInfo(vid) });
+      const info = await api.getMatchInfo(vid);
+      // Ignore a response that arrived after the user switched videos.
+      if (get().currentVideoId === vid) set({ matchInfo: info });
     } catch {
-      set({ matchInfo: null });
+      if (get().currentVideoId === vid) set({ matchInfo: null });
     }
   },
   lookupMatchInfo: async (description: string) => {
@@ -254,9 +256,11 @@ export const useStore = create<AppState>((set, get) => ({
     set({ matchInfoLoading: true });
     try {
       const info = await api.lookupMatchInfo(vid, description.trim());
-      set({ matchInfo: info });
+      // The Anthropic call takes seconds; drop the result if the user has since
+      // switched to a different video (otherwise A's report shows on B's page).
+      if (get().currentVideoId === vid) set({ matchInfo: info });
     } finally {
-      set({ matchInfoLoading: false });
+      if (get().currentVideoId === vid) set({ matchInfoLoading: false });
     }
   },
 
