@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine
 
 from .config import settings
@@ -11,11 +12,26 @@ from .config import settings
 settings.ensure_dirs()
 
 # check_same_thread=False lets the engine be shared across FastAPI's threadpool.
+# timeout is SQLite's busy timeout in seconds: a writer waits for the lock
+# instead of failing immediately with "database is locked".
 engine = create_engine(
     f"sqlite:///{settings.db_path}",
     echo=False,
-    connect_args={"check_same_thread": False},
+    connect_args={"check_same_thread": False, "timeout": 30},
 )
+
+
+@event.listens_for(engine, "connect")
+def _sqlite_pragmas(dbapi_conn, _record):
+    """WAL mode lets the frontend's status polls read while the background
+    analysis thread writes events/progress — without this the two collide and
+    raise "database is locked" mid-analysis. NORMAL sync is safe under WAL.
+    """
+    cur = dbapi_conn.cursor()
+    cur.execute("PRAGMA journal_mode=WAL")
+    cur.execute("PRAGMA busy_timeout=30000")
+    cur.execute("PRAGMA synchronous=NORMAL")
+    cur.close()
 
 
 def init_db() -> None:
