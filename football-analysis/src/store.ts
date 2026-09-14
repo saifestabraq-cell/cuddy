@@ -45,7 +45,7 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
   });
 }
 
-type Health = "checking" | "online" | "offline";
+type Health = "checking" | "online" | "offline" | "failed";
 
 const EMPTY_FILTER: Filter = {
   categoryIds: [],
@@ -56,6 +56,7 @@ const EMPTY_FILTER: Filter = {
 
 interface AppState {
   health: Health;
+  healthAttempts: number;
   projects: Project[];
   categories: Category[];
   descriptorGroups: DescriptorGroup[];
@@ -93,6 +94,7 @@ interface AppState {
   selectedEvent: () => MatchEvent | undefined;
 
   checkHealth: () => Promise<void>;
+  resetHealthCheck: () => void;
   loadProjects: () => Promise<void>;
   addProject: (name: string) => Promise<void>;
   selectProject: (id: number) => Promise<void>;
@@ -156,6 +158,7 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
   health: "checking",
+  healthAttempts: 0,
   projects: [],
   categories: [],
   descriptorGroups: [],
@@ -185,11 +188,16 @@ export const useStore = create<AppState>((set, get) => ({
   checkHealth: async () => {
     try {
       await api.health();
-      set({ health: "online" });
+      set({ health: "online", healthAttempts: 0 });
     } catch {
-      set({ health: "offline" });
+      const attempts = get().healthAttempts + 1;
+      // Give the sidecar ~20s (its heavy CV imports take time to unpack/load)
+      // before declaring it failed rather than still starting.
+      set({ health: attempts > 12 ? "failed" : "offline", healthAttempts: attempts });
     }
   },
+
+  resetHealthCheck: () => set({ health: "checking", healthAttempts: 0 }),
 
   loadProjects: async () => {
     const projects = await api.listProjects();

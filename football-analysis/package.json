@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "app": "tauri dev",
-    "app:build": "tauri build"
+    "app:build": "tauri build",
+    "build:backend": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -BackendOnly",
+    "build:windows": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

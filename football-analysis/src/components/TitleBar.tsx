@@ -4,13 +4,15 @@ import { useStore } from "../store";
 const dot = {
   checking: "bg-mist-400",
   online: "bg-teal-400",
-  offline: "bg-signal-live",
+  offline: "bg-mist-400",
+  failed: "bg-signal-live",
 } as const;
 
 const label = {
-  checking: "Connecting",
-  online: "Engine online",
-  offline: "Engine offline",
+  checking: "Starting Cuddy Engine…",
+  online: "Engine ready",
+  offline: "Connecting to Analysis Engine…",
+  failed: "Engine failed to start",
 } as const;
 
 export default function TitleBar() {

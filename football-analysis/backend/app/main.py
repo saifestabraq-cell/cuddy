@@ -63,7 +63,12 @@ app.add_middleware(
 @app.get("/health", tags=["meta"])
 def health():
     """Liveness probe used by the frontend to confirm the sidecar is up."""
-    return {"status": "ok", "app": settings.app_name, "version": __version__}
+    return {
+        "status": "ok",
+        "service": "cuddy-backend",
+        "app": settings.app_name,
+        "version": __version__,
+    }
 
 
 app.include_router(projects.router)
