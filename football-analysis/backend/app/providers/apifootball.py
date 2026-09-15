@@ -124,40 +124,73 @@ def _normalize_lineups(rows: list[dict]) -> dict[int, dict]:
     return out
 
 
-def fetch_match(query: str) -> dict:
-    """Return normalized match data for the best-matching fixture."""
-    teams = _parse_teams(query)
-    if not teams:
-        raise ProviderError(
-            'Could not read two team names from "%s". Try "Home vs Away".' % query
-        )
-    season = _season_from(query)
+def _fixture_summary(fx: dict) -> dict:
+    """A lightweight fixture card for the browser (no stats/lineups)."""
+    fixture = fx.get("fixture", {})
+    goals = fx.get("goals", {})
+    league = fx.get("league", {})
+    home = fx.get("teams", {}).get("home", {})
+    away = fx.get("teams", {}).get("away", {})
+    return {
+        "fixture_id": fixture.get("id"),
+        "date": (fixture.get("date") or "")[:10] or None,
+        "status": fixture.get("status", {}).get("short"),
+        "competition": league.get("name"),
+        "season": league.get("season"),
+        "home": home.get("name"),
+        "away": away.get("name"),
+        "home_logo": home.get("logo"),
+        "away_logo": away.get("logo"),
+        "score": f'{goals.get("home")}-{goals.get("away")}'
+        if goals.get("home") is not None
+        else None,
+    }
+
+
+def search_fixtures(query: str, limit: int = 25) -> list[dict]:
+    """Return candidate fixtures for a description, most recent first.
+
+    Two teams ("Arsenal vs Chelsea") -> their head-to-head meetings. One team
+    -> that team's recent fixtures. The caller picks the exact fixture, which is
+    then loaded by id — far more reliable than free-text guessing.
+    """
     with _client() as client:
-        a = _team_id(client, teams[0])
-        b = _team_id(client, teams[1])
-        if not a or not a["id"]:
-            raise ProviderError(f'Team not found: "{teams[0]}".')
-        if not b or not b["id"]:
-            raise ProviderError(f'Team not found: "{teams[1]}".')
-
-        fx = _pick_fixture(client, a["id"], b["id"], season)
-        if not fx:
-            raise ProviderError(
-                f'No fixture found between {a["name"]} and {b["name"]}.'
+        teams = _parse_teams(query)
+        if teams:
+            a = _team_id(client, teams[0])
+            b = _team_id(client, teams[1])
+            if not a or not a["id"]:
+                raise ProviderError(f'Team not found: "{teams[0]}".')
+            if not b or not b["id"]:
+                raise ProviderError(f'Team not found: "{teams[1]}".')
+            rows = _get(
+                client, "/fixtures/headtohead", {"h2h": f'{a["id"]}-{b["id"]}'}
             )
+        else:
+            name = query.strip()
+            if not name:
+                raise ProviderError("Enter a team or 'Home vs Away' to search.")
+            t = _team_id(client, name)
+            if not t or not t["id"]:
+                raise ProviderError(f'Team not found: "{name}".')
+            rows = _get(client, "/fixtures", {"team": t["id"], "last": 30})
 
-        fixture = fx.get("fixture", {})
-        fid = fixture.get("id")
-        goals = fx.get("goals", {})
-        league = fx.get("league", {})
-        f_home = fx.get("teams", {}).get("home", {})
-        f_away = fx.get("teams", {}).get("away", {})
+    rows.sort(key=lambda r: r.get("fixture", {}).get("timestamp", 0), reverse=True)
+    return [_fixture_summary(r) for r in rows[:limit]]
 
-        stats = _normalize_stats(_get(client, "/fixtures/statistics", {"fixture": fid}))
-        lineups = _normalize_lineups(
-            _get(client, "/fixtures/lineups", {"fixture": fid})
-        )
-        events_raw = _get(client, "/fixtures/events", {"fixture": fid})
+
+def _bundle(client, fx: dict, query: str) -> dict:
+    """Fetch stats/lineups/events for a fixture row and normalize everything."""
+    fixture = fx.get("fixture", {})
+    fid = fixture.get("id")
+    goals = fx.get("goals", {})
+    league = fx.get("league", {})
+    f_home = fx.get("teams", {}).get("home", {})
+    f_away = fx.get("teams", {}).get("away", {})
+
+    stats = _normalize_stats(_get(client, "/fixtures/statistics", {"fixture": fid}))
+    lineups = _normalize_lineups(_get(client, "/fixtures/lineups", {"fixture": fid}))
+    events_raw = _get(client, "/fixtures/events", {"fixture": fid})
 
     def side(team: dict) -> dict:
         tid = team.get("id")
@@ -194,3 +227,34 @@ def fetch_match(query: str) -> dict:
         "away": side(f_away),
         "events": events,
     }
+
+
+def fetch_match_by_id(fixture_id: int) -> dict:
+    """Load full match data for a specific fixture id (from the browser)."""
+    with _client() as client:
+        rows = _get(client, "/fixtures", {"id": fixture_id})
+        if not rows:
+            raise ProviderError(f"Fixture {fixture_id} not found.")
+        return _bundle(client, rows[0], query=f"fixture:{fixture_id}")
+
+
+def fetch_match(query: str) -> dict:
+    """Return normalized match data for the best-matching fixture (free-text)."""
+    teams = _parse_teams(query)
+    if not teams:
+        raise ProviderError(
+            'Could not read two team names from "%s". Try "Home vs Away".' % query
+        )
+    season = _season_from(query)
+    with _client() as client:
+        a = _team_id(client, teams[0])
+        b = _team_id(client, teams[1])
+        if not a or not a["id"]:
+            raise ProviderError(f'Team not found: "{teams[0]}".')
+        if not b or not b["id"]:
+            raise ProviderError(f'Team not found: "{teams[1]}".')
+
+        fx = _pick_fixture(client, a["id"], b["id"], season)
+        if not fx:
+            raise ProviderError(f'No fixture found between {a["name"]} and {b["name"]}.')
+        return _bundle(client, fx, query=query)

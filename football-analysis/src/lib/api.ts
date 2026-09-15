@@ -9,6 +9,7 @@ import type {
   DescriptorGroup,
   MatchData,
   MatchEvent,
+  MatchFixtureSummary,
   MatchInfo,
   PitchData,
   Project,
@@ -212,6 +213,16 @@ export const api = {
     request<MatchData>(`/videos/${videoId}/match-data`, {
       method: "POST",
       body: JSON.stringify({ question: description }),
+    }),
+  fetchMatchDataById: (videoId: number, fixtureId: number) =>
+    request<MatchData>(`/videos/${videoId}/match-data`, {
+      method: "POST",
+      body: JSON.stringify({ fixture_id: fixtureId }),
+    }),
+  searchMatches: (videoId: number, query: string) =>
+    request<MatchFixtureSummary[]>(`/videos/${videoId}/match-search`, {
+      method: "POST",
+      body: JSON.stringify({ query }),
     }),
 
   // User settings (API keys / model)

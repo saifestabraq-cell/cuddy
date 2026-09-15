@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
-import type { MatchTeam } from "../lib/types";
+import type { MatchFixtureSummary, MatchTeam } from "../lib/types";
 
 /**
  * Post-analysis match dashboard: real score, formations and a side-by-side
@@ -16,14 +16,18 @@ export default function StatsDashboard() {
   const error = useStore((s) => s.matchDataError);
   const keySet = useStore((s) => s.apifootballKeySet);
   const openSettings = useStore((s) => s.openSettings);
-  const fetchMatchData = useStore((s) => s.fetchMatchData);
+  const results = useStore((s) => s.fixtureResults);
+  const searching = useStore((s) => s.fixtureSearchLoading);
+  const searchError = useStore((s) => s.fixtureSearchError);
+  const searchFixtures = useStore((s) => s.searchFixtures);
+  const loadFixture = useStore((s) => s.loadFixture);
 
   const [query, setQuery] = useState("");
   const [side, setSide] = useState<"home" | "away">("home");
 
   if (!currentVideo) return null;
 
-  const run = (q: string) => q.trim() && fetchMatchData(q.trim());
+  const search = (q: string) => q.trim() && searchFixtures(q.trim());
 
   // --- empty / prompt states ------------------------------------------------
   if (!data) {
@@ -42,31 +46,51 @@ export default function StatsDashboard() {
         ) : (
           <div className="mt-1 flex flex-col gap-2">
             <p className="text-xs text-mist-400">
-              Name the match to load its real stats and formations.
+              Search for the match, then pick the exact fixture.
             </p>
             <div className="flex items-center gap-2">
               <input
                 className="input flex-1"
-                placeholder="e.g. Chelsea vs Arsenal 2024"
+                placeholder="e.g. Arsenal vs Chelsea"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && run(query)}
+                onKeyDown={(e) => e.key === "Enter" && search(query)}
               />
               <button
                 className="btn-accent"
-                disabled={loading || !query.trim()}
-                onClick={() => run(query)}
+                disabled={searching || !query.trim()}
+                onClick={() => search(query)}
               >
-                {loading ? "Loading…" : "Load"}
+                {searching ? "Searching…" : "Search"}
               </button>
             </div>
-            {project && (
+            {project && !results.length && (
               <button
                 className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors self-start"
-                onClick={() => run(project.name)}
+                onClick={() => search(project.name)}
               >
-                Use project name: "{project.name}"
+                Search project name: "{project.name}"
               </button>
+            )}
+            {searchError && <p className="text-xs text-signal-live">{searchError}</p>}
+
+            {results.length > 0 && (
+              <div className="flex flex-col gap-1 mt-1 max-h-72 overflow-y-auto pr-1">
+                {results.map((fx) => (
+                  <FixtureRow
+                    key={fx.fixture_id}
+                    fx={fx}
+                    disabled={loading}
+                    onClick={() => loadFixture(fx.fixture_id)}
+                  />
+                ))}
+              </div>
+            )}
+            {loading && (
+              <div className="flex items-center gap-2 text-xs text-mist-400 mt-1">
+                <span className="w-3 h-3 rounded-full border-2 border-teal-300/40 border-t-teal-300 animate-spin" />
+                Loading fixture…
+              </div>
             )}
             {error && <p className="text-xs text-signal-live">{error}</p>}
           </div>
@@ -85,7 +109,11 @@ export default function StatsDashboard() {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Header competition={data.competition} date={data.date} />
+      <Header
+        competition={data.competition}
+        date={data.date}
+        onChange={() => useStore.setState({ matchData: null })}
+      />
 
       {/* Scoreline + formations */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-1 mb-4">
@@ -150,18 +178,56 @@ export default function StatsDashboard() {
   );
 }
 
+function FixtureRow({
+  fx,
+  disabled,
+  onClick,
+}: {
+  fx: MatchFixtureSummary;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const meta = [fx.competition, fx.date].filter(Boolean).join(" · ");
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="card px-2.5 py-2 text-left hover:bg-ink-600 transition-colors disabled:opacity-50"
+    >
+      <div className="flex items-center gap-2 text-sm text-mist-100">
+        <span className="flex-1 truncate">{fx.home}</span>
+        <span className="tabular-nums text-teal-300 shrink-0">{fx.score ?? "vs"}</span>
+        <span className="flex-1 truncate text-right">{fx.away}</span>
+      </div>
+      {meta && <div className="text-[11px] text-mist-500 mt-0.5">{meta}</div>}
+    </button>
+  );
+}
+
 function Header({
   competition,
   date,
+  onChange,
 }: {
   competition?: string | null;
   date?: string | null;
+  onChange?: () => void;
 }) {
   const sub = [competition, date].filter(Boolean).join(" · ");
   return (
     <div className="flex items-center justify-between mb-2">
       <span className="text-xs uppercase tracking-wider text-mist-400">Match</span>
-      {sub && <span className="text-[11px] text-mist-400">{sub}</span>}
+      <div className="flex items-center gap-3">
+        {sub && <span className="text-[11px] text-mist-400">{sub}</span>}
+        {onChange && (
+          <button
+            className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors"
+            onClick={onChange}
+          >
+            Change
+          </button>
+        )}
+      </div>
     </div>
   );
 }

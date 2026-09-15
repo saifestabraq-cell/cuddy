@@ -13,6 +13,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from .. import user_settings
@@ -423,23 +424,58 @@ def get_match_data(video_id: int, session: Session = Depends(get_session)):
     return None
 
 
-@router.post("/videos/{video_id}/match-data")
-def fetch_match_data(
-    video_id: int, payload: MatchInfoRequest, session: Session = Depends(get_session)
+class MatchSearchRequest(BaseModel):
+    query: str
+
+
+class MatchDataRequest(BaseModel):
+    # Either a free-text description, or a precise fixture id from the browser.
+    question: str = ""
+    fixture_id: int | None = None
+
+
+@router.post("/videos/{video_id}/match-search")
+def search_matches(
+    video_id: int, payload: MatchSearchRequest, session: Session = Depends(get_session)
 ):
-    """Look up real match data (lineups, formations, stats, events) from
-    API-Football for the described fixture and persist it."""
+    """Return candidate fixtures for a description so the user picks the exact one."""
     from ..providers import apifootball
 
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    description = payload.question.strip()
-    if not description:
-        raise HTTPException(400, "Provide a match description (e.g. 'Chelsea vs Arsenal').")
+    query = payload.query.strip()
+    if not query:
+        raise HTTPException(400, "Enter a team or 'Home vs Away' to search.")
     try:
-        data = apifootball.fetch_match(description)
+        return apifootball.search_fixtures(query)
     except apifootball.ProviderError as exc:
         raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"Fixture search failed: {type(exc).__name__}: {exc}") from exc
+
+
+@router.post("/videos/{video_id}/match-data")
+def fetch_match_data(
+    video_id: int, payload: MatchDataRequest, session: Session = Depends(get_session)
+):
+    """Load real match data (lineups, formations, stats, events) from
+    API-Football and persist it — by exact fixture id, or from a description."""
+    from ..providers import apifootball
+
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    try:
+        if payload.fixture_id is not None:
+            data = apifootball.fetch_match_by_id(payload.fixture_id)
+        else:
+            description = payload.question.strip()
+            if not description:
+                raise HTTPException(400, "Provide a match description or a fixture id.")
+            data = apifootball.fetch_match(description)
+    except apifootball.ProviderError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as exc:  # noqa: BLE001 - surface unexpected provider errors
         raise HTTPException(502, f"Match-data lookup failed: {type(exc).__name__}: {exc}") from exc
     try:

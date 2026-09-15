@@ -255,6 +255,20 @@ export interface MatchDataEvent {
   detail: string | null;
 }
 
+/** A fixture card in the browser (before loading full stats). */
+export interface MatchFixtureSummary {
+  fixture_id: number;
+  date: string | null;
+  status: string | null;
+  competition: string | null;
+  season: number | null;
+  home: string | null;
+  away: string | null;
+  home_logo: string | null;
+  away_logo: string | null;
+  score: string | null;
+}
+
 /** Real match data from API-Football (validated, not CV/LLM-derived). */
 export interface MatchData {
   query: string;

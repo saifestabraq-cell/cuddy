@@ -15,6 +15,7 @@ import type {
   Filter,
   MatchData,
   MatchEvent,
+  MatchFixtureSummary,
   MatchInfo,
   PitchData,
   Project,
@@ -180,6 +181,14 @@ interface AppState {
   matchDataError: string | null;
   loadMatchData: () => Promise<void>;
   fetchMatchData: (description: string) => Promise<void>;
+
+  // Fixture browser (pick the exact match)
+  fixtureResults: MatchFixtureSummary[];
+  fixtureSearchLoading: boolean;
+  fixtureSearchError: string | null;
+  searchFixtures: (query: string) => Promise<void>;
+  loadFixture: (fixtureId: number) => Promise<void>;
+  clearFixtureResults: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -215,6 +224,9 @@ export const useStore = create<AppState>((set, get) => ({
   matchData: null,
   matchDataLoading: false,
   matchDataError: null,
+  fixtureResults: [],
+  fixtureSearchLoading: false,
+  fixtureSearchError: null,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -286,6 +298,40 @@ export const useStore = create<AppState>((set, get) => ({
       if (get().currentVideoId === vid) set({ matchDataLoading: false });
     }
   },
+
+  searchFixtures: async (query: string) => {
+    const vid = get().currentVideoId;
+    if (!vid || !query.trim()) return;
+    set({ fixtureSearchLoading: true, fixtureSearchError: null, fixtureResults: [] });
+    try {
+      const rows = await api.searchMatches(vid, query.trim());
+      if (get().currentVideoId === vid) set({ fixtureResults: rows });
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ fixtureSearchError: e instanceof Error ? e.message : "Search failed" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ fixtureSearchLoading: false });
+    }
+  },
+  loadFixture: async (fixtureId: number) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    set({ matchDataLoading: true, matchDataError: null });
+    try {
+      const data = await api.fetchMatchDataById(vid, fixtureId);
+      if (get().currentVideoId === vid) {
+        set({ matchData: data, fixtureResults: [] });
+      }
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ matchDataError: e instanceof Error ? e.message : "Could not load fixture" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ matchDataLoading: false });
+    }
+  },
+  clearFixtureResults: () => set({ fixtureResults: [], fixtureSearchError: null }),
 
   loadMatchInfo: async () => {
     const vid = get().currentVideoId;
@@ -419,6 +465,8 @@ export const useStore = create<AppState>((set, get) => ({
       matchInfo: null,
       matchData: null,
       matchDataError: null,
+      fixtureResults: [],
+      fixtureSearchError: null,
       videoMissing: false,
     });
     await Promise.all([
