@@ -2,14 +2,18 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../store";
 
-/** Modal to configure the Anthropic API key used for AI chat & clip queries. */
+/** Modal to configure the AI provider key (Groq/Anthropic) and API-Football key. */
 export default function SettingsPanel() {
   const open = useStore((s) => s.settingsOpen);
   const close = useStore((s) => s.closeSettings);
   const apiKeySet = useStore((s) => s.apiKeySet);
+  const groqKeySet = useStore((s) => s.groqKeySet);
+  const provider = useStore((s) => s.aiProvider);
   const keySource = useStore((s) => s.keySource);
   const apifootballKeySet = useStore((s) => s.apifootballKeySet);
   const saveApiKey = useStore((s) => s.saveApiKey);
+  const saveGroqKey = useStore((s) => s.saveGroqKey);
+  const setProvider = useStore((s) => s.setProvider);
   const saveApiFootballKey = useStore((s) => s.saveApiFootballKey);
   const refreshSettings = useStore((s) => s.refreshSettings);
 
@@ -22,6 +26,8 @@ export default function SettingsPanel() {
   const [fbBusy, setFbBusy] = useState(false);
   const [fbSaved, setFbSaved] = useState(false);
   const [fbErr, setFbErr] = useState<string | null>(null);
+
+  const activeKeySet = provider === "groq" ? groqKeySet : apiKeySet;
 
   useEffect(() => {
     if (open) {
@@ -61,13 +67,26 @@ export default function SettingsPanel() {
     setBusy(true);
     setErr(null);
     try {
-      await saveApiKey(key.trim());
+      if (provider === "groq") await saveGroqKey(key.trim());
+      else await saveApiKey(key.trim());
       setSaved(true);
       setKey("");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not save the key.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const switchProvider = async (p: "groq" | "anthropic") => {
+    if (p === provider) return;
+    setKey("");
+    setSaved(false);
+    setErr(null);
+    try {
+      await setProvider(p);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not switch provider.");
     }
   };
 
@@ -145,20 +164,47 @@ export default function SettingsPanel() {
 
             <div className="border-t border-ink-500/50 my-4" />
 
-            <p className="text-xs text-mist-400 mb-4 leading-relaxed">
-              <span className="text-mist-200">AI chat (optional).</span> Natural-language
-              questions use the Anthropic API — a separate paid key (your Claude
-              subscription does not apply). Stored locally, only sent to Anthropic.
+            {/* AI chat — provider (Groq is free; Anthropic optional) */}
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-mist-200">AI chat</label>
+              <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5">
+                <ProviderTab
+                  label="Groq · free"
+                  active={provider === "groq"}
+                  onClick={() => switchProvider("groq")}
+                />
+                <ProviderTab
+                  label="Anthropic"
+                  active={provider === "anthropic"}
+                  onClick={() => switchProvider("anthropic")}
+                />
+              </div>
+            </div>
+
+            <p className="text-[11px] text-mist-400 mb-3 leading-relaxed">
+              {provider === "groq" ? (
+                <>
+                  Natural-language questions run on Groq&apos;s free, fast API. Get a
+                  free key at <span className="text-mist-300">console.groq.com</span>{" "}
+                  (API Keys). Stored locally, only sent to Groq.
+                </>
+              ) : (
+                <>
+                  Uses the Anthropic API — a separate paid key (your Claude
+                  subscription does not apply). Stored locally, only sent to
+                  Anthropic.
+                </>
+              )}
             </p>
 
             <div className="flex items-center gap-2 mb-3 text-xs">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  apiKeySet ? "bg-teal-400" : "bg-mist-500"
+                  activeKeySet ? "bg-teal-400" : "bg-mist-500"
                 }`}
               />
               <span className="text-mist-300">
-                {apiKeySet
+                {activeKeySet
                   ? keySource === "env"
                     ? "Key active (from environment)"
                     : "Key configured"
@@ -168,18 +214,23 @@ export default function SettingsPanel() {
 
             {keySource === "env" ? (
               <p className="text-xs text-mist-400 leading-relaxed">
-                An <code className="text-teal-300">ANTHROPIC_API_KEY</code>{" "}
+                A{" "}
+                <code className="text-teal-300">
+                  {provider === "groq" ? "GROQ_API_KEY" : "ANTHROPIC_API_KEY"}
+                </code>{" "}
                 environment variable is set and takes precedence. Unset it to
                 manage the key here instead.
               </p>
             ) : (
               <>
-                <label className="text-xs text-mist-300">Anthropic API key</label>
+                <label className="text-xs text-mist-300">
+                  {provider === "groq" ? "Groq API key" : "Anthropic API key"}
+                </label>
                 <input
                   type="password"
                   autoFocus
                   className="input w-full mt-1"
-                  placeholder="sk-ant-…"
+                  placeholder={provider === "groq" ? "gsk_…" : "sk-ant-…"}
                   value={key}
                   onChange={(e) => {
                     setKey(e.target.value);
@@ -193,7 +244,7 @@ export default function SettingsPanel() {
                     disabled={busy || !key.trim()}
                     onClick={save}
                   >
-                    {busy ? "Saving…" : apiKeySet ? "Update key" : "Save key"}
+                    {busy ? "Saving…" : activeKeySet ? "Update key" : "Save key"}
                   </button>
                   {saved && (
                     <motion.span
@@ -206,15 +257,32 @@ export default function SettingsPanel() {
                   )}
                   {err && <span className="text-xs text-signal-live">{err}</span>}
                 </div>
-                <p className="text-[11px] text-mist-500 mt-3 leading-relaxed">
-                  Get a key at{" "}
-                  <span className="text-mist-300">console.anthropic.com</span>.
-                </p>
               </>
             )}
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function ProviderTab({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2.5 py-1 rounded-md text-xs transition-colors ${
+        active ? "bg-ink-600 text-mist-100" : "text-mist-400 hover:text-mist-200"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

@@ -292,10 +292,10 @@ def _build_context(video_id: int, session: Session) -> str:
 def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_session)):
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    if not user_settings.has_key():
+    if not user_settings.has_llm_key():
         raise HTTPException(
             400,
-            "No Anthropic API key configured. Add one in Settings to use AI chat.",
+            "No AI provider key configured. Add a free Groq key in Settings to use AI chat.",
         )
     context = _build_context(video_id, session)
     try:
@@ -313,10 +313,10 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
     """Return a playable reel (event clips) + a one-line grounded summary."""
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    if not user_settings.has_key():
+    if not user_settings.has_llm_key():
         raise HTTPException(
             400,
-            "No Anthropic API key configured. Add one in Settings to use AI chat.",
+            "No AI provider key configured. Add a free Groq key in Settings to use AI chat.",
         )
     cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
     events = session.exec(

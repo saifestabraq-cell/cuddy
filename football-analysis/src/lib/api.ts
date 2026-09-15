@@ -219,6 +219,8 @@ export const api = {
   getSettings: () => request<SettingsStatus>("/settings"),
   saveSettings: (input: {
     anthropic_api_key?: string;
+    groq_api_key?: string;
+    provider?: "groq" | "anthropic";
     model?: string;
     apifootball_key?: string;
   }) =>

@@ -1,20 +1,24 @@
-"""Natural-language query over a match's data via the Anthropic API (Phase 3c).
+"""Natural-language query over a match's data (Phase 3c).
 
-The API key comes from the user settings store (or the ANTHROPIC_API_KEY
-environment variable); the model defaults to ``claude-opus-5`` and can be
-overridden in settings or via FA_LLM_MODEL.
+Provider-swappable behind a single ``_chat`` helper: Groq (free,
+OpenAI-compatible) by default, or Anthropic. The active provider, key and model
+come from the user settings store (or ``FA_LLM_PROVIDER`` / ``GROQ_API_KEY`` /
+``ANTHROPIC_API_KEY`` / ``FA_LLM_MODEL`` in the environment).
 """
 
 from __future__ import annotations
 
 from . import user_settings
 
+_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
 
 class MissingApiKey(RuntimeError):
-    """Raised when no Anthropic API key is configured."""
+    """Raised when the active provider has no API key configured."""
 
 
 def _client():
+    """Anthropic client (only used when the provider is ``anthropic``)."""
     from anthropic import Anthropic
 
     key = user_settings.get_anthropic_key()
@@ -23,6 +27,52 @@ def _client():
             "No Anthropic API key configured. Add one in Settings to use AI chat."
         )
     return Anthropic(api_key=key)
+
+
+def _chat_groq(system: str, user: str, max_tokens: int) -> str:
+    import httpx
+
+    key = user_settings.get_groq_key()
+    if not key:
+        raise MissingApiKey(
+            "No Groq API key configured. Add a free key in Settings to use AI chat."
+        )
+    resp = httpx.post(
+        _GROQ_URL,
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        json={
+            "model": user_settings.get_model(),
+            "max_tokens": max_tokens,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        },
+        timeout=60.0,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return (data["choices"][0]["message"]["content"] or "").strip()
+
+
+def _chat_anthropic(system: str, user: str, max_tokens: int) -> str:
+    client = _client()
+    message = client.messages.create(
+        model=user_settings.get_model(),
+        max_tokens=max_tokens,
+        system=system,
+        messages=[{"role": "user", "content": user}],
+    )
+    return "".join(
+        block.text for block in message.content if getattr(block, "type", None) == "text"
+    ).strip()
+
+
+def _chat(system: str, user: str, max_tokens: int) -> str:
+    """Single grounded turn against the active provider; returns the reply text."""
+    if user_settings.get_provider() == "anthropic":
+        return _chat_anthropic(system, user, max_tokens)
+    return _chat_groq(system, user, max_tokens)
 
 
 SYSTEM = (
@@ -35,23 +85,12 @@ SYSTEM = (
 
 
 def answer_question(question: str, context_json: str) -> str:
-    """Ask Claude the question grounded in the match data JSON."""
-    client = _client()
-    model = user_settings.get_model()
-    message = client.messages.create(
-        model=model,
-        max_tokens=1024,
-        system=SYSTEM,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Match data (JSON):\n{context_json}\n\nQuestion: {question}",
-            }
-        ],
+    """Answer the question grounded in the match data JSON."""
+    return _chat(
+        SYSTEM,
+        f"Match data (JSON):\n{context_json}\n\nQuestion: {question}",
+        1024,
     )
-    return "".join(
-        block.text for block in message.content if getattr(block, "type", None) == "text"
-    ).strip()
 
 
 QUERY_SYSTEM = (
@@ -71,25 +110,12 @@ def query_clips(question: str, events_json: str) -> dict:
     one-line grounded summary. Context is the structured event record only."""
     import json as _json
 
-    client = _client()
-    model = user_settings.get_model()
-    message = client.messages.create(
-        model=model,
-        max_tokens=1500,
-        system=QUERY_SYSTEM,
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    f"Events (JSON):\n{events_json}\n\nQuestion: {question}\n\n"
-                    "Return only the JSON object."
-                ),
-            }
-        ],
+    text = _chat(
+        QUERY_SYSTEM,
+        f"Events (JSON):\n{events_json}\n\nQuestion: {question}\n\n"
+        "Return only the JSON object.",
+        1500,
     )
-    text = "".join(
-        b.text for b in message.content if getattr(b, "type", None) == "text"
-    ).strip()
     # tolerate ```json fences
     if text.startswith("```"):
         text = text.strip("`")

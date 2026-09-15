@@ -162,12 +162,17 @@ interface AppState {
   tagShots: () => Promise<number>;
 
   // Settings (API keys)
-  apiKeySet: boolean;
+  apiKeySet: boolean; // Anthropic key configured
+  groqKeySet: boolean; // Groq key configured
+  aiProvider: "groq" | "anthropic";
+  aiKeySet: boolean; // the active provider has a usable key
   keySource: "env" | "stored" | "none";
   apifootballKeySet: boolean;
   settingsOpen: boolean;
   refreshSettings: () => Promise<void>;
   saveApiKey: (key: string, model?: string) => Promise<void>;
+  saveGroqKey: (key: string) => Promise<void>;
+  setProvider: (provider: "groq" | "anthropic") => Promise<void>;
   saveApiFootballKey: (key: string) => Promise<void>;
   openSettings: () => void;
   closeSettings: () => void;
@@ -213,6 +218,9 @@ export const useStore = create<AppState>((set, get) => ({
   analytics: null,
   shots: null,
   apiKeySet: false,
+  groqKeySet: false,
+  aiProvider: "groq",
+  aiKeySet: false,
   keySource: "none",
   apifootballKeySet: false,
   settingsOpen: false,
@@ -248,6 +256,10 @@ export const useStore = create<AppState>((set, get) => ({
       const s = await api.getSettings();
       set({
         apiKeySet: s.anthropic_api_key_set,
+        groqKeySet: s.groq_api_key_set,
+        aiProvider: s.provider,
+        aiKeySet:
+          s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
         keySource: s.key_source,
         apifootballKeySet: s.apifootball_key_set,
       });
@@ -257,7 +269,30 @@ export const useStore = create<AppState>((set, get) => ({
   },
   saveApiKey: async (key: string, model?: string) => {
     const s = await api.saveSettings({ anthropic_api_key: key, model });
-    set({ apiKeySet: s.anthropic_api_key_set, keySource: s.key_source });
+    set({
+      apiKeySet: s.anthropic_api_key_set,
+      aiKeySet:
+        s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+      keySource: s.key_source,
+    });
+  },
+  saveGroqKey: async (key: string) => {
+    const s = await api.saveSettings({ groq_api_key: key });
+    set({
+      groqKeySet: s.groq_api_key_set,
+      aiKeySet:
+        s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+      keySource: s.key_source,
+    });
+  },
+  setProvider: async (provider: "groq" | "anthropic") => {
+    const s = await api.saveSettings({ provider });
+    set({
+      aiProvider: s.provider,
+      aiKeySet:
+        s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+      keySource: s.key_source,
+    });
   },
   saveApiFootballKey: async (key: string) => {
     const s = await api.saveSettings({ apifootball_key: key });

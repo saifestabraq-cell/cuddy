@@ -31,7 +31,7 @@ const PLACEHOLDER: Record<Mode, string> = {
  */
 export default function AIPanel() {
   const videoId = useStore((s) => s.currentVideoId);
-  const apiKeySet = useStore((s) => s.apiKeySet);
+  const aiKeySet = useStore((s) => s.aiKeySet);
   const openSettings = useStore((s) => s.openSettings);
   const requestSeek = useStore((s) => s.requestSeek);
   const selectEvent = useStore((s) => s.selectEvent);
@@ -99,13 +99,13 @@ export default function AIPanel() {
         </div>
       </div>
 
-      {!apiKeySet && (
+      {!aiKeySet && (
         <button
           onClick={openSettings}
           className="mb-2 w-full text-left card px-3 py-2 text-xs text-mist-300 hover:bg-ink-600 transition-colors flex items-center gap-2"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-          Add your Anthropic API key in Settings to use AI.
+          Add a free Groq API key in Settings to use AI.
         </button>
       )}
 
