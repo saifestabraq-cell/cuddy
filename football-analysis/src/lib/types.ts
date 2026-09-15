@@ -233,6 +233,8 @@ export interface AnalysisJob {
 
 export interface SettingsStatus {
   anthropic_api_key_set: boolean;
+  groq_api_key_set: boolean;
+  provider: "groq" | "anthropic";
   model: string;
   key_source: "env" | "stored" | "none";
   apifootball_key_set: boolean;
@@ -279,18 +281,4 @@ export interface MatchData {
   home: MatchTeam;
   away: MatchTeam;
   events: MatchDataEvent[];
-}
-
-/** AI-estimated match facts (knowledge-based lookup — presented as an estimate). */
-export interface MatchInfo {
-  home_team?: string | null;
-  away_team?: string | null;
-  score?: string | null;
-  home_formation?: string | null;
-  away_formation?: string | null;
-  competition?: string | null;
-  date?: string | null;
-  confidence?: number;
-  notes?: string;
-  query?: string;
 }

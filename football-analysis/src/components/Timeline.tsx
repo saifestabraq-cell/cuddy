@@ -22,6 +22,7 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const selectedId = useStore((s) => s.selectedEventId);
   const selectEvent = useStore((s) => s.selectEvent);
   const updateEvent = useStore((s) => s.updateEvent);
+  const setComposeSeed = useStore((s) => s.setComposeSeed);
   const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -38,7 +39,10 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
 
   const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (drag) return;
-    onSeek(msFromClientX(e.clientX));
+    const ms = msFromClientX(e.clientX);
+    onSeek(ms);
+    // Prefill the Add-event form's time with the clicked position.
+    setComposeSeed({ ms: Math.round(ms) });
   };
 
   const beginDrag = (
@@ -98,6 +102,12 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
                 e.stopPropagation();
                 selectEvent(ev.id);
                 onSeek(start);
+                // Prefill the Add-event form to quickly log a similar event here.
+                setComposeSeed({
+                  ms: Math.round(start),
+                  label: ev.label ?? undefined,
+                  categoryId: ev.category_id ?? undefined,
+                });
               }}
               title={`${cat?.name ?? ev.label} — ${fmtClock(start)}`}
               className="absolute top-2 bottom-2 rounded-md group"

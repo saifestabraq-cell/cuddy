@@ -10,7 +10,6 @@ import type {
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
-  MatchInfo,
   PitchData,
   Project,
   QueryResult,
@@ -196,15 +195,6 @@ export const api = {
   // Validation harness (Phase 1): score AI events vs the manual reference
   getValidation: (videoId: number) =>
     request<ValidationResult>(`/videos/${videoId}/validation`),
-
-  // Match info (AI-estimated score + formations)
-  getMatchInfo: (videoId: number) =>
-    request<MatchInfo | null>(`/videos/${videoId}/match-info`),
-  lookupMatchInfo: (videoId: number, description: string) =>
-    request<MatchInfo>(`/videos/${videoId}/match-info`, {
-      method: "POST",
-      body: JSON.stringify({ question: description }),
-    }),
 
   // Real match data (API-Football)
   getMatchData: (videoId: number) =>

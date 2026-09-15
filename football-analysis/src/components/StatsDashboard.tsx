@@ -23,7 +23,7 @@ export default function StatsDashboard() {
   const loadFixture = useStore((s) => s.loadFixture);
 
   const [query, setQuery] = useState("");
-  const [side, setSide] = useState<"home" | "away">("home");
+  const [side, setSide] = useState<"both" | "home" | "away">("both");
 
   if (!currentVideo) return null;
 
@@ -100,8 +100,9 @@ export default function StatsDashboard() {
   }
 
   // --- populated dashboard --------------------------------------------------
-  const focus = side === "home" ? data.home : data.away;
   const statKeys = orderedStatKeys(data.home.stats, data.away.stats);
+  const hasLineups =
+    data.home.start_xi.length > 0 || data.away.start_xi.length > 0;
 
   return (
     <motion.div
@@ -129,52 +130,114 @@ export default function StatsDashboard() {
         <TeamHead team={data.away} align="left" />
       </div>
 
-      {/* Side-by-side stats table */}
+      {/* Both / Home / Away switch — governs stats + lineups */}
+      <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5 w-fit mb-3">
+        <SideTab label="Both" active={side === "both"} onClick={() => setSide("both")} />
+        <SideTab
+          label={data.home.name ?? "Home"}
+          active={side === "home"}
+          onClick={() => setSide("home")}
+        />
+        <SideTab
+          label={data.away.name ?? "Away"}
+          active={side === "away"}
+          onClick={() => setSide("away")}
+        />
+      </div>
+
+      {/* Stats — side-by-side for "Both", single-column otherwise */}
       {statKeys.length > 0 && (
         <div className="flex flex-col gap-2">
-          {statKeys.map((k) => (
-            <StatRow
-              key={k}
-              label={k}
-              home={data.home.stats[k]}
-              away={data.away.stats[k]}
-            />
-          ))}
+          {statKeys.map((k) =>
+            side === "both" ? (
+              <StatRow
+                key={k}
+                label={k}
+                home={data.home.stats[k]}
+                away={data.away.stats[k]}
+              />
+            ) : (
+              <StatLine
+                key={k}
+                label={k}
+                value={(side === "home" ? data.home : data.away).stats[k]}
+                accent={side === "home" ? "teal" : "violet"}
+              />
+            ),
+          )}
         </div>
       )}
 
-      {/* Team A / B switch → lineup */}
-      {(data.home.start_xi.length > 0 || data.away.start_xi.length > 0) && (
-        <div className="mt-4">
-          <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5 w-fit mb-2">
-            <SideTab
-              label={data.home.name ?? "Home"}
-              active={side === "home"}
-              onClick={() => setSide("home")}
-            />
-            <SideTab
-              label={data.away.name ?? "Away"}
-              active={side === "away"}
-              onClick={() => setSide("away")}
-            />
-          </div>
-          <div className="flex items-center gap-2 text-xs text-mist-400 mb-1.5">
-            <span className="text-teal-300 tabular-nums">{focus.formation ?? "—"}</span>
-            <span>{focus.name}</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {focus.start_xi.map((p) => (
-              <span
-                key={p}
-                className="px-2 py-0.5 rounded-md text-[11px] text-mist-200 bg-ink-700/60 border border-ink-500/50"
-              >
-                {p}
-              </span>
-            ))}
-          </div>
+      {/* Lineups — both XIs for "Both", one otherwise */}
+      {hasLineups && (
+        <div className="mt-4 grid gap-4">
+          {(side === "both" || side === "home") &&
+            data.home.start_xi.length > 0 && (
+              <Lineup team={data.home} accent="teal" />
+            )}
+          {(side === "both" || side === "away") &&
+            data.away.start_xi.length > 0 && (
+              <Lineup team={data.away} accent="violet" />
+            )}
         </div>
       )}
     </motion.div>
+  );
+}
+
+function Lineup({ team, accent }: { team: MatchTeam; accent: "teal" | "violet" }) {
+  const dot = accent === "teal" ? "bg-teal-400" : "bg-violet-400";
+  const form = accent === "teal" ? "text-teal-300" : "text-violet-300";
+  return (
+    <div>
+      <div className="flex items-center gap-2 text-xs text-mist-400 mb-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />
+        <span className={`tabular-nums ${form}`}>{team.formation ?? "—"}</span>
+        <span className="truncate">{team.name}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {team.start_xi.map((p) => (
+          <span
+            key={p}
+            className="px-2 py-0.5 rounded-md text-[11px] text-mist-200 bg-ink-700/60 border border-ink-500/50"
+          >
+            {p}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Single-team stat line with a proportional bar (0–100 scaled or share). */
+function StatLine({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number | null;
+  accent: "teal" | "violet";
+}) {
+  const bar = accent === "teal" ? "bg-teal-400/80" : "bg-violet-400/80";
+  const n = num(value);
+  // Percent-like values fill by magnitude; others just show a full subtle bar.
+  const pct =
+    n != null && n >= 0 && n <= 100 && /%|Possession|Passes %/i.test(label)
+      ? n
+      : null;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-mist-400 text-[11px] uppercase tracking-wide">{label}</span>
+        <span className="tabular-nums text-mist-100">{fmt(value)}</span>
+      </div>
+      {pct != null && (
+        <div className="mt-1 h-1.5">
+          <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+    </div>
   );
 }
 

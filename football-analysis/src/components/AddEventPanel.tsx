@@ -33,6 +33,8 @@ export default function AddEventPanel({ playheadMs, disabled }: Props) {
   const updateEvent = useStore((s) => s.updateEvent);
   const addCategory = useStore((s) => s.addCategory);
   const currentVideoId = useStore((s) => s.currentVideoId);
+  const composeSeed = useStore((s) => s.composeSeed);
+  const setComposeSeed = useStore((s) => s.setComposeSeed);
 
   const [time, setTime] = useState(fmtClock(playheadMs));
   const [touchedTime, setTouchedTime] = useState(false);
@@ -46,6 +48,16 @@ export default function AddEventPanel({ playheadMs, disabled }: Props) {
   useEffect(() => {
     if (!touchedTime) setTime(fmtClock(playheadMs));
   }, [playheadMs, touchedTime]);
+
+  // Prefill from a clicked timeline/list item, then consume the seed.
+  useEffect(() => {
+    if (!composeSeed) return;
+    setTime(fmtClock(composeSeed.ms));
+    setTouchedTime(true); // pin the seeded time; don't let the playhead override it
+    if (composeSeed.label != null) setLabel(composeSeed.label);
+    if (composeSeed.categoryId != null) setCategoryId(composeSeed.categoryId);
+    setComposeSeed(null);
+  }, [composeSeed, setComposeSeed]);
 
   const snap = () => {
     setTime(fmtClock(playheadMs));

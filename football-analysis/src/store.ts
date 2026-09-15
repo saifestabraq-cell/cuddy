@@ -16,7 +16,6 @@ import type {
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
-  MatchInfo,
   PitchData,
   Project,
   SegmentMap,
@@ -124,6 +123,10 @@ interface AppState {
 
   selectEvent: (id: number | null) => void;
 
+  // Add-event compose seed: clicking a timeline/list item prefills the form.
+  composeSeed: { ms: number; label?: string; categoryId?: number | null } | null;
+  setComposeSeed: (seed: AppState["composeSeed"]) => void;
+
   setFilter: (patch: Partial<Filter>) => void;
   clearFilter: () => void;
 
@@ -169,12 +172,6 @@ interface AppState {
   openSettings: () => void;
   closeSettings: () => void;
 
-  // Match info (AI-estimated score + formations — legacy LLM path)
-  matchInfo: MatchInfo | null;
-  matchInfoLoading: boolean;
-  loadMatchInfo: () => Promise<void>;
-  lookupMatchInfo: (description: string) => Promise<void>;
-
   // Real match data (API-Football)
   matchData: MatchData | null;
   matchDataLoading: boolean;
@@ -219,8 +216,7 @@ export const useStore = create<AppState>((set, get) => ({
   keySource: "none",
   apifootballKeySet: false,
   settingsOpen: false,
-  matchInfo: null,
-  matchInfoLoading: false,
+  composeSeed: null,
   matchData: null,
   matchDataLoading: false,
   matchDataError: null,
@@ -333,33 +329,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   clearFixtureResults: () => set({ fixtureResults: [], fixtureSearchError: null }),
 
-  loadMatchInfo: async () => {
-    const vid = get().currentVideoId;
-    if (!vid) {
-      set({ matchInfo: null });
-      return;
-    }
-    try {
-      const info = await api.getMatchInfo(vid);
-      // Ignore a response that arrived after the user switched videos.
-      if (get().currentVideoId === vid) set({ matchInfo: info });
-    } catch {
-      if (get().currentVideoId === vid) set({ matchInfo: null });
-    }
-  },
-  lookupMatchInfo: async (description: string) => {
-    const vid = get().currentVideoId;
-    if (!vid || !description.trim()) return;
-    set({ matchInfoLoading: true });
-    try {
-      const info = await api.lookupMatchInfo(vid, description.trim());
-      // The Anthropic call takes seconds; drop the result if the user has since
-      // switched to a different video (otherwise A's report shows on B's page).
-      if (get().currentVideoId === vid) set({ matchInfo: info });
-    } finally {
-      if (get().currentVideoId === vid) set({ matchInfoLoading: false });
-    }
-  },
+  setComposeSeed: (seed) => set({ composeSeed: seed }),
 
   loadProjects: async () => {
     const projects = await api.listProjects();
@@ -462,7 +432,7 @@ export const useStore = create<AppState>((set, get) => ({
       analytics: null,
       shots: null,
       segments: null,
-      matchInfo: null,
+      composeSeed: null,
       matchData: null,
       matchDataError: null,
       fixtureResults: [],
