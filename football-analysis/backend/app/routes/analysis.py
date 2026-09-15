@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 from .. import user_settings
 from ..config import settings
 from ..cv.analytics import compute_analytics
-from ..cv.pitch import autotag_final_third, build_pitch_data
+from ..cv.pitch import autotag_final_third, build_pitch_data, build_player_heatmap
 from ..cv.shots import detect_shots
 from ..db import get_session
 from ..llm import answer_question, query_clips
@@ -56,6 +56,10 @@ def _studio_path(video_id: int) -> Path:
 
 def _playerstats_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_playerstats.json"
+
+
+def _assign_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_assign.json"
 
 
 @router.post("/videos/{video_id}/analyze")
@@ -531,6 +535,62 @@ def fetch_player_stats(video_id: int, session: Session = Depends(get_session)):
         _playerstats_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
     except OSError:
         pass
+    return data
+
+
+# --- Per-player heatmap (from CV tracks) + player↔track assignments ---
+
+
+@router.get("/videos/{video_id}/player-heatmap")
+def player_heatmap(video_id: int, track_id: int, session: Session = Depends(get_session)):
+    """Heatmap for a single tracked player, in pitch space if the video is
+    calibrated, else normalized image space (approximate)."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    tpath = _tracks_path(video_id)
+    if not tpath.is_file():
+        raise HTTPException(400, "Analyse the video first to produce tracks.")
+    tracks = json.loads(tpath.read_text(encoding="utf-8"))
+    img_pts = None
+    ppath = _pitch_path(video_id)
+    if ppath.is_file():
+        try:
+            img_pts = json.loads(ppath.read_text(encoding="utf-8")).get("img_points")
+        except (ValueError, OSError):
+            img_pts = None
+    return build_player_heatmap(tracks, track_id, img_pts)
+
+
+class Assignments(BaseModel):
+    # player full name -> CV track id
+    map: dict[str, int] = {}
+
+
+@router.get("/videos/{video_id}/assignments")
+def get_assignments(video_id: int, session: Session = Depends(get_session)):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _assign_path(video_id)
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return {"map": {}}
+
+
+@router.put("/videos/{video_id}/assignments")
+def put_assignments(
+    video_id: int, payload: Assignments, session: Session = Depends(get_session)
+):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    data = payload.model_dump()
+    try:
+        settings.ensure_dirs()
+        _assign_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as exc:
+        raise HTTPException(500, f"Could not save assignments: {exc}") from exc
     return data
 
 

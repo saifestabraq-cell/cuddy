@@ -176,6 +176,18 @@ export interface PlayerStatsDoc {
   by_team: Record<string, { name: string | null; players: PlayerStat[] }>;
 }
 
+/** Per-player heatmap from CV tracks (pitch space if calibrated, else image). */
+export interface PlayerHeatmap {
+  track_id: number;
+  space: "pitch" | "image";
+  length: number;
+  width: number;
+  bins_x: number;
+  bins_y: number;
+  grid: number[][];
+  n_points: number;
+}
+
 export interface PitchData {
   length: number;
   width: number;

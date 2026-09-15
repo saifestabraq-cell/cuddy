@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
+import { api } from "../lib/api";
 import SectionHeader from "./SectionHeader";
-import type { MatchFixtureSummary, MatchTeam, PlayerStat } from "../lib/types";
+import type {
+  MatchFixtureSummary,
+  MatchTeam,
+  PlayerHeatmap,
+  PlayerStat,
+  TracksData,
+} from "../lib/types";
 
 /** Lowercase, strip accents/punctuation for loose name matching. */
 function norm(s: string): string {
@@ -55,6 +62,10 @@ export default function StatsDashboard() {
   const fetchPlayerStats = useStore((s) => s.fetchPlayerStats);
   const selectedPlayerName = useStore((s) => s.selectedPlayerName);
   const selectPlayer = useStore((s) => s.selectPlayer);
+  const tracks = useStore((s) => s.tracks);
+  const currentVideoId = useStore((s) => s.currentVideoId);
+  const assignments = useStore((s) => s.assignments);
+  const assignPlayer = useStore((s) => s.assignPlayer);
 
   const [query, setQuery] = useState("");
   const [side, setSide] = useState<"both" | "home" | "away">("both");
@@ -254,6 +265,14 @@ export default function StatsDashboard() {
           {selectedStat && (
             <PlayerStatCard
               stat={selectedStat}
+              videoId={currentVideoId}
+              tracks={tracks}
+              assignedTrackId={
+                selectedStat.name ? assignments[selectedStat.name] : undefined
+              }
+              onAssign={(trackId) =>
+                selectedStat.name && assignPlayer(selectedStat.name, trackId)
+              }
               onClose={() => selectPlayer(null)}
             />
           )}
@@ -287,12 +306,21 @@ export default function StatsDashboard() {
   );
 }
 
-/** Compact card of a player's real match stats (API-Football). */
+/** Compact card of a player's real match stats (API-Football) + a per-player
+ *  heatmap from CV tracks once the player is assigned to a tracked number. */
 function PlayerStatCard({
   stat,
+  videoId,
+  tracks,
+  assignedTrackId,
+  onAssign,
   onClose,
 }: {
   stat: PlayerStat;
+  videoId: number | null;
+  tracks: TracksData | null;
+  assignedTrackId?: number;
+  onAssign: (trackId: number) => void;
   onClose: () => void;
 }) {
   // API-Football reports passes.accuracy as the COUNT of accurate passes;
@@ -354,7 +382,203 @@ function PlayerStatCard({
           </div>
         ))}
       </div>
+
+      <PlayerHeatmapSection
+        videoId={videoId}
+        tracks={tracks}
+        assignedTrackId={assignedTrackId}
+        onAssign={onAssign}
+      />
     </motion.div>
+  );
+}
+
+/** Heatmap block inside the player card: assign the named player to a CV track
+ *  number, then render that track's heatmap (approximate — from footage). */
+function PlayerHeatmapSection({
+  videoId,
+  tracks,
+  assignedTrackId,
+  onAssign,
+}: {
+  videoId: number | null;
+  tracks: TracksData | null;
+  assignedTrackId?: number;
+  onAssign: (trackId: number) => void;
+}) {
+  const [hm, setHm] = useState<PlayerHeatmap | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [reassign, setReassign] = useState(false);
+
+  // Track ids present in the analysis (person detections), sorted by how often
+  // they appear so the most-tracked players are offered first.
+  const trackIds = useMemo(() => {
+    if (!tracks) return [] as number[];
+    const counts = new Map<number, number>();
+    for (const f of tracks.frames) {
+      for (const d of f.dets) {
+        if (d.cls === 32) continue;
+        counts.set(d.id, (counts.get(d.id) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id)
+      .slice(0, 40);
+  }, [tracks]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (videoId == null || assignedTrackId == null) {
+      setHm(null);
+      return;
+    }
+    setLoading(true);
+    api
+      .getPlayerHeatmap(videoId, assignedTrackId)
+      .then((d) => !cancelled && setHm(d))
+      .catch(() => !cancelled && setHm(null))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [videoId, assignedTrackId]);
+
+  if (!tracks) {
+    return (
+      <p className="text-[11px] text-mist-500 mt-3">
+        Analyse the video to enable a per-player heatmap.
+      </p>
+    );
+  }
+
+  const showPicker = assignedTrackId == null || reassign;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-ink-500/40">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] uppercase tracking-wide text-mist-500">
+          Heatmap{" "}
+          <span className="text-mist-600 normal-case">
+            {hm?.space === "image" ? "· camera view (approx.)" : hm?.space === "pitch" ? "· pitch" : ""}
+          </span>
+        </span>
+        {assignedTrackId != null && !reassign && (
+          <button
+            className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors"
+            onClick={() => setReassign(true)}
+          >
+            #{assignedTrackId} · reassign
+          </button>
+        )}
+      </div>
+
+      {showPicker ? (
+        <div>
+          <p className="text-[11px] text-mist-400 mb-1.5">
+            Link this player to their tracked number (hover a marker on the video
+            to read numbers):
+          </p>
+          <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            {trackIds.map((id) => (
+              <button
+                key={id}
+                className={`px-2 py-0.5 rounded-md text-[11px] tabular-nums border transition-colors ${
+                  id === assignedTrackId
+                    ? "bg-teal-400/20 border-teal-400/60 text-mist-100"
+                    : "border-ink-500/60 text-mist-300 hover:bg-ink-600"
+                }`}
+                onClick={() => {
+                  onAssign(id);
+                  setReassign(false);
+                }}
+              >
+                #{id}
+              </button>
+            ))}
+            {trackIds.length === 0 && (
+              <span className="text-[11px] text-mist-500">No tracked players found.</span>
+            )}
+          </div>
+        </div>
+      ) : loading ? (
+        <div className="h-28 grid place-items-center text-[11px] text-mist-500">
+          Building heatmap…
+        </div>
+      ) : hm && hm.n_points > 0 ? (
+        <MiniHeatmap hm={hm} />
+      ) : (
+        <p className="text-[11px] text-mist-500">
+          No positions tracked for #{assignedTrackId}. Try another number.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Renders a normalized heat grid as red blooms over a pitch/camera rectangle. */
+function MiniHeatmap({ hm }: { hm: PlayerHeatmap }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const cw = (canvas.width = canvas.clientWidth);
+    const ch = (canvas.height = canvas.clientHeight);
+    const cols = hm.bins_x;
+    const rows = hm.bins_y;
+    // Ground.
+    if (hm.space === "pitch") {
+      ctx.fillStyle = "#14352a";
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(3, 3, cw - 6, ch - 6);
+      ctx.beginPath();
+      ctx.moveTo(cw / 2, 3);
+      ctx.lineTo(cw / 2, ch - 3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cw / 2, ch / 2, Math.min(cw, ch) * 0.12, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "#0C0E16";
+      ctx.fillRect(0, 0, cw, ch);
+    }
+    // Heat blooms.
+    ctx.globalCompositeOperation = "lighter";
+    const bw = cw / cols;
+    const bh = ch / rows;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const v = hm.grid[y]?.[x] ?? 0;
+        if (v <= 0.02) continue;
+        const cx = (x + 0.5) * bw;
+        const cy = (y + 0.5) * bh;
+        const r = Math.max(bw, bh) * 1.6;
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, `rgba(255,80,60,${Math.min(0.9, v)})`);
+        g.addColorStop(1, "rgba(255,80,60,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }, [hm]);
+  return (
+    <div>
+      <canvas
+        ref={canvasRef}
+        className="w-full rounded-lg border border-ink-500/50"
+        style={{ aspectRatio: hm.space === "pitch" ? "105 / 68" : "16 / 9" }}
+      />
+      <p className="text-[10px] text-mist-500 mt-1">
+        {hm.n_points} tracked positions · approximate spatial layer, not measured data.
+      </p>
+    </div>
   );
 }
 

@@ -232,6 +232,11 @@ interface AppState {
   loadPlayerStats: () => Promise<void>;
   fetchPlayerStats: () => Promise<void>;
   selectPlayer: (name: string | null) => void;
+
+  // Player name -> CV track id (for per-player heatmaps)
+  assignments: Record<string, number>;
+  loadAssignments: () => Promise<void>;
+  assignPlayer: (name: string, trackId: number) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -281,6 +286,7 @@ export const useStore = create<AppState>((set, get) => ({
   playerStatsLoading: false,
   playerStatsError: null,
   selectedPlayerName: null,
+  assignments: {},
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -444,6 +450,31 @@ export const useStore = create<AppState>((set, get) => ({
   },
   selectPlayer: (name) => set({ selectedPlayerName: name }),
 
+  loadAssignments: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ assignments: {} });
+      return;
+    }
+    try {
+      const doc = await api.getAssignments(vid);
+      if (get().currentVideoId === vid) set({ assignments: doc.map ?? {} });
+    } catch {
+      if (get().currentVideoId === vid) set({ assignments: {} });
+    }
+  },
+  assignPlayer: async (name, trackId) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    const map = { ...get().assignments, [name]: trackId };
+    set({ assignments: map });
+    try {
+      await api.putAssignments(vid, map);
+    } catch {
+      /* keep the optimistic local assignment */
+    }
+  },
+
   setComposeSeed: (seed) => set({ composeSeed: seed }),
 
   loadProjects: async () => {
@@ -559,6 +590,7 @@ export const useStore = create<AppState>((set, get) => ({
       playerStats: null,
       playerStatsError: null,
       selectedPlayerName: null,
+      assignments: {},
       videoMissing: false,
     });
     await Promise.all([
@@ -571,6 +603,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadStudio(),
       get().loadMatchData(),
       get().loadPlayerStats(),
+      get().loadAssignments(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {

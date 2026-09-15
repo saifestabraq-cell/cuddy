@@ -11,6 +11,7 @@ import type {
   MatchEvent,
   MatchFixtureSummary,
   PitchData,
+  PlayerHeatmap,
   PlayerStatsDoc,
   Project,
   QueryResult,
@@ -230,6 +231,17 @@ export const api = {
     request<PlayerStatsDoc | null>(`/videos/${videoId}/player-stats`),
   fetchPlayerStats: (videoId: number) =>
     request<PlayerStatsDoc>(`/videos/${videoId}/player-stats`, { method: "POST" }),
+
+  // Per-player heatmap (from CV tracks) + player↔track assignments
+  getPlayerHeatmap: (videoId: number, trackId: number) =>
+    request<PlayerHeatmap>(`/videos/${videoId}/player-heatmap?track_id=${trackId}`),
+  getAssignments: (videoId: number) =>
+    request<{ map: Record<string, number> }>(`/videos/${videoId}/assignments`),
+  putAssignments: (videoId: number, map: Record<string, number>) =>
+    request<{ map: Record<string, number> }>(`/videos/${videoId}/assignments`, {
+      method: "PUT",
+      body: JSON.stringify({ map }),
+    }),
 
   // User settings (API keys / model)
   getSettings: () => request<SettingsStatus>("/settings"),
