@@ -6,7 +6,6 @@ import VideoBar from "./VideoBar";
 import VideoPlayer from "./VideoPlayer";
 import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
-import TagPad from "./TagPad";
 import AnalyzePanel from "./AnalyzePanel";
 import StatsDashboard from "./StatsDashboard";
 import DescriptorManager from "./DescriptorManager";
@@ -14,10 +13,9 @@ import Dashboard from "./Dashboard";
 import EventList from "./EventList";
 import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
-import PitchPanel from "./PitchPanel";
-import AnalyticsPanel from "./AnalyticsPanel";
-import ShotsPanel from "./ShotsPanel";
+import AnalysisTabs from "./AnalysisTabs";
 import AIPanel from "./AIPanel";
+import AddEventPanel from "./AddEventPanel";
 import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
@@ -221,19 +219,13 @@ export default function Workspace() {
             }}
           />
           <AnalyzePanel />
-          {analyzed && (
-            <>
-              <PitchPanel />
-              <AnalyticsPanel />
-              <ShotsPanel />
-            </>
-          )}
+          {analyzed && <AnalysisTabs />}
           <Timeline
             durationMs={durationMs || currentVideo?.duration_ms || 0}
             playheadMs={playheadMs}
             onSeek={seek}
           />
-          <TagPad playheadMs={playheadMs} disabled={!currentVideo} />
+          <AddEventPanel playheadMs={playheadMs} disabled={!currentVideo} />
           <DescriptorManager />
         </div>
 
