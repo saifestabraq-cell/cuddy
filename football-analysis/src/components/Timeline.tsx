@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { useStore, useFilteredEvents } from "../store";
 import type { Category } from "../lib/types";
 import { fmtClock } from "../lib/time";
@@ -133,11 +132,11 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
           );
         })}
 
-        <motion.div
-          className="absolute top-0 bottom-0 w-0.5 bg-teal-300 shadow-glow pointer-events-none"
+        {/* Plain div + CSS transition — a motion `animate` here re-ran a
+            tween on every timeupdate (many times/sec) for no visual gain. */}
+        <div
+          className="absolute top-0 bottom-0 w-0.5 bg-teal-300 shadow-glow pointer-events-none transition-[left] duration-100 ease-linear"
           style={{ left: pct(playheadMs) }}
-          animate={{ left: pct(playheadMs) }}
-          transition={{ duration: 0.1, ease: "linear" }}
         />
       </div>
 

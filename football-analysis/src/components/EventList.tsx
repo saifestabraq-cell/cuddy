@@ -32,11 +32,10 @@ export default function EventList({ onSeek }: Props) {
             return (
               <motion.div
                 key={ev.id}
-                layout
                 initial={{ opacity: 0, x: 8 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                 className={`group card px-2.5 py-2 flex items-center gap-2.5 cursor-pointer transition-colors ${
                   selected ? "bg-ink-600 ring-1 ring-white/20" : "hover:bg-ink-600"
                 }`}
