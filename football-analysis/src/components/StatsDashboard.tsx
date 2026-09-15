@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
+import SectionHeader from "./SectionHeader";
 import type { MatchFixtureSummary, MatchTeam } from "../lib/types";
+
+/** Short 3-letter team code from an explicit abbrev, else the name. */
+function teamCode(name?: string | null): string {
+  if (!name) return "—";
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 2) return (words[0][0] + words[1][0] + (words[1][1] ?? "")).toUpperCase();
+  return name.slice(0, 3).toUpperCase();
+}
 
 /**
  * Post-analysis match dashboard: real score, formations and a side-by-side
@@ -104,6 +113,9 @@ export default function StatsDashboard() {
   const hasLineups =
     data.home.start_xi.length > 0 || data.away.start_xi.length > 0;
 
+  const homeCode = teamCode(data.home.name);
+  const awayCode = teamCode(data.away.name);
+
   return (
     <motion.div
       className="panel p-4"
@@ -117,69 +129,74 @@ export default function StatsDashboard() {
       />
 
       {/* Scoreline + formations */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-1 mb-4">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-3 mb-4">
         <TeamHead team={data.home} align="right" />
-        <div className="text-center">
-          <div className="text-3xl font-semibold tabular-nums text-mist-100 leading-none">
+        <div className="text-center px-2">
+          <div className="text-4xl font-bold tabular-nums text-mist-100 leading-none tracking-tight">
             {data.score ?? "—"}
           </div>
-          <div className="text-[10px] uppercase tracking-wider text-mist-500 mt-1">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-mist-500 mt-1.5">
             Full time
           </div>
         </div>
         <TeamHead team={data.away} align="left" />
       </div>
 
-      {/* Both / Home / Away switch — governs stats + lineups */}
-      <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5 w-fit mb-3">
-        <SideTab label="Both" active={side === "both"} onClick={() => setSide("both")} />
-        <SideTab
-          label={data.home.name ?? "Home"}
-          active={side === "home"}
-          onClick={() => setSide("home")}
-        />
-        <SideTab
-          label={data.away.name ?? "Away"}
-          active={side === "away"}
-          onClick={() => setSide("away")}
-        />
-      </div>
+      {/* Team statistics */}
+      <SectionHeader
+        label="Team Statistics"
+        className="mt-5 mb-2.5"
+        right={
+          <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/70 p-0.5">
+            <SideTab label="Both" active={side === "both"} onClick={() => setSide("both")} />
+            <SideTab label={homeCode} active={side === "home"} onClick={() => setSide("home")} />
+            <SideTab label={awayCode} active={side === "away"} onClick={() => setSide("away")} />
+          </div>
+        }
+      />
 
-      {/* Stats — side-by-side for "Both", single-column otherwise */}
-      {statKeys.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {statKeys.map((k) =>
-            side === "both" ? (
-              <StatRow
-                key={k}
-                label={k}
-                home={data.home.stats[k]}
-                away={data.away.stats[k]}
-              />
-            ) : (
-              <StatLine
-                key={k}
-                label={k}
-                value={(side === "home" ? data.home : data.away).stats[k]}
-                accent={side === "home" ? "teal" : "violet"}
-              />
-            ),
-          )}
+      {statKeys.length > 0 && side === "both" && (
+        <>
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-mist-400 mb-1.5 px-0.5">
+            <span className="text-teal-300 font-medium">{homeCode}</span>
+            <span>Metric</span>
+            <span className="text-violet-300 font-medium">{awayCode}</span>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {statKeys.map((k) => (
+              <StatRow key={k} label={k} home={data.home.stats[k]} away={data.away.stats[k]} />
+            ))}
+          </div>
+        </>
+      )}
+      {statKeys.length > 0 && side !== "both" && (
+        <div className="flex flex-col gap-2.5">
+          {statKeys.map((k) => (
+            <StatLine
+              key={k}
+              label={k}
+              value={(side === "home" ? data.home : data.away).stats[k]}
+              accent={side === "home" ? "teal" : "violet"}
+            />
+          ))}
         </div>
       )}
 
       {/* Lineups — both XIs for "Both", one otherwise */}
       {hasLineups && (
-        <div className="mt-4 grid gap-4">
-          {(side === "both" || side === "home") &&
-            data.home.start_xi.length > 0 && (
-              <Lineup team={data.home} accent="teal" />
-            )}
-          {(side === "both" || side === "away") &&
-            data.away.start_xi.length > 0 && (
-              <Lineup team={data.away} accent="violet" />
-            )}
-        </div>
+        <>
+          <SectionHeader label="Lineups" className="mt-5 mb-2.5" />
+          <div className="grid gap-4">
+            {(side === "both" || side === "home") &&
+              data.home.start_xi.length > 0 && (
+                <Lineup team={data.home} accent="teal" />
+              )}
+            {(side === "both" || side === "away") &&
+              data.away.start_xi.length > 0 && (
+                <Lineup team={data.away} accent="violet" />
+              )}
+          </div>
+        </>
       )}
     </motion.div>
   );
@@ -278,51 +295,63 @@ function Header({
 }) {
   const sub = [competition, date].filter(Boolean).join(" · ");
   return (
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-xs uppercase tracking-wider text-mist-400">Match</span>
-      <div className="flex items-center gap-3">
-        {sub && <span className="text-[11px] text-mist-400">{sub}</span>}
-        {onChange && (
-          <button
-            className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors"
-            onClick={onChange}
-          >
-            Change
-          </button>
-        )}
-      </div>
-    </div>
+    <SectionHeader
+      label="Match — API-Football · Validated"
+      right={
+        <div className="flex items-center gap-3 min-w-0">
+          {sub && <span className="text-[11px] text-mist-400 truncate">{sub}</span>}
+          {onChange && (
+            <button
+              className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors shrink-0"
+              onClick={onChange}
+            >
+              Change fixture
+            </button>
+          )}
+        </div>
+      }
+    />
   );
 }
 
 function TeamHead({ team, align }: { team: MatchTeam; align: "left" | "right" }) {
+  const side = align === "right" ? "Home" : "Away";
+  const meta = [team.formation, side].filter(Boolean).join(" · ");
   return (
     <div
-      className={`flex items-center gap-2 ${
-        align === "right" ? "justify-end text-right" : "justify-start text-left"
+      className={`flex items-center gap-2.5 ${
+        align === "right" ? "flex-row-reverse text-right" : "text-left"
       }`}
     >
-      {align === "left" && <TeamLogo team={team} />}
-      <div>
-        <div className="text-sm font-medium text-mist-100 truncate">{team.name}</div>
-        {team.formation && (
-          <div className="text-[11px] text-teal-300 tabular-nums">{team.formation}</div>
+      <TeamBadge team={team} />
+      <div className="min-w-0">
+        <div className="text-base font-semibold text-mist-100 truncate leading-tight">
+          {team.name}
+        </div>
+        {meta && (
+          <div className="text-[11px] text-mist-400 tabular-nums truncate">{meta}</div>
         )}
       </div>
-      {align === "right" && <TeamLogo team={team} />}
     </div>
   );
 }
 
-function TeamLogo({ team }: { team: MatchTeam }) {
-  if (!team.logo) return null;
+/** Team badge: the crest if available, else a blurple rounded-square code chip. */
+function TeamBadge({ team }: { team: MatchTeam }) {
+  if (team.logo) {
+    return (
+      <img
+        src={team.logo}
+        alt=""
+        className="w-8 h-8 object-contain shrink-0"
+        onError={(e) => (e.currentTarget.style.display = "none")}
+      />
+    );
+  }
   return (
-    <img
-      src={team.logo}
-      alt=""
-      className="w-6 h-6 object-contain shrink-0"
-      onError={(e) => (e.currentTarget.style.display = "none")}
-    />
+    <span className="w-8 h-8 shrink-0 grid place-items-center rounded-lg bg-teal-400/20 text-teal-200 text-[11px] font-semibold tabular-nums">
+      {teamCode(team.name)}
+    </span>
   );
 }
 

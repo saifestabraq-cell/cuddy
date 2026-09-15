@@ -15,10 +15,29 @@ const label = {
   failed: "Engine failed to start",
 } as const;
 
+/** Short 3-letter code for a team (from an explicit abbrev, else the name). */
+function teamCode(name?: string | null): string {
+  if (!name) return "";
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 2) return (words[0][0] + words[1][0] + (words[1][1] ?? "")).toUpperCase();
+  return name.slice(0, 3).toUpperCase();
+}
+
 export default function TitleBar() {
   const health = useStore((s) => s.health);
   const openSettings = useStore((s) => s.openSettings);
   const apiKeySet = useStore((s) => s.apiKeySet);
+  const match = useStore((s) => s.matchData);
+
+  const fixture = match
+    ? [
+        match.competition || undefined,
+        `${teamCode(match.home?.name)} v ${teamCode(match.away?.name)}`,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
+
   return (
     <header
       className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-ink-500/60 bg-ink-800/80 backdrop-blur"
@@ -27,10 +46,12 @@ export default function TitleBar() {
     >
       <div className="flex items-center gap-2.5 pointer-events-none">
         <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-teal-300 to-violet-400" />
-        <span className="text-sm font-medium tracking-tight text-mist-100">
+        <span className="text-sm font-semibold tracking-tight text-mist-100">
           Cuddy
         </span>
-        <span className="text-xs text-mist-400">football analysis</span>
+        <span className="text-[11px] uppercase tracking-[0.14em] text-mist-400">
+          Match Analysis
+        </span>
       </div>
       <div className="flex items-center gap-3 text-xs text-mist-300">
         <div className="flex items-center gap-2">
@@ -43,6 +64,12 @@ export default function TitleBar() {
           />
           {label[health]}
         </div>
+        {fixture && (
+          <>
+            <span className="text-ink-500">|</span>
+            <span className="text-mist-200 tabular-nums">{fixture}</span>
+          </>
+        )}
         <button
           onClick={openSettings}
           title="Settings"
