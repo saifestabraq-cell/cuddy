@@ -17,6 +17,7 @@ import AnalysisTabs from "./AnalysisTabs";
 import AIPanel from "./AIPanel";
 import AddEventPanel from "./AddEventPanel";
 import StudioToolbar from "./StudioToolbar";
+import MatchHero from "./MatchHero";
 import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
@@ -206,6 +207,7 @@ export default function Workspace() {
     <div className="h-full flex flex-col gap-3">
       <VideoBar />
       <FilterBar />
+      <MatchHero />
 
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4">
         {/* left: video + timeline + coding */}

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useStore } from "../store";
 import { api } from "../lib/api";
 import SectionHeader from "./SectionHeader";
+import { teamCode } from "./TeamBits";
 import type {
   MatchFixtureSummary,
   MatchTeam,
@@ -28,14 +29,6 @@ function lastToken(s: string): string {
     .split(/\s+/)
     .filter(Boolean);
   return parts[parts.length - 1] ?? "";
-}
-
-/** Short 3-letter team code from an explicit abbrev, else the name. */
-function teamCode(name?: string | null): string {
-  if (!name) return "—";
-  const words = name.trim().split(/\s+/);
-  if (words.length >= 2) return (words[0][0] + words[1][0] + (words[1][1] ?? "")).toUpperCase();
-  return name.slice(0, 3).toUpperCase();
 }
 
 /**
@@ -176,30 +169,10 @@ export default function StatsDashboard() {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Header
-        competition={data.competition}
-        date={data.date}
-        onChange={() => useStore.setState({ matchData: null })}
-      />
-
-      {/* Scoreline + formations */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-3 mb-4">
-        <TeamHead team={data.home} align="right" />
-        <div className="text-center px-2">
-          <div className="text-4xl font-bold tabular-nums text-mist-100 leading-none tracking-tight">
-            {data.score ?? "—"}
-          </div>
-          <div className="text-[10px] uppercase tracking-[0.16em] text-mist-500 mt-1.5">
-            Full time
-          </div>
-        </div>
-        <TeamHead team={data.away} align="left" />
-      </div>
-
-      {/* Team statistics */}
+      {/* Team statistics (scoreline + KPIs live in the full-width MatchHero) */}
       <SectionHeader
         label="Team Statistics"
-        className="mt-5 mb-2.5"
+        className="mb-2.5"
         right={
           <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/70 p-0.5">
             <SideTab label="Both" active={side === "both"} onClick={() => setSide("both")} />
@@ -742,47 +715,6 @@ function Header({
         </div>
       }
     />
-  );
-}
-
-function TeamHead({ team, align }: { team: MatchTeam; align: "left" | "right" }) {
-  const side = align === "right" ? "Home" : "Away";
-  const meta = [team.formation, side].filter(Boolean).join(" · ");
-  return (
-    <div
-      className={`flex items-center gap-2.5 ${
-        align === "right" ? "flex-row-reverse text-right" : "text-left"
-      }`}
-    >
-      <TeamBadge team={team} />
-      <div className="min-w-0">
-        <div className="text-base font-semibold text-mist-100 truncate leading-tight">
-          {team.name}
-        </div>
-        {meta && (
-          <div className="text-[11px] text-mist-400 tabular-nums truncate">{meta}</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Team badge: the crest if available, else a blurple rounded-square code chip. */
-function TeamBadge({ team }: { team: MatchTeam }) {
-  if (team.logo) {
-    return (
-      <img
-        src={team.logo}
-        alt=""
-        className="w-8 h-8 object-contain shrink-0"
-        onError={(e) => (e.currentTarget.style.display = "none")}
-      />
-    );
-  }
-  return (
-    <span className="w-8 h-8 shrink-0 grid place-items-center rounded-lg bg-teal-400/20 text-teal-200 text-[11px] font-semibold tabular-nums">
-      {teamCode(team.name)}
-    </span>
   );
 }
 
