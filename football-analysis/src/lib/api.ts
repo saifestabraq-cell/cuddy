@@ -16,6 +16,7 @@ import type {
   SegmentMap,
   SettingsStatus,
   ShotsData,
+  StudioDoc,
   TracksData,
   ValidationResult,
   Video,
@@ -155,6 +156,14 @@ export const api = {
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
+
+  // Studio telestration graphics (persisted per video)
+  getStudio: (videoId: number) => request<StudioDoc>(`/videos/${videoId}/studio`),
+  putStudio: (videoId: number, doc: StudioDoc) =>
+    request<StudioDoc>(`/videos/${videoId}/studio`, {
+      method: "PUT",
+      body: JSON.stringify(doc),
+    }),
 
   // Pitch calibration / heatmaps / auto-tag (Phase 2b)
   calibrate: (videoId: number, imgPoints: number[][], length = 105, width = 68) =>

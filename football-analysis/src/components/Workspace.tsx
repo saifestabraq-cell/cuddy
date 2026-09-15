@@ -16,6 +16,7 @@ import PlaylistBar from "./PlaylistBar";
 import AnalysisTabs from "./AnalysisTabs";
 import AIPanel from "./AIPanel";
 import AddEventPanel from "./AddEventPanel";
+import StudioToolbar from "./StudioToolbar";
 import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
@@ -218,6 +219,7 @@ export default function Workspace() {
               if (currentVideo) setVideoMeta(currentVideo.id, meta);
             }}
           />
+          {currentVideo && <StudioToolbar />}
           <AnalyzePanel />
           {analyzed && <AnalysisTabs />}
           <Timeline

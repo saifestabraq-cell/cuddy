@@ -113,6 +113,37 @@ export interface TracksData {
   frames: TrackFrame[];
 }
 
+// --- Studio: telestration graphics drawn over the video ---
+
+export type StudioTool =
+  | "arrow"
+  | "highlight"
+  | "zone"
+  | "path"
+  | "shape"
+  | "box"
+  | "text";
+
+/**
+ * A telestration graphic. `geom` is a list of normalized [0..1] points over the
+ * video box. When `pinnedTrackId`/`pinPos` are set, the whole shape translates
+ * each frame by the tracked player's displacement from `pinPos`, so the graphic
+ * follows the player.
+ */
+export interface StudioShape {
+  id: string;
+  type: StudioTool;
+  color: string;
+  geom: [number, number][];
+  label?: string;
+  pinnedTrackId?: number;
+  pinPos?: [number, number];
+}
+
+export interface StudioDoc {
+  shapes: StudioShape[];
+}
+
 export interface PitchData {
   length: number;
   width: number;

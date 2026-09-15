@@ -20,9 +20,23 @@ import type {
   Project,
   SegmentMap,
   ShotsData,
+  StudioShape,
+  StudioTool,
   TracksData,
   Video,
 } from "./lib/types";
+
+// Debounce Studio saves so rapid edits collapse into one PUT.
+let studioSaveTimer: ReturnType<typeof setTimeout> | null = null;
+function queueStudioSave(get: () => AppState) {
+  if (studioSaveTimer) clearTimeout(studioSaveTimer);
+  studioSaveTimer = setTimeout(() => {
+    const { currentVideoId, studioShapes } = get();
+    if (currentVideoId != null) {
+      api.putStudio(currentVideoId, { shapes: studioShapes }).catch(() => {});
+    }
+  }, 600);
+}
 
 /** Pure filter — kept out of the store so selectors stay reference-stable. */
 export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] {
@@ -161,6 +175,23 @@ interface AppState {
   loadShots: () => Promise<void>;
   tagShots: () => Promise<number>;
 
+  // Studio: telestration graphics (drawn over the video, follow tracked players)
+  studioShapes: StudioShape[];
+  studioTool: StudioTool | null;
+  studioColor: string;
+  selectedShapeId: string | null;
+  studioPinArm: boolean;
+  loadStudio: () => Promise<void>;
+  setStudioTool: (tool: StudioTool | null) => void;
+  setStudioColor: (color: string) => void;
+  addShape: (shape: StudioShape) => void;
+  updateShape: (id: string, patch: Partial<StudioShape>) => void;
+  deleteShape: (id: string) => void;
+  selectShape: (id: string | null) => void;
+  clearStudio: () => void;
+  armPin: (on: boolean) => void;
+  pinShapeToTrack: (id: string, trackId: number, pinPos: [number, number]) => void;
+
   // Settings (API keys)
   apiKeySet: boolean; // Anthropic key configured
   groqKeySet: boolean; // Groq key configured
@@ -217,6 +248,11 @@ export const useStore = create<AppState>((set, get) => ({
   pitch: null,
   analytics: null,
   shots: null,
+  studioShapes: [],
+  studioTool: null,
+  studioColor: "#F5C24B",
+  selectedShapeId: null,
+  studioPinArm: false,
   apiKeySet: false,
   groqKeySet: false,
   aiProvider: "groq",
@@ -467,6 +503,10 @@ export const useStore = create<AppState>((set, get) => ({
       analytics: null,
       shots: null,
       segments: null,
+      studioShapes: [],
+      studioTool: null,
+      selectedShapeId: null,
+      studioPinArm: false,
       composeSeed: null,
       matchData: null,
       matchDataError: null,
@@ -481,6 +521,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
+      get().loadStudio(),
       get().loadMatchData(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
@@ -758,6 +799,57 @@ export const useStore = create<AppState>((set, get) => ({
     const { created } = await api.tagShots(vid);
     await get().loadEvents();
     return created;
+  },
+
+  loadStudio: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ studioShapes: [] });
+      return;
+    }
+    try {
+      const doc = await api.getStudio(vid);
+      if (get().currentVideoId === vid) set({ studioShapes: doc.shapes ?? [] });
+    } catch {
+      if (get().currentVideoId === vid) set({ studioShapes: [] });
+    }
+  },
+  setStudioTool: (tool) =>
+    set({ studioTool: tool, studioPinArm: false }),
+  setStudioColor: (color) => set({ studioColor: color }),
+  addShape: (shape) => {
+    set({ studioShapes: [...get().studioShapes, shape], selectedShapeId: shape.id });
+    queueStudioSave(get);
+  },
+  updateShape: (id, patch) => {
+    set({
+      studioShapes: get().studioShapes.map((s) =>
+        s.id === id ? { ...s, ...patch } : s,
+      ),
+    });
+    queueStudioSave(get);
+  },
+  deleteShape: (id) => {
+    set({
+      studioShapes: get().studioShapes.filter((s) => s.id !== id),
+      selectedShapeId: get().selectedShapeId === id ? null : get().selectedShapeId,
+    });
+    queueStudioSave(get);
+  },
+  selectShape: (id) => set({ selectedShapeId: id }),
+  clearStudio: () => {
+    set({ studioShapes: [], selectedShapeId: null, studioPinArm: false });
+    queueStudioSave(get);
+  },
+  armPin: (on) => set({ studioPinArm: on }),
+  pinShapeToTrack: (id, trackId, pinPos) => {
+    set({
+      studioShapes: get().studioShapes.map((s) =>
+        s.id === id ? { ...s, pinnedTrackId: trackId, pinPos } : s,
+      ),
+      studioPinArm: false,
+    });
+    queueStudioSave(get);
   },
 }));
 

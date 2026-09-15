@@ -1,8 +1,9 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { fmtClockPrecise } from "../lib/time";
 import { useStore } from "../store";
+import { nearestFrame } from "../lib/tracks";
 import { TEAM_COLORS, BALL_COLOR } from "./AnalyzePanel";
-import type { TrackFrame } from "../lib/types";
+import StudioLayer from "./StudioLayer";
 
 interface Props {
   src: string | null;
@@ -11,22 +12,6 @@ interface Props {
 }
 
 const CALIB_LABELS = ["TL", "TR", "BR", "BL"];
-
-/** Nearest track frame to a timestamp (binary search over sorted frames). */
-function nearestFrame(frames: TrackFrame[], ms: number): TrackFrame | null {
-  if (!frames.length) return null;
-  let lo = 0;
-  let hi = frames.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (frames[mid].t_ms < ms) lo = mid + 1;
-    else hi = mid;
-  }
-  const cand = [frames[lo], frames[Math.max(0, lo - 1)]];
-  return cand.reduce((a, b) =>
-    Math.abs(a.t_ms - ms) <= Math.abs(b.t_ms - ms) ? a : b,
-  );
-}
 
 const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
   ({ src, onTime, onMeta }, ref) => {
@@ -200,6 +185,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
                 ref={canvasRef}
                 className="absolute inset-0 w-full h-full pointer-events-none"
               />
+              <StudioLayer getVideo={el} playing={playing} ms={time} />
               {calibrationMode && (
                 <div
                   className="absolute inset-0 cursor-crosshair"

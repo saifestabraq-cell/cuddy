@@ -50,6 +50,10 @@ def _matchdata_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_matchdata.json"
 
 
+def _studio_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_studio.json"
+
+
 @router.post("/videos/{video_id}/analyze")
 def start_analysis(video_id: int, session: Session = Depends(get_session)):
     """Start (or resume) the durable staged pipeline for this video."""
@@ -92,6 +96,53 @@ def get_segments(video_id: int):
     if not path.is_file():
         raise HTTPException(404, "No segmentation for this video yet")
     return json.loads(path.read_text())
+
+
+# --- Studio: telestration graphics drawn over the video ---
+
+
+class StudioShape(BaseModel):
+    id: str
+    type: str
+    color: str
+    geom: list[list[float]]
+    label: str | None = None
+    pinnedTrackId: int | None = None
+    pinPos: list[float] | None = None
+
+
+class StudioDoc(BaseModel):
+    shapes: list[StudioShape] = []
+
+
+@router.get("/videos/{video_id}/studio")
+def get_studio(video_id: int, session: Session = Depends(get_session)):
+    """Return the saved telestration graphics for this video (or an empty set)."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _studio_path(video_id)
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return {"shapes": []}
+
+
+@router.put("/videos/{video_id}/studio")
+def put_studio(
+    video_id: int, payload: StudioDoc, session: Session = Depends(get_session)
+):
+    """Persist the telestration graphics as a JSON file in the tracks dir."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    data = payload.model_dump(exclude_none=True)
+    try:
+        settings.ensure_dirs()
+        _studio_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as exc:
+        raise HTTPException(500, f"Could not save studio graphics: {exc}") from exc
+    return data
 
 
 @router.get("/videos/{video_id}/tracks/summary")
