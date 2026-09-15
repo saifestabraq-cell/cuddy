@@ -232,7 +232,7 @@ export default function Workspace() {
         </div>
 
         {/* right: playlist + edit + dashboard + events */}
-        <div className="flex flex-col gap-3 min-h-0">
+        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto pr-1">
           <StatsDashboard />
           <PlaylistBar
             presenting={presenting}

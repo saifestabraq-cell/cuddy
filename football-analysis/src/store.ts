@@ -17,6 +17,7 @@ import type {
   MatchEvent,
   MatchFixtureSummary,
   PitchData,
+  PlayerStatsDoc,
   Project,
   SegmentMap,
   ShotsData,
@@ -222,6 +223,15 @@ interface AppState {
   searchFixtures: (query: string) => Promise<void>;
   loadFixture: (fixtureId: number) => Promise<void>;
   clearFixtureResults: () => void;
+
+  // Per-player statistics (API-Football) + the selected player card
+  playerStats: PlayerStatsDoc | null;
+  playerStatsLoading: boolean;
+  playerStatsError: string | null;
+  selectedPlayerName: string | null;
+  loadPlayerStats: () => Promise<void>;
+  fetchPlayerStats: () => Promise<void>;
+  selectPlayer: (name: string | null) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -267,6 +277,10 @@ export const useStore = create<AppState>((set, get) => ({
   fixtureResults: [],
   fixtureSearchLoading: false,
   fixtureSearchError: null,
+  playerStats: null,
+  playerStatsLoading: false,
+  playerStatsError: null,
+  selectedPlayerName: null,
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -400,6 +414,36 @@ export const useStore = create<AppState>((set, get) => ({
   },
   clearFixtureResults: () => set({ fixtureResults: [], fixtureSearchError: null }),
 
+  loadPlayerStats: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ playerStats: null });
+      return;
+    }
+    try {
+      const data = await api.getPlayerStats(vid);
+      if (get().currentVideoId === vid) set({ playerStats: data });
+    } catch {
+      if (get().currentVideoId === vid) set({ playerStats: null });
+    }
+  },
+  fetchPlayerStats: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    set({ playerStatsLoading: true, playerStatsError: null });
+    try {
+      const data = await api.fetchPlayerStats(vid);
+      if (get().currentVideoId === vid) set({ playerStats: data });
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ playerStatsError: e instanceof Error ? e.message : "Could not load player stats" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ playerStatsLoading: false });
+    }
+  },
+  selectPlayer: (name) => set({ selectedPlayerName: name }),
+
   setComposeSeed: (seed) => set({ composeSeed: seed }),
 
   loadProjects: async () => {
@@ -512,6 +556,9 @@ export const useStore = create<AppState>((set, get) => ({
       matchDataError: null,
       fixtureResults: [],
       fixtureSearchError: null,
+      playerStats: null,
+      playerStatsError: null,
+      selectedPlayerName: null,
       videoMissing: false,
     });
     await Promise.all([
@@ -523,6 +570,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadShots(),
       get().loadStudio(),
       get().loadMatchData(),
+      get().loadPlayerStats(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {

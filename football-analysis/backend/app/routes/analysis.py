@@ -54,6 +54,10 @@ def _studio_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_studio.json"
 
 
+def _playerstats_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_playerstats.json"
+
+
 @router.post("/videos/{video_id}/analyze")
 def start_analysis(video_id: int, session: Session = Depends(get_session)):
     """Start (or resume) the durable staged pipeline for this video."""
@@ -475,6 +479,56 @@ def fetch_match_data(
         raise HTTPException(502, f"Match-data lookup failed: {type(exc).__name__}: {exc}") from exc
     try:
         _matchdata_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+    return data
+
+
+# --- Per-player statistics (API-Football, real named players) ---
+
+
+@router.get("/videos/{video_id}/player-stats")
+def get_player_stats(video_id: int, session: Session = Depends(get_session)):
+    """Return cached per-player stats for this video, or null if none saved."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _playerstats_path(video_id)
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return None
+
+
+@router.post("/videos/{video_id}/player-stats")
+def fetch_player_stats(video_id: int, session: Session = Depends(get_session)):
+    """Fetch per-player stats for the fixture already loaded on this video.
+
+    Uses the fixture id from the saved match data, so the user loads a fixture
+    first (via the match browser) and this pulls the named player stat lines.
+    """
+    from ..providers import apifootball
+
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    md_path = _matchdata_path(video_id)
+    if not md_path.is_file():
+        raise HTTPException(400, "Load a match fixture first, then fetch player stats.")
+    try:
+        fixture_id = json.loads(md_path.read_text(encoding="utf-8")).get("fixture_id")
+    except (ValueError, OSError):
+        fixture_id = None
+    if not fixture_id:
+        raise HTTPException(400, "The loaded match has no fixture id to look up.")
+    try:
+        data = apifootball.fetch_player_stats(int(fixture_id))
+    except apifootball.ProviderError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"Player-stats lookup failed: {type(exc).__name__}: {exc}") from exc
+    try:
+        _playerstats_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
     except OSError:
         pass
     return data

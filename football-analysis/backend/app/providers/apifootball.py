@@ -238,6 +238,67 @@ def fetch_match_by_id(fixture_id: int) -> dict:
         return _bundle(client, rows[0], query=f"fixture:{fixture_id}")
 
 
+def _player_line(entry: dict) -> dict:
+    """Compact per-player stat line from a /fixtures/players player entry."""
+    p = entry.get("player", {})
+    s = (entry.get("statistics") or [{}])[0]
+    games = s.get("games") or {}
+    shots = s.get("shots") or {}
+    goals = s.get("goals") or {}
+    passes = s.get("passes") or {}
+    tackles = s.get("tackles") or {}
+    duels = s.get("duels") or {}
+    dribbles = s.get("dribbles") or {}
+    cards = s.get("cards") or {}
+    rating = games.get("rating")
+    return {
+        "id": p.get("id"),
+        "name": p.get("name"),
+        "photo": p.get("photo"),
+        "number": games.get("number"),
+        "position": games.get("position"),
+        "minutes": games.get("minutes"),
+        "rating": round(float(rating), 1) if rating not in (None, "") else None,
+        "captain": bool(games.get("captain")),
+        "goals": goals.get("total") or 0,
+        "assists": goals.get("assists") or 0,
+        "shots": shots.get("total") or 0,
+        "shots_on": shots.get("on") or 0,
+        "passes": passes.get("total") or 0,
+        "pass_accuracy": passes.get("accuracy"),
+        "key_passes": passes.get("key") or 0,
+        "tackles": tackles.get("total") or 0,
+        "interceptions": tackles.get("interceptions") or 0,
+        "duels_won": duels.get("won") or 0,
+        "duels_total": duels.get("total") or 0,
+        "dribbles": dribbles.get("success") or 0,
+        "yellow": cards.get("yellow") or 0,
+        "red": cards.get("red") or 0,
+    }
+
+
+def fetch_player_stats(fixture_id: int) -> dict:
+    """Per-player match statistics for a fixture, grouped by team id.
+
+    Returns ``{"fixture_id", "by_team": {team_id: {"name", "players": [...]}}}``
+    from API-Football's ``/fixtures/players`` (real, provider-validated).
+    """
+    with _client() as client:
+        rows = _get(client, "/fixtures/players", {"fixture": fixture_id})
+    by_team: dict[str, dict] = {}
+    for entry in rows:
+        team = entry.get("team", {})
+        tid = team.get("id")
+        if tid is None:
+            continue
+        players = [_player_line(pe) for pe in entry.get("players", [])]
+        # Keep only players who actually appeared, most involved first.
+        players = [p for p in players if (p.get("minutes") or 0) > 0]
+        players.sort(key=lambda p: (p.get("minutes") or 0), reverse=True)
+        by_team[str(tid)] = {"name": team.get("name"), "players": players}
+    return {"fixture_id": fixture_id, "by_team": by_team}
+
+
 def fetch_match(query: str) -> dict:
     """Return normalized match data for the best-matching fixture (free-text)."""
     teams = _parse_teams(query)

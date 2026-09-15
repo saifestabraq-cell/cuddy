@@ -2,7 +2,26 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
 import SectionHeader from "./SectionHeader";
-import type { MatchFixtureSummary, MatchTeam } from "../lib/types";
+import type { MatchFixtureSummary, MatchTeam, PlayerStat } from "../lib/types";
+
+/** Lowercase, strip accents/punctuation for loose name matching. */
+function norm(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z\s.]/g, "")
+    .trim();
+}
+
+/** The surname-ish last token of a name, ignoring initials like "W.". */
+function lastToken(s: string): string {
+  const parts = norm(s)
+    .replace(/\b[a-z]\.\s*/g, "") // drop "w. " style initials
+    .split(/\s+/)
+    .filter(Boolean);
+  return parts[parts.length - 1] ?? "";
+}
 
 /** Short 3-letter team code from an explicit abbrev, else the name. */
 function teamCode(name?: string | null): string {
@@ -30,11 +49,35 @@ export default function StatsDashboard() {
   const searchError = useStore((s) => s.fixtureSearchError);
   const searchFixtures = useStore((s) => s.searchFixtures);
   const loadFixture = useStore((s) => s.loadFixture);
+  const playerStats = useStore((s) => s.playerStats);
+  const playerStatsLoading = useStore((s) => s.playerStatsLoading);
+  const playerStatsError = useStore((s) => s.playerStatsError);
+  const fetchPlayerStats = useStore((s) => s.fetchPlayerStats);
+  const selectedPlayerName = useStore((s) => s.selectedPlayerName);
+  const selectPlayer = useStore((s) => s.selectPlayer);
 
   const [query, setQuery] = useState("");
   const [side, setSide] = useState<"both" | "home" | "away">("both");
 
   if (!currentVideo) return null;
+
+  // Resolve a lineup name (often abbreviated, e.g. "W. Saliba") to a stat line
+  // (full name, e.g. "William Saliba"). Match on the surname / shared token so
+  // the two API-Football name formats line up.
+  const allStats: PlayerStat[] = playerStats
+    ? Object.values(playerStats.by_team).flatMap((t) => t.players)
+    : [];
+  const resolveStat = (lineupName: string): PlayerStat | undefined => {
+    if (!allStats.length) return undefined;
+    const key = lastToken(lineupName);
+    if (!key) return undefined;
+    // Prefer a real surname match; fall back to a name that contains the token.
+    return (
+      allStats.find((p) => p.name && lastToken(p.name) === key) ??
+      allStats.find((p) => p.name && norm(p.name).includes(key))
+    );
+  };
+  const selectedStat = selectedPlayerName ? resolveStat(selectedPlayerName) : undefined;
 
   const search = (q: string) => q.trim() && searchFixtures(q.trim());
 
@@ -182,18 +225,60 @@ export default function StatsDashboard() {
         </div>
       )}
 
-      {/* Lineups — both XIs for "Both", one otherwise */}
+      {/* Lineups — both XIs for "Both", one otherwise. Names are clickable to
+          show that player's real match stats (once loaded). */}
       {hasLineups && (
         <>
-          <SectionHeader label="Lineups" className="mt-5 mb-2.5" />
+          <SectionHeader
+            label="Lineups"
+            className="mt-5 mb-2.5"
+            right={
+              !playerStats ? (
+                <button
+                  className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors disabled:opacity-50"
+                  disabled={playerStatsLoading}
+                  onClick={() => fetchPlayerStats()}
+                >
+                  {playerStatsLoading ? "Loading…" : "Load player stats"}
+                </button>
+              ) : (
+                <span className="text-[10px] uppercase tracking-wide text-mist-500">
+                  Tap a player
+                </span>
+              )
+            }
+          />
+          {playerStatsError && (
+            <p className="text-xs text-signal-live mb-2">{playerStatsError}</p>
+          )}
+          {selectedStat && (
+            <PlayerStatCard
+              stat={selectedStat}
+              onClose={() => selectPlayer(null)}
+            />
+          )}
           <div className="grid gap-4">
             {(side === "both" || side === "home") &&
               data.home.start_xi.length > 0 && (
-                <Lineup team={data.home} accent="teal" />
+                <Lineup
+                  team={data.home}
+                  accent="teal"
+                  resolveStat={resolveStat}
+                  hasStats={allStats.length > 0}
+                  selectedName={selectedPlayerName}
+                  onPick={selectPlayer}
+                />
               )}
             {(side === "both" || side === "away") &&
               data.away.start_xi.length > 0 && (
-                <Lineup team={data.away} accent="violet" />
+                <Lineup
+                  team={data.away}
+                  accent="violet"
+                  resolveStat={resolveStat}
+                  hasStats={allStats.length > 0}
+                  selectedName={selectedPlayerName}
+                  onPick={selectPlayer}
+                />
               )}
           </div>
         </>
@@ -202,25 +287,129 @@ export default function StatsDashboard() {
   );
 }
 
-function Lineup({ team, accent }: { team: MatchTeam; accent: "teal" | "violet" }) {
+/** Compact card of a player's real match stats (API-Football). */
+function PlayerStatCard({
+  stat,
+  onClose,
+}: {
+  stat: PlayerStat;
+  onClose: () => void;
+}) {
+  // API-Football reports passes.accuracy as the COUNT of accurate passes;
+  // derive the completion percentage from total rather than mislabelling it.
+  const acc =
+    typeof stat.pass_accuracy === "number" &&
+    stat.passes > 0 &&
+    stat.pass_accuracy <= stat.passes
+      ? Math.round((stat.pass_accuracy / stat.passes) * 100)
+      : null;
+  const cells: [string, string | number][] = [
+    ["Rating", stat.rating ?? "—"],
+    ["Mins", stat.minutes ?? "—"],
+    ["Goals", stat.goals],
+    ["Assists", stat.assists],
+    ["Shots", `${stat.shots}${stat.shots_on ? ` (${stat.shots_on})` : ""}`],
+    ["Passes", stat.passes],
+    ["Pass %", acc != null ? `${acc}%` : "—"],
+    ["Key passes", stat.key_passes],
+    ["Tackles", stat.tackles],
+    ["Interc.", stat.interceptions],
+    ["Duels won", `${stat.duels_won}/${stat.duels_total}`],
+    ["Dribbles", stat.dribbles],
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card p-3 mb-3"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {stat.number != null && (
+            <span className="w-5 h-5 grid place-items-center rounded-md bg-teal-400/20 text-teal-200 text-[10px] font-semibold tabular-nums shrink-0">
+              {stat.number}
+            </span>
+          )}
+          <span className="text-sm font-medium text-mist-100 truncate">{stat.name}</span>
+          {stat.position && (
+            <span className="text-[10px] uppercase text-mist-500">{stat.position}</span>
+          )}
+          {stat.rating != null && (
+            <span className="text-[11px] tabular-nums text-teal-300">{stat.rating}</span>
+          )}
+        </div>
+        <button
+          className="text-mist-500 hover:text-mist-200 transition-colors text-sm leading-none"
+          onClick={onClose}
+          aria-label="Close player stats"
+        >
+          ×
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+        {cells.map(([k, v]) => (
+          <div key={k} className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wide text-mist-500">{k}</span>
+            <span className="text-sm tabular-nums text-mist-100">{v}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function Lineup({
+  team,
+  accent,
+  resolveStat,
+  hasStats,
+  selectedName,
+  onPick,
+}: {
+  team: MatchTeam;
+  accent: "teal" | "violet";
+  resolveStat?: (name: string) => PlayerStat | undefined;
+  hasStats?: boolean;
+  selectedName?: string | null;
+  onPick?: (name: string | null) => void;
+}) {
   const dot = accent === "teal" ? "bg-teal-400" : "bg-violet-400";
   const form = accent === "teal" ? "text-teal-300" : "text-violet-300";
   return (
     <div>
       <div className="flex items-center gap-2 text-xs text-mist-400 mb-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />
+        {team.logo ? (
+          <img src={team.logo} alt="" className="w-4 h-4 object-contain shrink-0" />
+        ) : (
+          <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />
+        )}
         <span className={`tabular-nums ${form}`}>{team.formation ?? "—"}</span>
         <span className="truncate">{team.name}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {team.start_xi.map((p) => (
-          <span
-            key={p}
-            className="px-2 py-0.5 rounded-md text-[11px] text-mist-200 bg-ink-700/60 border border-ink-500/50"
-          >
-            {p}
-          </span>
-        ))}
+        {team.start_xi.map((p) => {
+          const hasStat = hasStats ? !!resolveStat?.(p) : false;
+          const selected = selectedName === p;
+          const cls = `px-2 py-0.5 rounded-md text-[11px] border transition-colors ${
+            selected
+              ? "bg-teal-400/20 border-teal-400/60 text-mist-100"
+              : "text-mist-200 bg-ink-700/60 border-ink-500/50"
+          } ${hasStat ? "hover:bg-ink-600 cursor-pointer" : ""}`;
+          return hasStat && onPick ? (
+            <button
+              key={p}
+              className={cls}
+              onClick={() => onPick(selected ? null : p)}
+              title="Show match stats"
+            >
+              {p}
+            </button>
+          ) : (
+            <span key={p} className={cls}>
+              {p}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -275,12 +464,30 @@ function FixtureRow({
       className="card px-2.5 py-2 text-left hover:bg-ink-600 transition-colors disabled:opacity-50"
     >
       <div className="flex items-center gap-2 text-sm text-mist-100">
-        <span className="flex-1 truncate">{fx.home}</span>
-        <span className="tabular-nums text-teal-300 shrink-0">{fx.score ?? "vs"}</span>
-        <span className="flex-1 truncate text-right">{fx.away}</span>
+        <span className="flex-1 min-w-0 flex items-center gap-1.5 justify-end">
+          <span className="truncate text-right">{fx.home}</span>
+          <FixtureLogo src={fx.home_logo} />
+        </span>
+        <span className="tabular-nums text-teal-300 shrink-0 px-1">{fx.score ?? "vs"}</span>
+        <span className="flex-1 min-w-0 flex items-center gap-1.5">
+          <FixtureLogo src={fx.away_logo} />
+          <span className="truncate">{fx.away}</span>
+        </span>
       </div>
       {meta && <div className="text-[11px] text-mist-500 mt-0.5">{meta}</div>}
     </button>
+  );
+}
+
+function FixtureLogo({ src }: { src?: string | null }) {
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-4 h-4 object-contain shrink-0"
+      onError={(e) => (e.currentTarget.style.display = "none")}
+    />
   );
 }
 

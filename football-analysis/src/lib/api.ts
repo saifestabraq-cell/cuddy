@@ -11,6 +11,7 @@ import type {
   MatchEvent,
   MatchFixtureSummary,
   PitchData,
+  PlayerStatsDoc,
   Project,
   QueryResult,
   SegmentMap,
@@ -223,6 +224,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ query }),
     }),
+
+  // Per-player statistics (API-Football)
+  getPlayerStats: (videoId: number) =>
+    request<PlayerStatsDoc | null>(`/videos/${videoId}/player-stats`),
+  fetchPlayerStats: (videoId: number) =>
+    request<PlayerStatsDoc>(`/videos/${videoId}/player-stats`, { method: "POST" }),
 
   // User settings (API keys / model)
   getSettings: () => request<SettingsStatus>("/settings"),

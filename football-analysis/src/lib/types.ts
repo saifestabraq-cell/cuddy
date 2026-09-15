@@ -144,6 +144,38 @@ export interface StudioDoc {
   shapes: StudioShape[];
 }
 
+// --- Per-player statistics (API-Football, real named players) ---
+
+export interface PlayerStat {
+  id: number | null;
+  name: string | null;
+  photo?: string | null;
+  number?: number | null;
+  position?: string | null;
+  minutes?: number | null;
+  rating?: number | null;
+  captain?: boolean;
+  goals: number;
+  assists: number;
+  shots: number;
+  shots_on: number;
+  passes: number;
+  pass_accuracy?: string | number | null;
+  key_passes: number;
+  tackles: number;
+  interceptions: number;
+  duels_won: number;
+  duels_total: number;
+  dribbles: number;
+  yellow: number;
+  red: number;
+}
+
+export interface PlayerStatsDoc {
+  fixture_id: number;
+  by_team: Record<string, { name: string | null; players: PlayerStat[] }>;
+}
+
 export interface PitchData {
   length: number;
   width: number;
