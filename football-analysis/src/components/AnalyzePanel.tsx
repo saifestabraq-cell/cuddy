@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { useStore } from "../store";
 
-export const TEAM_COLORS = ["#6EE7D6", "#F0A6C0"]; // team 0, team 1
-export const BALL_COLOR = "#F2C879";
+export const TEAM_COLORS = ["#4C9BFF", "#FF6B4C"]; // team 0 (blue), team 1 (orange-red)
+export const BALL_COLOR = "#FFE14D"; // lit yellow
 
 const STAGE_LABELS: Record<string, string> = {
   triage: "Triage",

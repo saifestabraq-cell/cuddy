@@ -66,8 +66,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           if (frame) {
             const sx = cw / tracks.width;
             const sy = ch / tracks.height;
-            ctx.lineWidth = 2;
-            ctx.font = "11px Inter, system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             for (const d of frame.dets) {
               const isBall = d.cls === 32;
               const color = isBall ? BALL_COLOR : TEAM_COLORS[d.team] ?? "#8A90A0";
@@ -76,17 +76,39 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
               const w = d.w * sx;
               const h = d.h * sy;
               if (isBall) {
+                // Lit ball marker: soft halo + bright core.
+                const bx = x + w / 2;
+                const by = y + h / 2;
+                const halo = ctx.createRadialGradient(bx, by, 0, bx, by, 16);
+                halo.addColorStop(0, "rgba(255,225,77,0.55)");
+                halo.addColorStop(1, "rgba(255,225,77,0)");
+                ctx.fillStyle = halo;
                 ctx.beginPath();
-                ctx.arc(x + w / 2, y + h / 2, Math.max(5, w / 2), 0, Math.PI * 2);
-                ctx.strokeStyle = color;
+                ctx.arc(bx, by, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(bx, by, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = "#ffffff";
                 ctx.stroke();
               } else {
-                ctx.strokeStyle = color;
-                ctx.strokeRect(x, y, w, h);
+                // Small numbered circular marker at the player's feet.
+                const cx = x + w / 2;
+                const cy = y + h;
+                const label = String(d.id);
+                const r = label.length > 2 ? 11 : 9;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
                 ctx.fillStyle = color;
-                ctx.fillRect(x, y - 12, 18, 12);
-                ctx.fillStyle = "#0E0F13";
-                ctx.fillText(String(d.id), x + 3, y - 2);
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = "rgba(9,11,17,0.7)";
+                ctx.stroke();
+                ctx.fillStyle = "#0A0C12";
+                ctx.font = `bold ${label.length > 2 ? 9 : 10}px Inter, system-ui, sans-serif`;
+                ctx.fillText(label, cx, cy + 0.5);
               }
             }
           }
