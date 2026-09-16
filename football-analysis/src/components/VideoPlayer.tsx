@@ -19,6 +19,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     const [time, setTime] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [enhance, setEnhance] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const boxRef = useRef<HTMLDivElement>(null);
 
@@ -194,6 +195,16 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
 
     return (
       <div className="panel overflow-hidden flex flex-col shrink-0">
+        {/* Sharpen convolution used by the Enhance toggle. */}
+        <svg width="0" height="0" className="absolute" aria-hidden>
+          <filter id="cuddy-sharpen">
+            <feConvolveMatrix
+              order="3 3"
+              preserveAlpha="true"
+              kernelMatrix="0 -0.6 0 -0.6 3.4 -0.6 0 -0.6 0"
+            />
+          </filter>
+        </svg>
         <div ref={boxRef} className="relative bg-black aspect-video w-full overflow-hidden">
           {src ? (
             <>
@@ -208,6 +219,11 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
                   ref={ref}
                   src={src}
                   className="absolute inset-0 w-full h-full"
+                  style={{
+                    filter: enhance
+                      ? "url(#cuddy-sharpen) contrast(1.07) saturate(1.12) brightness(1.02)"
+                      : undefined,
+                  }}
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
                   onTimeUpdate={(e) => {
@@ -283,6 +299,14 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             J K L · , . frame · [ ] nudge
           </span>
           <div className="flex-1" />
+          <button
+            className={`btn px-2.5 mr-1 ${enhance ? "bg-teal-500/25 text-mist-100" : ""}`}
+            disabled={!src}
+            title="Enhance: sharpen + boost contrast/colour (view only)"
+            onClick={() => setEnhance((v) => !v)}
+          >
+            Enhance
+          </button>
           {/* Zoom */}
           <div className="flex items-center gap-1 mr-1">
             <button
