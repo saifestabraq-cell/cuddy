@@ -9,6 +9,11 @@ const TOOLS: { tool: StudioTool; label: string; hint: string }[] = [
   { tool: "path", label: "Path", hint: "Click points, double-click to finish" },
   { tool: "shape", label: "Shape", hint: "Click points, double-click to finish" },
   { tool: "text", label: "Text", hint: "Click to place a label" },
+  {
+    tool: "link",
+    label: "Link players",
+    hint: "Click players to connect them; double-click to finish. The shape follows and deforms as they move.",
+  },
 ];
 
 const COLORS = ["#F5C24B", "#6E75F5", "#F2555A", "#29E0C4", "#EAECF2", "#F59E42"];
@@ -30,6 +35,8 @@ export default function StudioToolbar() {
   const armPin = useStore((s) => s.armPin);
   const pinArm = useStore((s) => s.studioPinArm);
   const tracks = useStore((s) => s.tracks);
+  const undoStudio = useStore((s) => s.undoStudio);
+  const canUndo = useStore((s) => s.studioHistory.length > 0);
 
   const selected = shapes.find((s) => s.id === selectedId) ?? null;
   const canPin = !!selected && !!tracks;
@@ -45,14 +52,24 @@ export default function StudioToolbar() {
     <div className="panel p-3">
       <div className="flex items-center justify-between mb-2 px-0.5">
         <span className="text-xs uppercase tracking-wider text-mist-400">Studio</span>
-        {shapes.length > 0 && (
+        <div className="flex items-center gap-3">
           <button
-            className="text-[11px] text-mist-400 hover:text-signal-live transition-colors"
-            onClick={clearStudio}
+            className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors disabled:opacity-40 disabled:hover:text-mist-400"
+            onClick={undoStudio}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
           >
-            Clear all
+            ↶ Undo
           </button>
-        )}
+          {shapes.length > 0 && (
+            <button
+              className="text-[11px] text-mist-400 hover:text-signal-live transition-colors"
+              onClick={clearStudio}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5">

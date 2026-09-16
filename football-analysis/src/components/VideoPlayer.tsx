@@ -17,10 +17,14 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
   ({ src, onTime, onMeta }, ref) => {
     const [playing, setPlaying] = useState(false);
     const [time, setTime] = useState(0);
+    const [zoom, setZoom] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const boxRef = useRef<HTMLDivElement>(null);
 
     const tracks = useStore((s) => s.tracks);
     const overlay = useStore((s) => s.overlay);
+    const studioTool = useStore((s) => s.studioTool);
     const calibrationMode = useStore((s) => s.calibrationMode);
     const calibrationPoints = useStore((s) => s.calibrationPoints);
     const addCalibrationPoint = useStore((s) => s.addCalibrationPoint);
@@ -139,7 +143,40 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     useEffect(() => {
       setTime(0);
       setPlaying(false);
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
     }, [src]);
+
+    const clampPan = (x: number, y: number, z: number) => {
+      const rect = boxRef.current?.getBoundingClientRect();
+      const maxX = rect ? ((z - 1) * rect.width) / 2 : 0;
+      const maxY = rect ? ((z - 1) * rect.height) / 2 : 0;
+      return {
+        x: Math.max(-maxX, Math.min(maxX, x)),
+        y: Math.max(-maxY, Math.min(maxY, y)),
+      };
+    };
+
+    const setZoomLevel = (z: number) => {
+      const nz = Math.max(1, Math.min(4, z));
+      setZoom(nz);
+      setPan((p) => (nz === 1 ? { x: 0, y: 0 } : clampPan(p.x, p.y, nz)));
+    };
+
+    const startPan = (e: React.MouseEvent) => {
+      e.preventDefault();
+      const sx = e.clientX;
+      const sy = e.clientY;
+      const orig = pan;
+      const move = (ev: MouseEvent) =>
+        setPan(clampPan(orig.x + (ev.clientX - sx), orig.y + (ev.clientY - sy), zoom));
+      const up = () => {
+        window.removeEventListener("mousemove", move);
+        window.removeEventListener("mouseup", up);
+      };
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    };
 
     const toggle = () => {
       const v = el();
@@ -157,40 +194,55 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
 
     return (
       <div className="panel overflow-hidden flex flex-col shrink-0">
-        <div className="relative bg-black aspect-video w-full">
+        <div ref={boxRef} className="relative bg-black aspect-video w-full overflow-hidden">
           {src ? (
             <>
-              <video
-                ref={ref}
-                src={src}
-                className="absolute inset-0 w-full h-full"
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onTimeUpdate={(e) => {
-                  const ms = e.currentTarget.currentTime * 1000;
-                  setTime(ms);
-                  onTime(ms);
-                  draw(ms);
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: "center center",
                 }}
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  onMeta({
-                    duration_ms: Math.round(v.duration * 1000),
-                    width: v.videoWidth,
-                    height: v.videoHeight,
-                  });
-                }}
-              />
-              <canvas
-                ref={canvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
-              />
-              <StudioLayer getVideo={el} playing={playing} ms={time} />
-              {calibrationMode && (
+              >
+                <video
+                  ref={ref}
+                  src={src}
+                  className="absolute inset-0 w-full h-full"
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onTimeUpdate={(e) => {
+                    const ms = e.currentTarget.currentTime * 1000;
+                    setTime(ms);
+                    onTime(ms);
+                    draw(ms);
+                  }}
+                  onLoadedMetadata={(e) => {
+                    const v = e.currentTarget;
+                    onMeta({
+                      duration_ms: Math.round(v.duration * 1000),
+                      width: v.videoWidth,
+                      height: v.videoHeight,
+                    });
+                  }}
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                />
+                <StudioLayer getVideo={el} playing={playing} ms={time} />
+                {calibrationMode && (
+                  <div
+                    className="absolute inset-0 cursor-crosshair"
+                    onClick={onCalibClick}
+                    title="Click the pitch corners: TL, TR, BR, BL"
+                  />
+                )}
+              </div>
+              {/* Pan grabber — only when zoomed and no drawing tool is active. */}
+              {zoom > 1 && !calibrationMode && studioTool === null && (
                 <div
-                  className="absolute inset-0 cursor-crosshair"
-                  onClick={onCalibClick}
-                  title="Click the pitch corners: TL, TR, BR, BL"
+                  className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                  onMouseDown={startPan}
                 />
               )}
               {videoMissing && (
@@ -231,6 +283,33 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             J K L · , . frame · [ ] nudge
           </span>
           <div className="flex-1" />
+          {/* Zoom */}
+          <div className="flex items-center gap-1 mr-1">
+            <button
+              className="btn px-2"
+              disabled={!src || zoom <= 1}
+              title="Zoom out"
+              onClick={() => setZoomLevel(zoom - 0.5)}
+            >
+              −
+            </button>
+            <button
+              className="btn px-2 tabular-nums min-w-[3rem]"
+              disabled={!src}
+              title="Reset zoom"
+              onClick={() => setZoomLevel(1)}
+            >
+              {zoom.toFixed(1)}×
+            </button>
+            <button
+              className="btn px-2"
+              disabled={!src || zoom >= 4}
+              title="Zoom in"
+              onClick={() => setZoomLevel(zoom + 0.5)}
+            >
+              +
+            </button>
+          </div>
           {[-5, -1, 1, 5].map((sec) => (
             <button
               key={sec}

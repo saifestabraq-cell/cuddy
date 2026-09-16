@@ -122,13 +122,18 @@ export type StudioTool =
   | "path"
   | "shape"
   | "box"
-  | "text";
+  | "text"
+  | "link";
 
 /**
  * A telestration graphic. `geom` is a list of normalized [0..1] points over the
- * video box. When `pinnedTrackId`/`pinPos` are set, the whole shape translates
- * each frame by the tracked player's displacement from `pinPos`, so the graphic
- * follows the player.
+ * video box.
+ *
+ * - When `pinnedTrackId`/`pinPos` are set, the WHOLE shape translates each frame
+ *   by that tracked player's displacement (rigid follow).
+ * - When `vertexTracks` is set (one entry per geom point), each vertex follows
+ *   its own tracked player, so a shape connecting several players deforms as
+ *   they move relative to each other. A null entry keeps that vertex fixed.
  */
 export interface StudioShape {
   id: string;
@@ -138,6 +143,7 @@ export interface StudioShape {
   label?: string;
   pinnedTrackId?: number;
   pinPos?: [number, number];
+  vertexTracks?: (number | null)[];
 }
 
 export interface StudioDoc {

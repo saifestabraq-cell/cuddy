@@ -16,7 +16,11 @@ interface Props {
   ms: number;
 }
 
-type Draft = { type: StudioTool; geom: [number, number][] } | null;
+type Draft = {
+  type: StudioTool;
+  geom: [number, number][];
+  vertexTracks?: (number | null)[];
+} | null;
 
 const TWO_POINT: StudioTool[] = ["arrow", "box", "zone"];
 const N_POINT: StudioTool[] = ["path", "shape"];
@@ -40,6 +44,8 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
   const deleteShape = useStore((s) => s.deleteShape);
   const pinShapeToTrack = useStore((s) => s.pinShapeToTrack);
   const armPin = useStore((s) => s.armPin);
+  const undoStudio = useStore((s) => s.undoStudio);
+  const pushStudioHistory = useStore((s) => s.pushStudioHistory);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const [draft, setDraft] = useState<Draft>(null);
@@ -71,6 +77,11 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
         e.preventDefault();
         deleteShape(selectedId);
       }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+        e.preventDefault();
+        setDraft(null);
+        undoStudio();
+      }
       if (e.key === "Escape") {
         setDraft(null);
         armPin(false);
@@ -78,7 +89,7 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, deleteShape, armPin]);
+  }, [selectedId, deleteShape, armPin, undoStudio]);
 
   const drawing = tool !== null;
   const bgInteractive = drawing || pinArm;
@@ -91,8 +102,13 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
     ];
   };
 
-  const commitShape = (type: StudioTool, geom: [number, number][], label?: string) => {
-    addShape({ id: newId(), type, color, geom, label });
+  const commitShape = (
+    type: StudioTool,
+    geom: [number, number][],
+    label?: string,
+    vertexTracks?: (number | null)[],
+  ) => {
+    addShape({ id: newId(), type, color, geom, label, vertexTracks });
   };
 
   const handlePin = (n: [number, number]) => {
@@ -143,8 +159,22 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
   };
 
   const onBgClick = (e: React.MouseEvent) => {
-    if (!tool || !N_POINT.includes(tool)) return;
+    if (!tool) return;
     const n = toNorm(e.clientX, e.clientY);
+    if (tool === "link") {
+      // Each click adds a vertex snapped to (and pinned to) the nearest player,
+      // so the shape connects players and deforms as they move.
+      const hit = tracks ? nearestPlayerAt(tracks, curMs, n[0], n[1]) : null;
+      const pos = hit ? hit.pos : n;
+      const tid = hit ? hit.id : null;
+      setDraft((d) =>
+        d && d.type === "link"
+          ? { ...d, geom: [...d.geom, pos], vertexTracks: [...(d.vertexTracks ?? []), tid] }
+          : { type: "link", geom: [pos], vertexTracks: [tid] },
+      );
+      return;
+    }
+    if (!N_POINT.includes(tool)) return;
     setDraft((d) =>
       d && d.type === tool ? { ...d, geom: [...d.geom, n] } : { type: tool, geom: [n] },
     );
@@ -152,8 +182,13 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
 
   const onBgDoubleClick = () => {
     setDraft((d) => {
-      if (d && N_POINT.includes(d.type) && d.geom.length >= 2) {
-        // The double-click added a duplicate final point — drop it.
+      if (!d) return null;
+      if (d.type === "link" && d.geom.length >= 3) {
+        // drop the duplicate final point from the finishing double-click
+        const geom = d.geom.slice(0, -1);
+        const vt = (d.vertexTracks ?? []).slice(0, geom.length);
+        if (geom.length >= 2) commitShape("link", geom, undefined, vt);
+      } else if (N_POINT.includes(d.type) && d.geom.length >= 2) {
         const geom = d.geom.slice(0, -1);
         if (geom.length >= 2) commitShape(d.type, geom);
       }
@@ -166,6 +201,7 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
     e.stopPropagation();
     selectShape(shape.id);
     if (drawing || pinArm) return; // don't move while drawing/pinning
+    pushStudioHistory();
     const start = toNorm(e.clientX, e.clientY);
     const orig = shape.geom;
     const move = (ev: MouseEvent) => {
@@ -226,12 +262,22 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
 
 const DRAFT_META = { id: "draft", geom: [] as [number, number][] };
 
-/** Authored geometry translated by a pinned player's displacement, if any. */
+/** Live geometry: per-vertex player tracking, else rigid single-pin follow. */
 function resolveGeom(
   shape: StudioShape,
   ms: number,
   tracks: ReturnType<typeof useStore.getState>["tracks"],
 ): [number, number][] | null {
+  // Per-vertex: each point follows its own player (shape deforms).
+  if (shape.vertexTracks && tracks) {
+    return shape.geom.map(([x, y], i) => {
+      const tid = shape.vertexTracks![i];
+      if (tid == null) return [x, y] as [number, number];
+      const cur = trackPosAt(tracks, tid, ms);
+      return cur ?? ([x, y] as [number, number]); // hold last authored if lost
+    });
+  }
+  // Rigid: whole shape translates with one pinned player.
   if (shape.pinnedTrackId != null && shape.pinPos && tracks) {
     const cur = trackPosAt(tracks, shape.pinnedTrackId, ms);
     if (!cur) return null;
@@ -330,6 +376,35 @@ function ShapeView({
         strokeWidth={STROKE}
         strokeLinejoin="round"
       />,
+    );
+  }
+  if (shape.type === "link" && pts.length >= 1) {
+    // Players connected by lines; ≥3 closes into a filled shape. Vertices show
+    // a ring so it reads as "these players", and it deforms as they move.
+    const closed = pts.length >= 3;
+    return wrap(
+      <>
+        {closed ? (
+          <polygon
+            points={pts.map((p) => p.join(",")).join(" ")}
+            fill={fill}
+            stroke={c}
+            strokeWidth={STROKE}
+            strokeLinejoin="round"
+          />
+        ) : (
+          <polyline
+            points={pts.map((p) => p.join(",")).join(" ")}
+            fill="none"
+            stroke={c}
+            strokeWidth={STROKE}
+            strokeLinecap="round"
+          />
+        )}
+        {pts.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={9} fill={`${c}55`} stroke={c} strokeWidth={2.5} />
+        ))}
+      </>,
     );
   }
   if (shape.type === "highlight" && pts[0]) {

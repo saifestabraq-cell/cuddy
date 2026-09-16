@@ -182,6 +182,7 @@ interface AppState {
   studioColor: string;
   selectedShapeId: string | null;
   studioPinArm: boolean;
+  studioHistory: StudioShape[][];
   loadStudio: () => Promise<void>;
   setStudioTool: (tool: StudioTool | null) => void;
   setStudioColor: (color: string) => void;
@@ -192,6 +193,8 @@ interface AppState {
   clearStudio: () => void;
   armPin: (on: boolean) => void;
   pinShapeToTrack: (id: string, trackId: number, pinPos: [number, number]) => void;
+  pushStudioHistory: () => void;
+  undoStudio: () => void;
 
   // Settings (API keys)
   apiKeySet: boolean; // Anthropic key configured
@@ -268,6 +271,7 @@ export const useStore = create<AppState>((set, get) => ({
   studioColor: "#F5C24B",
   selectedShapeId: null,
   studioPinArm: false,
+  studioHistory: [],
   apiKeySet: false,
   groqKeySet: false,
   aiProvider: "groq",
@@ -582,6 +586,7 @@ export const useStore = create<AppState>((set, get) => ({
       studioTool: null,
       selectedShapeId: null,
       studioPinArm: false,
+      studioHistory: [],
       composeSeed: null,
       matchData: null,
       matchDataError: null,
@@ -898,7 +903,20 @@ export const useStore = create<AppState>((set, get) => ({
   setStudioTool: (tool) =>
     set({ studioTool: tool, studioPinArm: false }),
   setStudioColor: (color) => set({ studioColor: color }),
+  pushStudioHistory: () =>
+    set((s) => ({ studioHistory: [...s.studioHistory.slice(-49), s.studioShapes] })),
+  undoStudio: () => {
+    const hist = get().studioHistory;
+    if (!hist.length) return;
+    set({
+      studioShapes: hist[hist.length - 1],
+      studioHistory: hist.slice(0, -1),
+      selectedShapeId: null,
+    });
+    queueStudioSave(get);
+  },
   addShape: (shape) => {
+    get().pushStudioHistory();
     set({ studioShapes: [...get().studioShapes, shape], selectedShapeId: shape.id });
     queueStudioSave(get);
   },
@@ -911,6 +929,7 @@ export const useStore = create<AppState>((set, get) => ({
     queueStudioSave(get);
   },
   deleteShape: (id) => {
+    get().pushStudioHistory();
     set({
       studioShapes: get().studioShapes.filter((s) => s.id !== id),
       selectedShapeId: get().selectedShapeId === id ? null : get().selectedShapeId,
@@ -919,11 +938,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
   selectShape: (id) => set({ selectedShapeId: id }),
   clearStudio: () => {
+    get().pushStudioHistory();
     set({ studioShapes: [], selectedShapeId: null, studioPinArm: false });
     queueStudioSave(get);
   },
   armPin: (on) => set({ studioPinArm: on }),
   pinShapeToTrack: (id, trackId, pinPos) => {
+    get().pushStudioHistory();
     set({
       studioShapes: get().studioShapes.map((s) =>
         s.id === id ? { ...s, pinnedTrackId: trackId, pinPos } : s,
