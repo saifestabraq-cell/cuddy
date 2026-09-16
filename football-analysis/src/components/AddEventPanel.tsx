@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../store";
 import { fmtClock } from "../lib/time";
+import SectionHeader from "./SectionHeader";
 
 interface Props {
   playheadMs: number;
@@ -91,12 +92,11 @@ export default function AddEventPanel({ playheadMs, disabled }: Props) {
 
   return (
     <div className="panel p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs uppercase tracking-wider text-mist-400">
-          Add event
-        </span>
-        {flash && <span className="text-[11px] text-teal-300">Added ✓</span>}
-      </div>
+      <SectionHeader
+        label="Add Event"
+        className="mb-3"
+        right={flash ? <span className="text-[11px] text-teal-300">Added ✓</span> : undefined}
+      />
 
       <div className="grid grid-cols-2 gap-2.5">
         <Field label="Time">

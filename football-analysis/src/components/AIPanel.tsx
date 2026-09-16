@@ -4,6 +4,7 @@ import { useStore } from "../store";
 import { api } from "../lib/api";
 import type { QueryResult } from "../lib/types";
 import { fmtClock } from "../lib/time";
+import SectionHeader from "./SectionHeader";
 
 type Mode = "ask" | "find";
 
@@ -87,17 +88,20 @@ export default function AIPanel() {
 
   return (
     <div className="panel p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs uppercase tracking-wider text-mist-400">Ask AI</span>
-        <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5">
-          <ModeTab label="Ask" active={mode === "ask"} onClick={() => switchMode("ask")} />
-          <ModeTab
-            label="Find clips"
-            active={mode === "find"}
-            onClick={() => switchMode("find")}
-          />
-        </div>
-      </div>
+      <SectionHeader
+        label="Ask AI"
+        className="mb-2"
+        right={
+          <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5">
+            <ModeTab label="Ask" active={mode === "ask"} onClick={() => switchMode("ask")} />
+            <ModeTab
+              label="Find clips"
+              active={mode === "find"}
+              onClick={() => switchMode("find")}
+            />
+          </div>
+        }
+      />
 
       {!aiKeySet && (
         <button

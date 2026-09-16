@@ -1,5 +1,6 @@
 import { useStore } from "../store";
 import type { StudioTool } from "../lib/types";
+import SectionHeader from "./SectionHeader";
 
 const TOOLS: { tool: StudioTool; label: string; hint: string }[] = [
   { tool: "arrow", label: "Arrow", hint: "Drag to draw an arrow" },
@@ -50,27 +51,30 @@ export default function StudioToolbar() {
 
   return (
     <div className="panel p-3">
-      <div className="flex items-center justify-between mb-2 px-0.5">
-        <span className="text-xs uppercase tracking-wider text-mist-400">Studio</span>
-        <div className="flex items-center gap-3">
-          <button
-            className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors disabled:opacity-40 disabled:hover:text-mist-400"
-            onClick={undoStudio}
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-          >
-            ↶ Undo
-          </button>
-          {shapes.length > 0 && (
+      <SectionHeader
+        label="Studio"
+        className="mb-2 px-0.5"
+        right={
+          <div className="flex items-center gap-3">
             <button
-              className="text-[11px] text-mist-400 hover:text-signal-live transition-colors"
-              onClick={clearStudio}
+              className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors disabled:opacity-40 disabled:hover:text-mist-400"
+              onClick={undoStudio}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
             >
-              Clear all
+              ↶ Undo
             </button>
-          )}
-        </div>
-      </div>
+            {shapes.length > 0 && (
+              <button
+                className="text-[11px] text-mist-400 hover:text-signal-live transition-colors"
+                onClick={clearStudio}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        }
+      />
 
       <div className="flex flex-wrap gap-1.5">
         {TOOLS.map((t) => (

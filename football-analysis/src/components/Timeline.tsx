@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useStore, useFilteredEvents } from "../store";
 import type { Category } from "../lib/types";
 import { fmtClock } from "../lib/time";
+import SectionHeader from "./SectionHeader";
 
 interface Props {
   durationMs: number;
@@ -73,14 +74,18 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
 
   return (
     <div className="panel p-3">
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-xs uppercase tracking-wider text-mist-400">
-          Timeline
-        </span>
-        <span className="text-xs text-mist-400 tabular-nums">
-          {fmtClock(playheadMs)} / {fmtClock(durationMs)}
-        </span>
-      </div>
+      <SectionHeader
+        label="Timeline"
+        className="mb-2 px-1"
+        right={
+          <span className="text-xs text-mist-400 tabular-nums">
+            {fmtClock(playheadMs)} / {fmtClock(durationMs)}
+          </span>
+        }
+      />
+      <p className="text-[10px] text-mist-500 px-1 mb-2">
+        click a marker to jump &amp; auto-fill the event form
+      </p>
 
       <div
         ref={trackRef}
