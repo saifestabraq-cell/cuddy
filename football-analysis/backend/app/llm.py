@@ -37,11 +37,12 @@ def _chat_groq(system: str, user: str, max_tokens: int) -> str:
         raise MissingApiKey(
             "No Groq API key configured. Add a free key in Settings to use AI chat."
         )
+    model = user_settings.get_model()
     resp = httpx.post(
         _GROQ_URL,
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
         json={
-            "model": user_settings.get_model(),
+            "model": model,
             "max_tokens": max_tokens,
             "messages": [
                 {"role": "system", "content": system},
@@ -50,9 +51,16 @@ def _chat_groq(system: str, user: str, max_tokens: int) -> str:
         },
         timeout=60.0,
     )
-    resp.raise_for_status()
+    if resp.status_code >= 400:
+        # Surface Groq's own message (e.g. a decommissioned model) so it's actionable.
+        detail = resp.text
+        try:
+            detail = resp.json().get("error", {}).get("message", detail)
+        except Exception:  # noqa: BLE001
+            pass
+        raise RuntimeError(f"Groq ({model}): {detail}")
     data = resp.json()
-    return (data["choices"][0]["message"]["content"] or "").strip()
+    return (data["choices"][0]["message"].get("content") or "").strip()
 
 
 def _chat_anthropic(system: str, user: str, max_tokens: int) -> str:

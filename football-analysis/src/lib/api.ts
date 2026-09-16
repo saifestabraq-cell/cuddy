@@ -155,6 +155,8 @@ export const api = {
   getJob: (jobId: string) => request<AnalysisJob>(`/jobs/${jobId}`),
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
+  pickVideoFile: () =>
+    request<{ path: string | null }>("/videos/pick", { method: "POST" }),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),

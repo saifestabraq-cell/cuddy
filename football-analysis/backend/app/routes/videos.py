@@ -44,6 +44,37 @@ def register_video(payload: VideoCreate, session: Session = Depends(get_session)
     return video
 
 
+@router.post("/pick")
+def pick_video_file():
+    """Open a native OS file-open dialog on the local machine and return the
+    chosen path. Lets the browser/dev app import a file by clicking rather than
+    pasting a path (the backend runs locally, so it can show a real dialog)."""
+    import subprocess
+    import sys
+
+    if sys.platform != "win32":
+        raise HTTPException(400, "Native file picker is only wired for Windows.")
+    ps = (
+        "Add-Type -AssemblyName System.Windows.Forms;"
+        "$f=New-Object System.Windows.Forms.OpenFileDialog;"
+        "$f.Filter='Video files|*.mp4;*.mov;*.mkv;*.avi;*.m4v;*.webm|All files|*.*';"
+        "$f.Title='Select a match video';"
+        "$f.Multiselect=$false;"
+        "if($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){[Console]::Out.Write($f.FileName)}"
+    )
+    try:
+        out = subprocess.run(
+            ["powershell", "-NoProfile", "-STA", "-Command", ps],
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(500, f"Could not open the file picker: {exc}") from exc
+    path = (out.stdout or "").strip()
+    return {"path": path or None}
+
+
 @router.get("/{video_id}", response_model=Video)
 def get_video(video_id: int, session: Session = Depends(get_session)):
     video = session.get(Video, video_id)

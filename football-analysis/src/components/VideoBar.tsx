@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useStore } from "../store";
-import { exportUrl, downloadText } from "../lib/api";
+import { exportUrl, downloadText, api } from "../lib/api";
 import { pickVideoFile, isTauri, baseName } from "../lib/platform";
 import type { CodingTemplate } from "../lib/types";
 
@@ -17,7 +17,14 @@ export default function VideoBar() {
     if (isTauri()) {
       const path = await pickVideoFile();
       if (path) await registerVideo(baseName(path), path);
-    } else {
+      return;
+    }
+    // Browser/dev: ask the local backend to open a native OS file dialog.
+    try {
+      const { path } = await api.pickVideoFile();
+      if (path) await registerVideo(baseName(path), path);
+    } catch {
+      // Fallback to the manual path input if the picker isn't available.
       setImporting((v) => !v);
     }
   };

@@ -19,17 +19,9 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     const [time, setTime] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [enhance, setEnhance] = useState(false);
+    const [maximized, setMaximized] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const boxRef = useRef<HTMLDivElement>(null);
-    const panelRef = useRef<HTMLDivElement>(null);
-
-    const toggleFullscreen = () => {
-      const el = panelRef.current;
-      if (!el) return;
-      if (document.fullscreenElement) document.exitFullscreen();
-      else el.requestFullscreen?.();
-    };
 
     const tracks = useStore((s) => s.tracks);
     const overlay = useStore((s) => s.overlay);
@@ -156,6 +148,13 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
       setPan({ x: 0, y: 0 });
     }, [src]);
 
+    useEffect(() => {
+      if (!maximized) return;
+      const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMaximized(false);
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [maximized]);
+
     const clampPan = (x: number, y: number, z: number) => {
       const rect = boxRef.current?.getBoundingClientRect();
       const maxX = rect ? ((z - 1) * rect.width) / 2 : 0;
@@ -203,20 +202,18 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
 
     return (
       <div
-        ref={panelRef}
-        className="panel overflow-hidden flex flex-col shrink-0 [&:fullscreen]:justify-center [&:fullscreen]:bg-ink-900"
+        className={
+          maximized
+            ? "fixed inset-0 z-[60] bg-ink-900 flex flex-col justify-center overflow-hidden"
+            : "panel overflow-hidden flex flex-col shrink-0"
+        }
       >
-        {/* Sharpen convolution used by the Enhance toggle. */}
-        <svg width="0" height="0" className="absolute" aria-hidden>
-          <filter id="cuddy-sharpen">
-            <feConvolveMatrix
-              order="3 3"
-              preserveAlpha="true"
-              kernelMatrix="0 -0.6 0 -0.6 3.4 -0.6 0 -0.6 0"
-            />
-          </filter>
-        </svg>
-        <div ref={boxRef} className="relative bg-black aspect-video w-full overflow-hidden">
+        <div
+          ref={boxRef}
+          className={`relative bg-black w-full overflow-hidden ${
+            maximized ? "max-h-[calc(100vh-3.25rem)] aspect-video m-auto" : "aspect-video"
+          }`}
+        >
           {src ? (
             <>
               <div
@@ -230,11 +227,6 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
                   ref={ref}
                   src={src}
                   className="absolute inset-0 w-full h-full"
-                  style={{
-                    filter: enhance
-                      ? "url(#cuddy-sharpen) contrast(1.07) saturate(1.12) brightness(1.02)"
-                      : undefined,
-                  }}
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
                   onTimeUpdate={(e) => {
@@ -313,18 +305,10 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           <button
             className="btn px-2.5 mr-1"
             disabled={!src}
-            title="Maximize / fullscreen"
-            onClick={toggleFullscreen}
+            title={maximized ? "Exit maximize (Esc)" : "Maximize"}
+            onClick={() => setMaximized((v) => !v)}
           >
-            ⤢ Maximize
-          </button>
-          <button
-            className={`btn px-2.5 mr-1 ${enhance ? "bg-teal-500/25 text-mist-100" : ""}`}
-            disabled={!src}
-            title="Enhance: sharpen + boost contrast/colour (view only)"
-            onClick={() => setEnhance((v) => !v)}
-          >
-            Enhance
+            {maximized ? "⤡ Exit" : "⤢ Maximize"}
           </button>
           {/* Zoom */}
           <div className="flex items-center gap-1 mr-1">

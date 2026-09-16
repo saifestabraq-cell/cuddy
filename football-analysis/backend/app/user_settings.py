@@ -19,7 +19,7 @@ _FILENAME = "settings.json"
 # Default AI provider. Groq is free (OpenAI-compatible); Anthropic is optional.
 _DEFAULT_PROVIDER = "groq"
 _DEFAULT_MODELS = {
-    "groq": "llama-3.3-70b-versatile",
+    "groq": "openai/gpt-oss-120b",
     "anthropic": "claude-opus-5",
 }
 
