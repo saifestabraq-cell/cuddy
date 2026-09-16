@@ -259,7 +259,7 @@ export const useStore = create<AppState>((set, get) => ({
   requestSeekMs: null,
   analysisJob: null,
   tracks: null,
-  overlay: true,
+  overlay: false, // tracked-player circles off by default; toggle in Analyse panel
   segments: null,
   calibrationMode: false,
   calibrationPoints: [],
