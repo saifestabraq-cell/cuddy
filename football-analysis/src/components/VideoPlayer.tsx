@@ -22,6 +22,14 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     const [enhance, setEnhance] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const boxRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    const toggleFullscreen = () => {
+      const el = panelRef.current;
+      if (!el) return;
+      if (document.fullscreenElement) document.exitFullscreen();
+      else el.requestFullscreen?.();
+    };
 
     const tracks = useStore((s) => s.tracks);
     const overlay = useStore((s) => s.overlay);
@@ -194,7 +202,10 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     };
 
     return (
-      <div className="panel overflow-hidden flex flex-col shrink-0">
+      <div
+        ref={panelRef}
+        className="panel overflow-hidden flex flex-col shrink-0 [&:fullscreen]:justify-center [&:fullscreen]:bg-ink-900"
+      >
         {/* Sharpen convolution used by the Enhance toggle. */}
         <svg width="0" height="0" className="absolute" aria-hidden>
           <filter id="cuddy-sharpen">
@@ -299,6 +310,14 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             J K L · , . frame · [ ] nudge
           </span>
           <div className="flex-1" />
+          <button
+            className="btn px-2.5 mr-1"
+            disabled={!src}
+            title="Maximize / fullscreen"
+            onClick={toggleFullscreen}
+          >
+            ⤢ Maximize
+          </button>
           <button
             className={`btn px-2.5 mr-1 ${enhance ? "bg-teal-500/25 text-mist-100" : ""}`}
             disabled={!src}

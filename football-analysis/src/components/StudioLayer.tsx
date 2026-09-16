@@ -162,15 +162,15 @@ export default function StudioLayer({ getVideo, playing, ms }: Props) {
     if (!tool) return;
     const n = toNorm(e.clientX, e.clientY);
     if (tool === "link") {
-      // Each click adds a vertex snapped to (and pinned to) the nearest player,
-      // so the shape connects players and deforms as they move.
+      // Each click must land on a tracked player: the vertex pins to that
+      // player so the shape connects players and deforms as they move. Clicks
+      // that miss every player are ignored (no free-floating vertices).
       const hit = tracks ? nearestPlayerAt(tracks, curMs, n[0], n[1]) : null;
-      const pos = hit ? hit.pos : n;
-      const tid = hit ? hit.id : null;
+      if (!hit) return;
       setDraft((d) =>
         d && d.type === "link"
-          ? { ...d, geom: [...d.geom, pos], vertexTracks: [...(d.vertexTracks ?? []), tid] }
-          : { type: "link", geom: [pos], vertexTracks: [tid] },
+          ? { ...d, geom: [...d.geom, hit.pos], vertexTracks: [...(d.vertexTracks ?? []), hit.id] }
+          : { type: "link", geom: [hit.pos], vertexTracks: [hit.id] },
       );
       return;
     }
@@ -316,9 +316,6 @@ function ShapeView({
       {selected && pts.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r={7} fill="#fff" stroke={c} strokeWidth={2} />
       ))}
-      {shape.pinnedTrackId != null && pts[0] && (
-        <circle cx={pts[0][0]} cy={pts[0][1]} r={4} fill={c} stroke="#0A0C12" strokeWidth={1.5} />
-      )}
     </g>
   );
 
@@ -401,9 +398,10 @@ function ShapeView({
             strokeLinecap="round"
           />
         )}
-        {pts.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={9} fill={`${c}55`} stroke={c} strokeWidth={2.5} />
-        ))}
+        {(draft || selected) &&
+          pts.map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r={9} fill={`${c}55`} stroke={c} strokeWidth={2.5} />
+          ))}
       </>,
     );
   }

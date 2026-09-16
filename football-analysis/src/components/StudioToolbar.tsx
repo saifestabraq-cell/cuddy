@@ -110,7 +110,15 @@ export default function StudioToolbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-3">
+      <div className="flex items-center gap-2 mt-3 flex-wrap">
+        <button
+          className="btn h-7 py-0 disabled:opacity-40"
+          onClick={undoStudio}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          ↶ Undo
+        </button>
         <button
           className={`btn h-7 py-0 ${pinArm ? "bg-teal-500/25 text-mist-100" : ""}`}
           disabled={!canPin}
