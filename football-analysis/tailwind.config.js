@@ -7,11 +7,12 @@ export default {
         // Nocturne: a sharp, high-contrast dark blue-grey — not the old
         // low-contrast charcoal. Cooler and deeper, with clearer steps.
         ink: {
-          900: "#090B11", // app background (deep blue-black)
-          800: "#10131C", // panels
-          700: "#171B27", // raised cards
-          600: "#222739", // hover / strong border
-          500: "#313850", // hairline borders (more visible)
+          // Nocturne, lightened ~20% for a less heavy ground.
+          900: "#14161F", // app background
+          800: "#1C2029", // panels
+          700: "#262B37", // raised cards
+          600: "#343B4F", // hover / strong border
+          500: "#444C66", // hairline borders
         },
         mist: {
           100: "#F5F7FB", // primary text (crisp)

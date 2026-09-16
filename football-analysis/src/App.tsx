@@ -52,9 +52,9 @@ export default function App() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-ink-900 text-mist-100">
+    <div className="min-h-screen flex flex-col bg-ink-900 text-mist-100">
       <TitleBar />
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex">
         <Sidebar />
         <main className="flex-1 min-w-0 p-4">
           <AnimatePresence mode="wait">
@@ -64,7 +64,7 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="h-full grid place-items-center"
+                className="min-h-[70vh] grid place-items-center"
               >
                 <div className="text-center max-w-sm">
                   <div className="text-signal-live text-lg mb-2">
@@ -94,7 +94,7 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="h-full grid place-items-center"
+                className="min-h-[70vh] grid place-items-center"
               >
                 <div className="text-center max-w-sm">
                   <div className="text-mist-200 text-lg mb-2">
@@ -113,7 +113,6 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full"
               >
                 <Workspace />
               </motion.div>

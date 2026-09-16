@@ -40,7 +40,7 @@ export default function TitleBar() {
 
   return (
     <header
-      className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-ink-500/60 bg-ink-800/80 backdrop-blur"
+      className="h-11 shrink-0 sticky top-0 z-30 flex items-center justify-between px-4 border-b border-ink-500/60 bg-ink-800/80 backdrop-blur"
       // Lets the user drag the frameless Tauri window by the title bar.
       data-tauri-drag-region
     >

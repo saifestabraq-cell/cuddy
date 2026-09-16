@@ -7,10 +7,13 @@
 }
 
 html,
-body,
-#root {
-  height: 100%;
+body {
+  min-height: 100%;
   margin: 0;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 body {
@@ -21,7 +24,8 @@ body {
   text-rendering: optimizeLegibility;
   /* Desktop-app feel: no text selection except where useful. */
   user-select: none;
-  overflow: hidden;
+  /* Let the whole page scroll naturally instead of trapping panes. */
+  overflow-x: hidden;
 }
 
 /* Subtle, elegant scrollbars. */

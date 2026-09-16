@@ -195,7 +195,7 @@ export default function Workspace() {
 
   if (!currentProject) {
     return (
-      <div className="h-full grid place-items-center text-mist-300">
+      <div className="min-h-[70vh] grid place-items-center text-mist-300">
         Select or create a project to begin.
       </div>
     );
@@ -204,14 +204,14 @@ export default function Workspace() {
   const src = currentVideo ? streamUrl(currentVideo.id) : null;
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <VideoBar />
       <FilterBar />
       <MatchHero />
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
         {/* left: video + timeline + coding */}
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto pr-1">
+        <div className="flex flex-col gap-3">
           <VideoPlayer
             ref={videoRef}
             src={src}
@@ -234,7 +234,7 @@ export default function Workspace() {
         </div>
 
         {/* right: playlist + edit + dashboard + events */}
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto pr-1">
+        <div className="flex flex-col gap-3">
           <StatsDashboard />
           <PlaylistBar
             presenting={presenting}
