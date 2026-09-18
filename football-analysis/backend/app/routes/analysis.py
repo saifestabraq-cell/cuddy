@@ -432,6 +432,30 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
 
 # --- Structured, evidence-grounded query (planner -> deterministic -> LLM) ---
 
+# Cache deterministic query results keyed by (video, question, data signature).
+# When the underlying events/analytics change, the signature changes and the old
+# entry is bypassed. Caches structured evidence (incl. any explanation), never
+# provider prose as a source of truth (spec §45). Bounded, in-process.
+import hashlib as _hashlib
+from collections import OrderedDict as _OrderedDict
+
+_QUERY_CACHE: "_OrderedDict[str, dict]" = _OrderedDict()
+_QUERY_CACHE_MAX = 128
+
+
+def _data_signature(lite, relations, ap, sp) -> str:
+    parts = [
+        (e.id, e.start_ms, e.end_ms, e.source, e.reviewed, e.code) for e in lite
+    ]
+    mt = []
+    for p in (ap, sp):
+        try:
+            mt.append(p.stat().st_mtime_ns if p.is_file() else 0)
+        except OSError:
+            mt.append(0)
+    blob = json.dumps([parts, sorted(relations), mt], default=str, sort_keys=True)
+    return _hashlib.sha256(blob.encode()).hexdigest()[:16]
+
 
 @router.post("/videos/{video_id}/investigate")
 def investigate(
@@ -492,6 +516,14 @@ def investigate(
         if r.from_event_id in {e.id for e in events}
     ]
 
+    # Cache lookup: same question over the same data returns instantly and skips
+    # the provider call.
+    sig = _data_signature(lite, relations, ap, sp)
+    key = f"{video_id}|{payload.question.strip().lower()}|{sig}"
+    if key in _QUERY_CACHE:
+        _QUERY_CACHE.move_to_end(key)
+        return {**_QUERY_CACHE[key], "cached": True}
+
     query = plan_query(payload.question)
     pkg = resolve_query(
         payload.question, query, QueryContext(lite, analytics, shots, relations)
@@ -509,6 +541,12 @@ def investigate(
             pkg.warnings.append(f"Explanation unavailable: {type(exc).__name__}")
             result["warnings"] = pkg.warnings
     result["explanation"] = explanation
+    result["cached"] = False
+
+    _QUERY_CACHE[key] = result
+    _QUERY_CACHE.move_to_end(key)
+    while len(_QUERY_CACHE) > _QUERY_CACHE_MAX:
+        _QUERY_CACHE.popitem(last=False)
     return result
 
 

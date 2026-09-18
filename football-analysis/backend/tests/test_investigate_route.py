@@ -48,6 +48,23 @@ def test_investigate_returns_grounded_clips_without_llm(client, video):
     assert "middle_third" in body["query"]["zones"]
 
 
+def test_investigate_cache_hit_then_invalidation(client, video):
+    _ai_turnover(client, video, 10_000, ["middle third"])
+    q = {"question": "Show me turnovers in the middle third"}
+
+    first = client.post(f"/videos/{video}/investigate", json=q).json()
+    assert first["cached"] is False
+    second = client.post(f"/videos/{video}/investigate", json=q).json()
+    assert second["cached"] is True
+    assert second["events"] == first["events"]
+
+    # Adding an event changes the data signature -> cache is bypassed.
+    _ai_turnover(client, video, 20_000, ["middle third"])
+    third = client.post(f"/videos/{video}/investigate", json=q).json()
+    assert third["cached"] is False
+    assert len(third["events"]) == 2
+
+
 def test_investigate_no_match_is_honest(client, video):
     r = client.post(
         f"/videos/{video}/investigate",
