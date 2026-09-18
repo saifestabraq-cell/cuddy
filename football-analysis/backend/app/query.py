@@ -83,6 +83,12 @@ class EvidencePackage(BaseModel):
 FIRST_HALF_END_MS = 45 * 60 * 1000
 
 _INTENT_KEYWORDS: list[tuple[str, Intent]] = [
+    ("sequence", "sequence_lookup"),
+    ("leading to", "sequence_lookup"),
+    ("ending in", "sequence_lookup"),
+    ("build up to", "sequence_lookup"),
+    ("build-up to", "sequence_lookup"),
+    ("possession ending", "sequence_lookup"),
     ("turnover", "turnover_analysis"),
     ("lost the ball", "turnover_analysis"),
     ("lose the ball", "turnover_analysis"),
@@ -204,11 +210,13 @@ class EventLite:
 @dataclass
 class QueryContext:
     """Everything the engine may read. Analytics/shots are optional (may be
-    None when the video has not been analysed yet)."""
+    None when the video has not been analysed yet). `relations` are (from, to)
+    event-id pairs powering sequence lookups."""
 
     events: list[EventLite]
     analytics: Optional[dict] = None
     shots: Optional[dict] = None
+    relations: list[tuple[int, int]] = field(default_factory=list)
 
 
 def _text_of(ev: EventLite) -> str:
@@ -252,6 +260,66 @@ def _clip(ev: EventLite, reason: str = "") -> Clip:
     )
 
 
+def _resolve_sequences(
+    question: str, q: StructuredQuery, ctx: QueryContext
+) -> EvidencePackage:
+    """Reconstruct event chains from relations. If the query names a family
+    (e.g. "ending in a shot"), keep only sequences that contain it."""
+    pkg = EvidencePackage(question=question, query=q, summary="")
+    by_id = {e.id: e for e in ctx.events}
+    if not ctx.relations:
+        pkg.summary = "No event sequences recorded. Link related events first."
+        return pkg
+
+    # Follow from->to chains. Nodes that are a `to` but never a `from` start no
+    # chain; walk forward from each chain head (a `from` never seen as a `to`).
+    succ: dict[int, list[int]] = {}
+    tos: set[int] = set()
+    for a, b in ctx.relations:
+        succ.setdefault(a, []).append(b)
+        tos.add(b)
+    heads = [a for a in succ if a not in tos] or list(succ)
+
+    sequences: list[list[int]] = []
+    for head in heads:
+        chain: list[int] = [head]
+        cur = head
+        seen = {head}
+        while cur in succ:
+            nxt = succ[cur][0]
+            if nxt in seen:
+                break
+            chain.append(nxt)
+            seen.add(nxt)
+            cur = nxt
+        sequences.append(chain)
+
+    def contains_family(chain: list[int]) -> bool:
+        if not q.event_types:
+            return True
+        for eid in chain:
+            e = by_id.get(eid)
+            if e and football.family_of(e.code) in q.event_types:
+                return True
+        return False
+
+    kept = [c for c in sequences if contains_family(c)]
+    # Flatten to clips (deduped, time-ordered) for playback.
+    ids: list[int] = []
+    for c in kept:
+        for eid in c:
+            if eid not in ids and eid in by_id:
+                ids.append(eid)
+    events = sorted((by_id[i] for i in ids), key=lambda e: e.start_ms)
+    pkg.events = [e.id for e in events]
+    pkg.clips = [_clip(e, "sequence") for e in events]
+    label = (" ending in " + ", ".join(q.event_types)) if q.event_types else ""
+    pkg.summary = (
+        f"{len(kept)} sequence(s){label}." if kept else "No matching sequences found."
+    )
+    return pkg
+
+
 def resolve_query(question: str, q: StructuredQuery, ctx: QueryContext) -> EvidencePackage:
     """Answer a structured query deterministically from real data."""
     warnings: list[str] = []
@@ -262,6 +330,9 @@ def resolve_query(question: str, q: StructuredQuery, ctx: QueryContext) -> Evide
 
     metrics: list[Metric] = []
     pkg = EvidencePackage(question=question, query=q, summary="")
+
+    if q.intent == "sequence_lookup":
+        return _resolve_sequences(question, q, ctx)
 
     if q.intent == "metric_comparison" and q.metric == "xg":
         if ctx.shots and ctx.shots.get("team_xg"):

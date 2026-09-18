@@ -484,8 +484,18 @@ def investigate(
         except (ValueError, OSError):
             shots = None
 
+    from ..models import EventRelation
+
+    relations = [
+        (r.from_event_id, r.to_event_id)
+        for r in session.exec(select(EventRelation)).all()
+        if r.from_event_id in {e.id for e in events}
+    ]
+
     query = plan_query(payload.question)
-    pkg = resolve_query(payload.question, query, QueryContext(lite, analytics, shots))
+    pkg = resolve_query(
+        payload.question, query, QueryContext(lite, analytics, shots, relations)
+    )
 
     result = pkg.model_dump()
     # Optional prose over the evidence — additive, never the source of numbers.

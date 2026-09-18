@@ -82,6 +82,34 @@ def test_engine_xg_warns_when_missing():
     assert pkg.metrics == []
 
 
+def test_plan_sequence_lookup():
+    q = plan_query("Show me every sequence ending in a shot")
+    assert q.intent == "sequence_lookup"
+    assert "shot" in q.event_types
+
+
+def test_engine_sequence_lookup_filters_by_family():
+    events = [
+        EventLite(1, "Recovery", 0, 1000),
+        EventLite(2, "Pass", 2000, 3000),
+        EventLite(3, "Shot", 4000, 5000),
+        EventLite(4, "Recovery", 20000, 21000),
+        EventLite(5, "Pass", 22000, 23000),  # sequence with no shot
+    ]
+    relations = [(1, 2), (2, 3), (4, 5)]
+    q = plan_query("Show me sequences ending in a shot")
+    pkg = resolve_query("q", q, QueryContext(events=events, relations=relations))
+    assert pkg.events == [1, 2, 3]  # only the chain containing a shot
+    assert "1 sequence" in pkg.summary
+
+
+def test_engine_sequence_lookup_no_relations():
+    q = plan_query("Show me every sequence")
+    pkg = resolve_query("q", q, QueryContext(events=[EventLite(1, "Pass", 0, 1000)]))
+    assert pkg.clips == []
+    assert "No event sequences" in pkg.summary
+
+
 def test_engine_source_filter():
     q = plan_query("show me ai suggested passes")
     pkg = resolve_query("q", q, QueryContext(events=_events()))
