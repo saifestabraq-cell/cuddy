@@ -10,6 +10,7 @@ export default function ShotsPanel() {
   const shots = useStore((s) => s.shots);
   const computeShots = useStore((s) => s.computeShots);
   const tagShots = useStore((s) => s.tagShots);
+  const requestSeek = useStore((s) => s.requestSeek);
 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export default function ShotsPanel() {
             />
           </div>
 
-          <ShotMap shots={shots} />
+          <ShotMap shots={shots} onSeek={requestSeek} />
           <p className="text-[11px] text-mist-500">
             Dot size ∝ xG. Heuristic estimate — not a trained model.
           </p>

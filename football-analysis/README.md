@@ -95,4 +95,12 @@ detection/tracking/teams, positional heatmaps, possession/passing/shot
 analytics, and natural-language querying. See
 [docs/architecture.md](docs/architecture.md).
 
+- **Analyst workstation (in progress)** — event provenance (`EventRevision`,
+  `EventRelation`), an AI **review queue** (accept/reject with keyboard flow),
+  an evidence-grounded query engine (`/investigate`: deterministic clips +
+  metrics, LLM only explains — works with no AI key), a layered **timeline**
+  (manual vs AI lanes, zoom, scrub), honest per-metric **source labels**,
+  event-provenance in XML/CSV export, and **Findings** (observations linked to
+  evidence). DB head: migration `0005_finding`.
+
 > The CV stack is a separate install — see [docs/setup.md](docs/setup.md#cv--ml-dependencies-phase-2).

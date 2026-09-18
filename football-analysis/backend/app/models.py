@@ -115,11 +115,74 @@ class Event(SQLModel, table=True):
     # Lets re-analysis refresh only unreviewed auto events without touching the
     # analyst's manual or accepted ones.
     detector: Optional[str] = None
+    # Which analysis run produced this event (for AI events); None for manual.
+    # Lets derived outputs be traced to the run/config that generated them.
+    analysis_run_id: Optional[int] = Field(
+        default=None, foreign_key="analysisrun.id", index=True
+    )
 
     created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
     video: Optional[Video] = Relationship(back_populates="events")
     category: Optional[Category] = Relationship(back_populates="events")
+    revisions: list["EventRevision"] = Relationship(
+        back_populates="event",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class EventRevision(SQLModel, table=True):
+    """An immutable record of one change to an Event.
+
+    Every edit an analyst (or the system) makes to an Event appends a revision
+    holding the before/after values, so an AI suggestion is never silently
+    destroyed when it is corrected — the original is recoverable from history.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    event_id: int = Field(foreign_key="event.id", index=True)
+    previous_values: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    new_values: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    actor_type: str = "manual"  # "manual" | "system"
+    reason: str = ""
+    created_at: datetime = Field(default_factory=_utcnow)
+
+    event: Optional[Event] = Relationship(back_populates="revisions")
+
+
+class EventRelation(SQLModel, table=True):
+    """A typed link between two Events (e.g. a recovery that leads to a shot).
+
+    Powers lightweight sequence queries ("possessions ending in a shot") without
+    a second analytics system — relationships are data, not LLM inference.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    from_event_id: int = Field(foreign_key="event.id", index=True)
+    to_event_id: int = Field(foreign_key="event.id", index=True)
+    # e.g. follows | causes | assist_for | shot_from | turnover_to |
+    # possession_start | possession_end | same_sequence | related_clip
+    relation_type: str
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
+class Finding(SQLModel, table=True):
+    """An analyst-saved observation linked to its evidence.
+
+    e.g. "Repeated left-side turnovers in the first phase" tied to the events
+    and time range that support it. The lightweight basis for report generation
+    — it references events rather than duplicating them.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    video_id: int = Field(foreign_key="video.id", index=True)
+    title: str
+    description: str = ""
+    event_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+    start_ms: Optional[int] = None
+    end_ms: Optional[int] = None
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 class AnalysisRun(SQLModel, table=True):

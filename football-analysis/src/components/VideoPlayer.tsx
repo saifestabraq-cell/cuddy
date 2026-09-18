@@ -24,7 +24,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     const boxRef = useRef<HTMLDivElement>(null);
 
     const tracks = useStore((s) => s.tracks);
-    const overlay = useStore((s) => s.overlay);
+    const overlayMode = useStore((s) => s.overlayMode);
     const studioTool = useStore((s) => s.studioTool);
     const calibrationMode = useStore((s) => s.calibrationMode);
     const calibrationPoints = useStore((s) => s.calibrationPoints);
@@ -50,8 +50,12 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
         if (canvas.height !== ch) canvas.height = ch;
         ctx.clearRect(0, 0, cw, ch);
 
-        // detection overlay
-        if (overlay && tracks) {
+        // detection overlay — per-mode: players / ball / both / analysis
+        const showPlayers =
+          overlayMode === "players" || overlayMode === "both" || overlayMode === "analysis";
+        const showBall =
+          overlayMode === "ball" || overlayMode === "both" || overlayMode === "analysis";
+        if (overlayMode !== "off" && tracks) {
           const frame = nearestFrame(tracks.frames, ms);
           if (frame) {
             const sx = cw / tracks.width;
@@ -60,6 +64,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             ctx.textBaseline = "middle";
             for (const d of frame.dets) {
               const isBall = d.cls === 32;
+              if (isBall ? !showBall : !showPlayers) continue;
               const color = isBall ? BALL_COLOR : TEAM_COLORS[d.team] ?? "#8A90A0";
               const x = d.x * sx;
               const y = d.y * sy;
@@ -132,7 +137,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           });
         }
       },
-      [overlay, tracks, calibrationMode, calibrationPoints, nativeW, nativeH],
+      [overlayMode, tracks, calibrationMode, calibrationPoints, nativeW, nativeH],
     );
 
     useEffect(() => {

@@ -16,7 +16,7 @@
   6. Build the Tauri application (`npm run app:build`).
   7. Report the resulting installer path.
 
-  Run from the repository's football-analysis/ directory, or anywhere — the
+  Run from the repository's football-analysis/ directory, or anywhere - the
   script resolves paths relative to its own location.
 
 .EXAMPLE
@@ -98,10 +98,10 @@ if (-not $SkipBackend) {
     # silently-broken exe whose migrations fall back to create_all at runtime.
     Write-Host "  Verifying backend dependencies import..."
     & $py -c "from alembic import command, config; import torch, cv2, ultralytics, anthropic, sqlmodel, fastapi, uvicorn"
-    if ($LASTEXITCODE -ne 0) { throw "Backend dependency verification failed — a required package did not install." }
+    if ($LASTEXITCODE -ne 0) { throw "Backend dependency verification failed - a required package did not install." }
 
     # ---- 4. Build cuddy-backend.exe ---------------------------------------
-    Write-Step "Building cuddy-backend.exe (PyInstaller — several minutes)"
+    Write-Step "Building cuddy-backend.exe (PyInstaller - several minutes)"
     Push-Location $backend
     try {
         & $py -m PyInstaller cuddy-backend.spec --noconfirm --clean
@@ -125,7 +125,7 @@ if (-not $SkipBackend) {
     Write-Step "Skipping backend build (-SkipBackend)"
     $dest = Join-Path $binariesDir $sidecarName
     if (-not (Test-Path $dest)) {
-        throw "No existing sidecar at $dest — run without -SkipBackend first."
+        throw "No existing sidecar at $dest - run without -SkipBackend first."
     }
 }
 

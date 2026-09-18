@@ -22,6 +22,7 @@ from .routes import (
     descriptors,
     events,
     export,
+    findings,
     projects,
     settings as settings_routes,
     templates,
@@ -78,6 +79,7 @@ app.include_router(categories.router)
 app.include_router(descriptors.router)
 app.include_router(events.router)
 app.include_router(export.router)
+app.include_router(findings.router)
 app.include_router(templates.router)
 app.include_router(analysis.router)
 app.include_router(settings_routes.router)

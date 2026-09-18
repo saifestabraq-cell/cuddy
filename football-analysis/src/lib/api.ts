@@ -7,6 +7,10 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  EventRelation,
+  EventRevision,
+  EvidencePackage,
+  Finding,
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
@@ -15,11 +19,13 @@ import type {
   PlayerStatsDoc,
   Project,
   QueryResult,
+  ReportPayload,
   SegmentMap,
   SettingsStatus,
   ShotsData,
   StudioDoc,
   TracksData,
+  TracksWindow,
   ValidationResult,
   Video,
 } from "./types";
@@ -119,6 +125,57 @@ export const api = {
   deleteEvent: (id: number) =>
     request<void>(`/events/${id}`, { method: "DELETE" }),
 
+  // Review actions on AI suggestions (same canonical Event model)
+  acceptEvent: (id: number) =>
+    request<MatchEvent>(`/events/${id}/accept`, { method: "POST" }),
+  rejectEvent: (id: number) =>
+    request<void>(`/events/${id}/reject`, { method: "POST" }),
+
+  // Provenance trail (before/after values per edit), newest first
+  listRevisions: (id: number) =>
+    request<EventRevision[]>(`/events/${id}/revisions`),
+
+  // Event relations (sequences)
+  listRelations: (eventId: number) =>
+    request<EventRelation[]>(`/events/${eventId}/relations`),
+  createRelation: (
+    fromEventId: number,
+    toEventId: number,
+    relationType: string,
+  ) =>
+    request<EventRelation>(`/events/relations`, {
+      method: "POST",
+      body: JSON.stringify({
+        from_event_id: fromEventId,
+        to_event_id: toEventId,
+        relation_type: relationType,
+      }),
+    }),
+  deleteRelation: (relationId: number) =>
+    request<void>(`/events/relations/${relationId}`, { method: "DELETE" }),
+
+  // Findings (analyst observations linked to evidence)
+  listFindings: (videoId: number) =>
+    request<Finding[]>(`/videos/${videoId}/findings`),
+  createFinding: (
+    videoId: number,
+    input: {
+      title: string;
+      description?: string;
+      event_ids?: number[];
+      start_ms?: number | null;
+      end_ms?: number | null;
+    },
+  ) =>
+    request<Finding>(`/videos/${videoId}/findings`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  deleteFinding: (id: number) =>
+    request<void>(`/findings/${id}`, { method: "DELETE" }),
+  getReport: (videoId: number) =>
+    request<ReportPayload>(`/videos/${videoId}/report`),
+
   // Descriptors
   listDescriptorGroups: (projectId: number) =>
     request<DescriptorGroup[]>(`/descriptor-groups?project_id=${projectId}`),
@@ -158,6 +215,11 @@ export const api = {
   pickVideoFile: () =>
     request<{ path: string | null }>("/videos/pick", { method: "POST" }),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  // Windowed track access (spec §18): only frames near the playhead.
+  getTracksWindow: (videoId: number, startMs: number, endMs: number) =>
+    request<TracksWindow>(
+      `/videos/${videoId}/tracks/window?start_ms=${Math.max(0, Math.round(startMs))}&end_ms=${Math.round(endMs)}`,
+    ),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
 
@@ -201,6 +263,13 @@ export const api = {
     }),
   query: (videoId: number, question: string) =>
     request<QueryResult>(`/videos/${videoId}/query`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
+  // Structured, evidence-grounded query: deterministic clips/metrics first,
+  // optional LLM explanation. Works with no AI key.
+  investigate: (videoId: number, question: string) =>
+    request<EvidencePackage>(`/videos/${videoId}/investigate`, {
       method: "POST",
       body: JSON.stringify({ question }),
     }),

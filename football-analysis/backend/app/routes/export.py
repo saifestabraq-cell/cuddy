@@ -37,6 +37,14 @@ def _load(
     return video, events, cats
 
 
+def _labelled(parent: Element, group: str, text: str) -> None:
+    """A SportsCode/Nacsport <label><group/><text/></label> tag — the standard
+    way extra metadata rides along an instance, so provenance round-trips."""
+    label = SubElement(parent, "label")
+    SubElement(label, "group").text = group
+    SubElement(label, "text").text = text
+
+
 def _build_xml(video: Video, events: list[Event], cats: dict[int, Category]) -> bytes:
     root = Element("file")
     instances = SubElement(root, "ALL_INSTANCES")
@@ -50,6 +58,14 @@ def _build_xml(video: Video, events: list[Event], cats: dict[int, Category]) -> 
         for descriptor in ev.descriptors:
             label = SubElement(inst, "label")
             SubElement(label, "text").text = descriptor
+        # Provenance rides as grouped labels so the origin of each event survives
+        # the export (and is honest about being Cuddy-derived, not official).
+        _labelled(inst, "source", ev.source)
+        if ev.detector:
+            _labelled(inst, "detector", ev.detector)
+        if ev.confidence is not None:
+            _labelled(inst, "confidence", f"{ev.confidence:.3f}")
+        _labelled(inst, "reviewed", "true" if ev.reviewed else "false")
     return b'<?xml version="1.0" encoding="UTF-8"?>\n' + tostring(root, encoding="utf-8")
 
 
@@ -57,17 +73,18 @@ def _build_csv(events: list[Event], cats: dict[int, Category]) -> str:
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(
-        ["id", "code", "label", "start_s", "end_s", "duration_s",
-         "descriptors", "source", "confidence", "notes"]
+        ["id", "code", "category", "label", "start_s", "end_s", "duration_s",
+         "descriptors", "source", "detector", "confidence", "reviewed", "notes"]
     )
     for ev in events:
         code = cats[ev.category_id].name if ev.category_id in cats else ""
         writer.writerow([
-            ev.id, code, ev.label,
+            ev.id, code, code, ev.label,
             f"{ev.start_ms / 1000:.2f}", f"{ev.end_ms / 1000:.2f}",
             f"{(ev.end_ms - ev.start_ms) / 1000:.2f}",
-            "; ".join(ev.descriptors), ev.source,
-            "" if ev.confidence is None else f"{ev.confidence:.3f}", ev.notes,
+            "; ".join(ev.descriptors), ev.source, ev.detector or "",
+            "" if ev.confidence is None else f"{ev.confidence:.3f}",
+            "true" if ev.reviewed else "false", ev.notes,
         ])
     return buf.getvalue()
 

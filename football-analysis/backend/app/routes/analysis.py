@@ -22,7 +22,7 @@ from ..cv.analytics import compute_analytics
 from ..cv.pitch import autotag_final_third, build_pitch_data, build_player_heatmap
 from ..cv.shots import detect_shots
 from ..db import get_session
-from ..llm import answer_question, query_clips
+from ..llm import answer_question, explain_evidence, query_clips
 from ..models import Category, Event, Video
 from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
@@ -95,6 +95,26 @@ def get_tracks(video_id: int):
     if not path.is_file():
         raise HTTPException(404, "No analysis for this video yet")
     return FileResponse(path, media_type="application/json")
+
+
+@router.get("/videos/{video_id}/tracks/window")
+def get_tracks_window(video_id: int, start_ms: int, end_ms: int):
+    """Only the frames within [start_ms, end_ms] plus the track metadata.
+
+    Lets the overlay load a time window near the playhead instead of pulling the
+    whole match into browser memory (spec §18). Metadata mirrors /tracks/summary.
+    """
+    path = _tracks_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    if end_ms < start_ms:
+        raise HTTPException(422, "end_ms must be >= start_ms")
+    data = json.loads(path.read_text())
+    frames = [
+        f for f in data.get("frames", []) if start_ms <= f.get("t_ms", -1) <= end_ms
+    ]
+    meta = {k: v for k, v in data.items() if k != "frames"}
+    return meta | {"frames": frames, "window": [start_ms, end_ms], "n_total": len(data.get("frames", []))}
 
 
 @router.get("/videos/{video_id}/segments")
@@ -408,6 +428,126 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
                 "label": code_of(ev), "reason": str(c.get("reason", "")),
             })
     return {"summary": result.get("summary", ""), "clips": clips, "question": payload.question}
+
+
+# --- Structured, evidence-grounded query (planner -> deterministic -> LLM) ---
+
+# Cache deterministic query results keyed by (video, question, data signature).
+# When the underlying events/analytics change, the signature changes and the old
+# entry is bypassed. Caches structured evidence (incl. any explanation), never
+# provider prose as a source of truth (spec §45). Bounded, in-process.
+import hashlib as _hashlib
+from collections import OrderedDict as _OrderedDict
+
+_QUERY_CACHE: "_OrderedDict[str, dict]" = _OrderedDict()
+_QUERY_CACHE_MAX = 128
+
+
+def _data_signature(lite, relations, ap, sp) -> str:
+    parts = [
+        (e.id, e.start_ms, e.end_ms, e.source, e.reviewed, e.code) for e in lite
+    ]
+    mt = []
+    for p in (ap, sp):
+        try:
+            mt.append(p.stat().st_mtime_ns if p.is_file() else 0)
+        except OSError:
+            mt.append(0)
+    blob = json.dumps([parts, sorted(relations), mt], default=str, sort_keys=True)
+    return _hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+@router.post("/videos/{video_id}/investigate")
+def investigate(
+    video_id: int, payload: AskRequest, session: Session = Depends(get_session)
+):
+    """Answer a question with deterministic evidence + clips.
+
+    The clips and metrics come from real coded events / computed analytics via
+    the query engine — never from the LLM. The LLM (if a key is configured) only
+    adds a short explanation. Works fully offline without an AI key.
+    """
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+
+    from ..query import EventLite, QueryContext, plan_query, resolve_query
+
+    cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
+    events = session.exec(
+        select(Event).where(Event.video_id == video_id).order_by(Event.start_ms)
+    ).all()
+
+    def code_of(e: Event) -> str:
+        return (cats.get(e.category_id) if e.category_id else None) or e.label or "Event"
+
+    lite = [
+        EventLite(
+            id=e.id,
+            code=code_of(e),
+            start_ms=e.start_ms,
+            end_ms=e.end_ms,
+            source=e.source,
+            reviewed=e.reviewed,
+            descriptors=list(e.descriptors or []),
+        )
+        for e in events
+    ]
+
+    analytics = None
+    ap = _analytics_path(video_id)
+    if ap.is_file():
+        try:
+            analytics = json.loads(ap.read_text())
+        except (ValueError, OSError):
+            analytics = None
+    shots = None
+    sp = _shots_path(video_id)
+    if sp.is_file():
+        try:
+            shots = json.loads(sp.read_text())
+        except (ValueError, OSError):
+            shots = None
+
+    from ..models import EventRelation
+
+    relations = [
+        (r.from_event_id, r.to_event_id)
+        for r in session.exec(select(EventRelation)).all()
+        if r.from_event_id in {e.id for e in events}
+    ]
+
+    # Cache lookup: same question over the same data returns instantly and skips
+    # the provider call.
+    sig = _data_signature(lite, relations, ap, sp)
+    key = f"{video_id}|{payload.question.strip().lower()}|{sig}"
+    if key in _QUERY_CACHE:
+        _QUERY_CACHE.move_to_end(key)
+        return {**_QUERY_CACHE[key], "cached": True}
+
+    query = plan_query(payload.question)
+    pkg = resolve_query(
+        payload.question, query, QueryContext(lite, analytics, shots, relations)
+    )
+
+    result = pkg.model_dump()
+    # Optional prose over the evidence — additive, never the source of numbers.
+    explanation = None
+    if user_settings.has_llm_key():
+        try:
+            explanation = explain_evidence(
+                payload.question, json.dumps(result, default=str)
+            )
+        except Exception as exc:  # noqa: BLE001 - explanation is best-effort
+            pkg.warnings.append(f"Explanation unavailable: {type(exc).__name__}")
+            result["warnings"] = pkg.warnings
+    result["explanation"] = explanation
+    result["cached"] = False
+
+    _QUERY_CACHE[key] = result
+    _QUERY_CACHE.move_to_end(key)
+    while len(_QUERY_CACHE) > _QUERY_CACHE_MAX:
+        _QUERY_CACHE.popitem(last=False)
+    return result
 
 
 # --- Real match data from API-Football (score, formations, lineups, stats) ---

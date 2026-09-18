@@ -3,12 +3,15 @@ import { motion } from "framer-motion";
 import { useStore } from "../store";
 import { api } from "../lib/api";
 import SectionHeader from "./SectionHeader";
+import SourceBadge from "./SourceBadge";
 import { teamCode } from "./TeamBits";
 import type {
+  Analytics,
   MatchFixtureSummary,
   MatchTeam,
   PlayerHeatmap,
   PlayerStat,
+  ShotsData,
   TracksData,
 } from "../lib/types";
 
@@ -59,6 +62,8 @@ export default function StatsDashboard() {
   const currentVideoId = useStore((s) => s.currentVideoId);
   const assignments = useStore((s) => s.assignments);
   const assignPlayer = useStore((s) => s.assignPlayer);
+  const analytics = useStore((s) => s.analytics);
+  const shots = useStore((s) => s.shots);
 
   const [query, setQuery] = useState("");
   const [side, setSide] = useState<"both" | "home" | "away">("both");
@@ -172,7 +177,7 @@ export default function StatsDashboard() {
       {/* Team statistics (scoreline + KPIs live in the full-width MatchHero) */}
       <SectionHeader
         label="Team Statistics"
-        className="mb-2.5"
+        className="mb-1"
         right={
           <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/70 p-0.5">
             <SideTab label="Both" active={side === "both"} onClick={() => setSide("both")} />
@@ -181,6 +186,9 @@ export default function StatsDashboard() {
           </div>
         }
       />
+      <div className="mb-2.5">
+        <SourceBadge source="official_match_data" />
+      </div>
 
       {statKeys.length > 0 && side === "both" && (
         <>
@@ -208,6 +216,10 @@ export default function StatsDashboard() {
           ))}
         </div>
       )}
+
+      {/* Cuddy video-derived analytics — clearly separated from official data
+          and labelled by how each number was produced (spec §13/§58). */}
+      <CuddyAnalysisSection homeCode={homeCode} awayCode={awayCode} analytics={analytics} shots={shots} />
 
       {/* Lineups — both XIs for "Both", one otherwise. Names are clickable to
           show that player's real match stats (once loaded). */}
@@ -552,6 +564,92 @@ function MiniHeatmap({ hm }: { hm: PlayerHeatmap }) {
         {hm.n_points} tracked positions · approximate spatial layer, not measured data.
       </p>
     </div>
+  );
+}
+
+/** Video-derived metrics, each tagged with how it was produced. Kept visually
+ *  distinct from the official API-Football table above so the two data sources
+ *  are never conflated. */
+function CuddyAnalysisSection({
+  homeCode,
+  awayCode,
+  analytics,
+  shots,
+}: {
+  homeCode: string;
+  awayCode: string;
+  analytics: Analytics | null;
+  shots: ShotsData | null;
+}) {
+  const rows: { label: string; value: string; source: string }[] = [];
+  if (analytics?.possession_pct) {
+    const p = analytics.possession_pct;
+    rows.push({
+      label: "Possession",
+      value: `${Math.round(p["0"])}% / ${Math.round(p["1"])}%`,
+      source: "heuristic",
+    });
+  }
+  if (analytics?.passes) {
+    rows.push({
+      label: "Passes",
+      value: `${analytics.passes["0"]} / ${analytics.passes["1"]}`,
+      source: "heuristic",
+    });
+  }
+  if (analytics && typeof analytics.turnovers === "number") {
+    rows.push({ label: "Turnovers", value: String(analytics.turnovers), source: "heuristic" });
+  }
+  if (shots?.team_xg) {
+    rows.push({
+      label: "xG",
+      value: `${shots.team_xg["0"].toFixed(2)} / ${shots.team_xg["1"].toFixed(2)}`,
+      source: "cuddy_video_analysis",
+    });
+  }
+  if (shots?.team_shots) {
+    rows.push({
+      label: "Shots (detected)",
+      value: `${shots.team_shots["0"]} / ${shots.team_shots["1"]}`,
+      source: "cuddy_video_analysis",
+    });
+  }
+
+  return (
+    <>
+      <SectionHeader
+        label="Cuddy Video Analysis"
+        className="mt-5 mb-1"
+        right={
+          <span className="text-[10px] uppercase tracking-wide text-mist-500">
+            {homeCode} / {awayCode}
+          </span>
+        }
+      />
+      {rows.length === 0 ? (
+        <p className="text-xs text-mist-400">
+          Run analysis to compute video-derived metrics (possession, xG, turnovers).
+          These are approximate, not official data.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((r) => (
+            <div
+              key={r.label}
+              className="flex items-center justify-between card px-2.5 py-1.5 text-sm"
+            >
+              <span className="text-mist-300 text-[11px] uppercase tracking-wide">
+                {r.label}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="tabular-nums text-mist-100">{r.value}</span>
+                <SourceBadge source={r.source} />
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 

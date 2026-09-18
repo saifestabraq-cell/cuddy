@@ -60,7 +60,69 @@ export interface MatchEvent {
   source: EventSource;
   confidence: number | null;
   reviewed: boolean;
+  detector: string | null;
+  analysis_run_id: number | null;
   created_at: string;
+  updated_at: string;
+}
+
+/** One recorded change to an event (before/after), for the provenance trail. */
+export interface EventRevision {
+  id: number;
+  event_id: number;
+  previous_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
+  actor_type: "manual" | "system";
+  reason: string;
+  created_at: string;
+}
+
+export type EventRelationType =
+  | "follows"
+  | "causes"
+  | "assist_for"
+  | "shot_from"
+  | "turnover_to"
+  | "possession_start"
+  | "possession_end"
+  | "same_sequence"
+  | "related_clip";
+
+/** A typed link between two events (powers sequence queries). */
+export interface EventRelation {
+  id: number;
+  from_event_id: number;
+  to_event_id: number;
+  relation_type: EventRelationType | string;
+  created_at: string;
+}
+
+/** An analyst observation linked to its supporting events + time range. */
+export interface Finding {
+  id: number;
+  video_id: number;
+  title: string;
+  description: string;
+  event_ids: number[];
+  start_ms: number | null;
+  end_ms: number | null;
+  created_at: string;
+}
+
+/** Structured report payload (spec §56) — findings + resolved evidence clips. */
+export interface ReportPayload {
+  title: string;
+  generated_at: string;
+  match: Record<string, unknown> | null;
+  findings: {
+    id: number;
+    title: string;
+    description: string;
+    start_ms: number | null;
+    end_ms: number | null;
+    clips: { event_id: number; label: string; start_ms: number; end_ms: number; source: string }[];
+  }[];
+  notes: string;
 }
 
 // Portable coding template (categories + descriptor groups).
@@ -112,6 +174,17 @@ export interface TracksData {
   teams: number;
   frames: TrackFrame[];
 }
+
+/** A time-windowed slice of tracks (spec §18): metadata + only the frames in
+ *  [window[0], window[1]], to avoid loading the whole match into memory. */
+export interface TracksWindow extends TracksData {
+  window: [number, number];
+  n_total: number;
+}
+
+/** Video overlay mode (spec §19). "analysis" adds the spatial layer on top of
+ *  players+ball where available. */
+export type OverlayMode = "off" | "players" | "ball" | "both" | "analysis";
 
 // --- Studio: telestration graphics drawn over the video ---
 
@@ -274,6 +347,64 @@ export interface QueryResult {
   summary: string;
   clips: QueryClip[];
   question: string;
+}
+
+// --- Structured, evidence-grounded query (deterministic engine) ---
+
+export type QueryIntent =
+  | "metric_comparison"
+  | "event_lookup"
+  | "event_count"
+  | "event_filter"
+  | "sequence_lookup"
+  | "shot_analysis"
+  | "possession_analysis"
+  | "pass_analysis"
+  | "turnover_analysis"
+  | "zone_analysis"
+  | "player_analysis"
+  | "time_range_analysis"
+  | "clip_lookup";
+
+export interface StructuredQuery {
+  intent: QueryIntent;
+  team: "home" | "away" | "both" | null;
+  period: number | null;
+  zones: string[];
+  event_types: string[];
+  source: EventSource | null;
+  reviewed: boolean | null;
+  time_range_ms: [number, number] | null;
+  metric: string | null;
+  wants_clips: boolean;
+  limit: number;
+}
+
+export interface EvidenceMetric {
+  label: string;
+  value: number | string;
+  /** e.g. cuddy_video_analysis | heuristic | approximate_cv | official_match_data */
+  source: string;
+}
+
+export interface EvidenceClip {
+  event_id: number;
+  start_ms: number;
+  end_ms: number;
+  label: string;
+  reason: string;
+}
+
+/** Deterministic evidence package; `explanation` is optional LLM prose over it. */
+export interface EvidencePackage {
+  question: string;
+  query: StructuredQuery;
+  summary: string;
+  metrics: EvidenceMetric[];
+  events: number[];
+  clips: EvidenceClip[];
+  warnings: string[];
+  explanation: string | null;
 }
 
 export interface ValidationResult {

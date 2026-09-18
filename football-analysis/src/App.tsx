@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useStore } from "./store";
 import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
@@ -14,6 +14,7 @@ const STAGE_MESSAGE: Record<string, string> = {
 export default function App() {
   const { checkHealth, loadProjects, health, resetHealthCheck, refreshSettings } =
     useStore();
+  const reducedMotion = useStore((s) => s.reducedMotion);
 
   useEffect(() => {
     // Poll health until online, then load projects. Stops polling once the
@@ -52,6 +53,7 @@ export default function App() {
   };
 
   return (
+    <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
     <div className="min-h-screen flex flex-col bg-ink-900 text-mist-100">
       <TitleBar />
       <div className="flex-1 flex">
@@ -122,5 +124,6 @@ export default function App() {
       </div>
       <SettingsPanel />
     </div>
+    </MotionConfig>
   );
 }

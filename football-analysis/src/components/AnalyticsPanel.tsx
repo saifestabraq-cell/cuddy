@@ -8,6 +8,7 @@ export default function AnalyticsPanel() {
   const analytics = useStore((s) => s.analytics);
   const computeAnalytics = useStore((s) => s.computeAnalytics);
   const tagTurnovers = useStore((s) => s.tagTurnovers);
+  const requestSeek = useStore((s) => s.requestSeek);
 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -76,26 +77,34 @@ export default function AnalyticsPanel() {
             <Stat label="Turnovers" value={analytics.turnovers} />
           </div>
 
-          {/* top pass combinations */}
+          {/* top pass combinations — click to jump to that pass in the video */}
           {analytics.pass_edges.length > 0 && (
             <div>
               <div className="text-[11px] uppercase text-mist-400 mb-1">
                 Top pass combinations
               </div>
               <div className="flex flex-col gap-1">
-                {analytics.pass_edges.slice(0, 5).map((e, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 text-xs text-mist-200"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ background: TEAM_COLORS[e.team] }}
-                    />
-                    #{e.from} → #{e.to}
-                    <span className="text-mist-400">×{e.count}</span>
-                  </div>
-                ))}
+                {analytics.pass_edges.slice(0, 5).map((e, i) => {
+                  const first = analytics.pass_events.find(
+                    (p) => p.team === e.team && p.from === e.from && p.to === e.to,
+                  );
+                  return (
+                    <button
+                      key={i}
+                      disabled={!first}
+                      onClick={() => first && requestSeek(first.t_ms)}
+                      title={first ? "Jump to this pass" : "No clip for this pass"}
+                      className="flex items-center gap-2 text-xs text-mist-200 text-left rounded px-1 -mx-1 hover:bg-ink-600 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ background: TEAM_COLORS[e.team] }}
+                      />
+                      #{e.from} → #{e.to}
+                      <span className="text-mist-400">×{e.count}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

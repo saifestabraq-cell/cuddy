@@ -1,7 +1,7 @@
 # Cuddy — full project context bundle
 
 > Single-file dump of the entire Cuddy repository (docs + all source), generated for handing complete context to an AI model with no repo access.
-> Generated: 2026-09-18T00:05:38Z · Branch: feat/production-packaging · Commit: 3e2030b
+> Generated: 2026-09-18T21:43:45Z · Branch: feat/analyst-workstation · Commit: 522e153
 > Excludes: node_modules, .venv, build targets, binaries (models/images/fonts), and lock files (package-lock.json, Cargo.lock).
 
 ---
@@ -21,106 +21,123 @@
 11. `football-analysis/backend/alembic/versions/0001_baseline.py`
 12. `football-analysis/backend/alembic/versions/0002_analysis_run.py`
 13. `football-analysis/backend/alembic/versions/0003_event_detector.py`
-14. `football-analysis/backend/app/__init__.py`
-15. `football-analysis/backend/app/__main__.py`
-16. `football-analysis/backend/app/config.py`
-17. `football-analysis/backend/app/cv/__init__.py`
-18. `football-analysis/backend/app/cv/analytics.py`
-19. `football-analysis/backend/app/cv/events.py`
-20. `football-analysis/backend/app/cv/pipeline.py`
-21. `football-analysis/backend/app/cv/pitch.py`
-22. `football-analysis/backend/app/cv/segmentation.py`
-23. `football-analysis/backend/app/cv/shots.py`
-24. `football-analysis/backend/app/db.py`
-25. `football-analysis/backend/app/jobs.py`
-26. `football-analysis/backend/app/llm.py`
-27. `football-analysis/backend/app/logging_setup.py`
-28. `football-analysis/backend/app/main.py`
-29. `football-analysis/backend/app/migrations.py`
-30. `football-analysis/backend/app/models.py`
-31. `football-analysis/backend/app/pipeline.py`
-32. `football-analysis/backend/app/providers/__init__.py`
-33. `football-analysis/backend/app/providers/apifootball.py`
-34. `football-analysis/backend/app/routes/__init__.py`
-35. `football-analysis/backend/app/routes/analysis.py`
-36. `football-analysis/backend/app/routes/categories.py`
-37. `football-analysis/backend/app/routes/descriptors.py`
-38. `football-analysis/backend/app/routes/events.py`
-39. `football-analysis/backend/app/routes/export.py`
-40. `football-analysis/backend/app/routes/projects.py`
-41. `football-analysis/backend/app/routes/settings.py`
-42. `football-analysis/backend/app/routes/templates.py`
-43. `football-analysis/backend/app/routes/videos.py`
-44. `football-analysis/backend/app/schemas.py`
-45. `football-analysis/backend/app/user_settings.py`
-46. `football-analysis/backend/cuddy-backend.spec`
-47. `football-analysis/backend/requirements-cv.txt`
-48. `football-analysis/backend/requirements.txt`
-49. `football-analysis/backend/sidecar_entry.py`
-50. `football-analysis/backend/validation/__init__.py`
-51. `football-analysis/backend/validation/harness.py`
-52. `football-analysis/backend/validation/run.py`
-53. `football-analysis/backend/validation/service.py`
-54. `football-analysis/docs/architecture.md`
-55. `football-analysis/docs/running-on-a-new-machine.md`
-56. `football-analysis/docs/setup.md`
-57. `football-analysis/index.html`
-58. `football-analysis/package.json`
-59. `football-analysis/postcss.config.js`
-60. `football-analysis/scripts/build-windows.ps1`
-61. `football-analysis/src-tauri/Cargo.toml`
-62. `football-analysis/src-tauri/build.rs`
-63. `football-analysis/src-tauri/capabilities/default.json`
-64. `football-analysis/src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml`
-65. `football-analysis/src-tauri/icons/android/values/ic_launcher_background.xml`
-66. `football-analysis/src-tauri/src/lib.rs`
-67. `football-analysis/src-tauri/src/main.rs`
-68. `football-analysis/src-tauri/tauri.conf.json`
-69. `football-analysis/src/App.tsx`
-70. `football-analysis/src/components/AIPanel.tsx`
-71. `football-analysis/src/components/AddEventPanel.tsx`
-72. `football-analysis/src/components/AnalysisTabs.tsx`
-73. `football-analysis/src/components/AnalyticsPanel.tsx`
-74. `football-analysis/src/components/AnalyzePanel.tsx`
-75. `football-analysis/src/components/Dashboard.tsx`
-76. `football-analysis/src/components/DescriptorManager.tsx`
-77. `football-analysis/src/components/EventEditPanel.tsx`
-78. `football-analysis/src/components/EventList.tsx`
-79. `football-analysis/src/components/FilterBar.tsx`
-80. `football-analysis/src/components/HeatmapView.tsx`
-81. `football-analysis/src/components/MatchHero.tsx`
-82. `football-analysis/src/components/PitchPanel.tsx`
-83. `football-analysis/src/components/PlaylistBar.tsx`
-84. `football-analysis/src/components/SectionHeader.tsx`
-85. `football-analysis/src/components/SettingsPanel.tsx`
-86. `football-analysis/src/components/ShotMap.tsx`
-87. `football-analysis/src/components/ShotsPanel.tsx`
-88. `football-analysis/src/components/Sidebar.tsx`
-89. `football-analysis/src/components/StatsDashboard.tsx`
-90. `football-analysis/src/components/StudioLayer.tsx`
-91. `football-analysis/src/components/StudioToolbar.tsx`
-92. `football-analysis/src/components/TeamBits.tsx`
-93. `football-analysis/src/components/Timeline.tsx`
-94. `football-analysis/src/components/TitleBar.tsx`
-95. `football-analysis/src/components/ValidationPanel.tsx`
-96. `football-analysis/src/components/VideoBar.tsx`
-97. `football-analysis/src/components/VideoPlayer.tsx`
-98. `football-analysis/src/components/Workspace.tsx`
-99. `football-analysis/src/index.css`
-100. `football-analysis/src/lib/api.ts`
-101. `football-analysis/src/lib/platform.ts`
-102. `football-analysis/src/lib/time.ts`
-103. `football-analysis/src/lib/tracks.ts`
-104. `football-analysis/src/lib/types.ts`
-105. `football-analysis/src/main.tsx`
-106. `football-analysis/src/store.ts`
-107. `football-analysis/src/vite-env.d.ts`
-108. `football-analysis/tailwind.config.js`
-109. `football-analysis/tsconfig.json`
-110. `football-analysis/tsconfig.node.json`
-111. `football-analysis/vite.config.ts`
+14. `football-analysis/backend/alembic/versions/0004_event_provenance.py`
+15. `football-analysis/backend/alembic/versions/0005_finding.py`
+16. `football-analysis/backend/app/__init__.py`
+17. `football-analysis/backend/app/__main__.py`
+18. `football-analysis/backend/app/config.py`
+19. `football-analysis/backend/app/cv/__init__.py`
+20. `football-analysis/backend/app/cv/analytics.py`
+21. `football-analysis/backend/app/cv/events.py`
+22. `football-analysis/backend/app/cv/pipeline.py`
+23. `football-analysis/backend/app/cv/pitch.py`
+24. `football-analysis/backend/app/cv/segmentation.py`
+25. `football-analysis/backend/app/cv/shots.py`
+26. `football-analysis/backend/app/db.py`
+27. `football-analysis/backend/app/football.py`
+28. `football-analysis/backend/app/jobs.py`
+29. `football-analysis/backend/app/llm.py`
+30. `football-analysis/backend/app/logging_setup.py`
+31. `football-analysis/backend/app/main.py`
+32. `football-analysis/backend/app/migrations.py`
+33. `football-analysis/backend/app/models.py`
+34. `football-analysis/backend/app/pipeline.py`
+35. `football-analysis/backend/app/providers/__init__.py`
+36. `football-analysis/backend/app/providers/apifootball.py`
+37. `football-analysis/backend/app/query.py`
+38. `football-analysis/backend/app/routes/__init__.py`
+39. `football-analysis/backend/app/routes/analysis.py`
+40. `football-analysis/backend/app/routes/categories.py`
+41. `football-analysis/backend/app/routes/descriptors.py`
+42. `football-analysis/backend/app/routes/events.py`
+43. `football-analysis/backend/app/routes/export.py`
+44. `football-analysis/backend/app/routes/findings.py`
+45. `football-analysis/backend/app/routes/projects.py`
+46. `football-analysis/backend/app/routes/settings.py`
+47. `football-analysis/backend/app/routes/templates.py`
+48. `football-analysis/backend/app/routes/videos.py`
+49. `football-analysis/backend/app/schemas.py`
+50. `football-analysis/backend/app/user_settings.py`
+51. `football-analysis/backend/cuddy-backend.spec`
+52. `football-analysis/backend/requirements-cv.txt`
+53. `football-analysis/backend/requirements-dev.txt`
+54. `football-analysis/backend/requirements.txt`
+55. `football-analysis/backend/sidecar_entry.py`
+56. `football-analysis/backend/tests/conftest.py`
+57. `football-analysis/backend/tests/test_events_provenance.py`
+58. `football-analysis/backend/tests/test_export.py`
+59. `football-analysis/backend/tests/test_findings.py`
+60. `football-analysis/backend/tests/test_investigate_route.py`
+61. `football-analysis/backend/tests/test_query.py`
+62. `football-analysis/backend/tests/test_tracks_window.py`
+63. `football-analysis/backend/validation/__init__.py`
+64. `football-analysis/backend/validation/harness.py`
+65. `football-analysis/backend/validation/run.py`
+66. `football-analysis/backend/validation/service.py`
+67. `football-analysis/docs/architecture.md`
+68. `football-analysis/docs/running-on-a-new-machine.md`
+69. `football-analysis/docs/setup.md`
+70. `football-analysis/index.html`
+71. `football-analysis/package.json`
+72. `football-analysis/postcss.config.js`
+73. `football-analysis/scripts/build-windows.ps1`
+74. `football-analysis/src-tauri/Cargo.toml`
+75. `football-analysis/src-tauri/build.rs`
+76. `football-analysis/src-tauri/capabilities/default.json`
+77. `football-analysis/src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml`
+78. `football-analysis/src-tauri/icons/android/values/ic_launcher_background.xml`
+79. `football-analysis/src-tauri/src/lib.rs`
+80. `football-analysis/src-tauri/src/main.rs`
+81. `football-analysis/src-tauri/tauri.conf.json`
+82. `football-analysis/src/App.tsx`
+83. `football-analysis/src/components/AIPanel.tsx`
+84. `football-analysis/src/components/AddEventPanel.tsx`
+85. `football-analysis/src/components/AnalysisTabs.tsx`
+86. `football-analysis/src/components/AnalyticsPanel.tsx`
+87. `football-analysis/src/components/AnalyzePanel.tsx`
+88. `football-analysis/src/components/Dashboard.tsx`
+89. `football-analysis/src/components/DescriptorManager.tsx`
+90. `football-analysis/src/components/EventEditPanel.tsx`
+91. `football-analysis/src/components/EventList.tsx`
+92. `football-analysis/src/components/FilterBar.tsx`
+93. `football-analysis/src/components/FindingsPanel.tsx`
+94. `football-analysis/src/components/HeatmapView.tsx`
+95. `football-analysis/src/components/MatchHero.tsx`
+96. `football-analysis/src/components/PitchPanel.tsx`
+97. `football-analysis/src/components/PlaylistBar.tsx`
+98. `football-analysis/src/components/ReviewQueue.tsx`
+99. `football-analysis/src/components/SectionHeader.tsx`
+100. `football-analysis/src/components/SettingsPanel.tsx`
+101. `football-analysis/src/components/ShotMap.tsx`
+102. `football-analysis/src/components/ShotsPanel.tsx`
+103. `football-analysis/src/components/Sidebar.tsx`
+104. `football-analysis/src/components/SourceBadge.tsx`
+105. `football-analysis/src/components/StatsDashboard.tsx`
+106. `football-analysis/src/components/StudioLayer.tsx`
+107. `football-analysis/src/components/StudioToolbar.tsx`
+108. `football-analysis/src/components/TeamBits.tsx`
+109. `football-analysis/src/components/Timeline.tsx`
+110. `football-analysis/src/components/TitleBar.tsx`
+111. `football-analysis/src/components/ValidationPanel.tsx`
+112. `football-analysis/src/components/VideoBar.tsx`
+113. `football-analysis/src/components/VideoPlayer.tsx`
+114. `football-analysis/src/components/Workspace.tsx`
+115. `football-analysis/src/index.css`
+116. `football-analysis/src/lib/api.ts`
+117. `football-analysis/src/lib/confidence.ts`
+118. `football-analysis/src/lib/platform.ts`
+119. `football-analysis/src/lib/time.ts`
+120. `football-analysis/src/lib/tracks.ts`
+121. `football-analysis/src/lib/types.ts`
+122. `football-analysis/src/main.tsx`
+123. `football-analysis/src/store.ts`
+124. `football-analysis/src/vite-env.d.ts`
+125. `football-analysis/tailwind.config.js`
+126. `football-analysis/tsconfig.json`
+127. `football-analysis/tsconfig.node.json`
+128. `football-analysis/vite.config.ts`
 
-Total files: 111
+Total files: 128
 
 ---
 
@@ -204,17 +221,31 @@ redistributes media.
 
 - **Stack:** Tauri 2 (Rust shell) + React 18 / TypeScript / Vite / Tailwind /
   Zustand frontend + Python 3.12 FastAPI sidecar (SQLModel over SQLite) + a CV
-  stack (Ultralytics YOLO, ByteTrack, OpenCV, scikit-learn) + Anthropic LLM.
+  stack (Ultralytics YOLO, ByteTrack, OpenCV, scikit-learn) + a swappable LLM
+  (Groq by default, Anthropic optional).
 - **`Event.source`** (`"manual"` | `"ai"`) is the single unification point —
   manual and AI events are the same rows through the same endpoints. Do not fork
-  AI data into a separate store.
+  AI data into a separate store. Edits append an immutable **`EventRevision`**
+  (before/after), so an AI suggestion is never silently overwritten; accept
+  (`POST /events/{id}/accept`) / reject drive review; **`EventRelation`** links
+  events into sequences. A **`Finding`** is an analyst observation that
+  *references* events (never copies them).
+- **Evidence-first query:** the LLM is not the analytics engine.
+  `POST /videos/{id}/investigate` runs `plan_query` → `resolve_query`
+  (`backend/app/query.py`, deterministic, no network) to build real
+  clips/metrics from coded data, and only then asks the LLM to *explain* the
+  evidence. It works fully offline (no AI key). Football terms live in
+  `backend/app/football.py`.
 - Heavy CV imports (`torch`, `cv2`, `ultralytics`) stay lazy inside functions so
   the API starts fast.
 - AI-origin data is visually distinct in the UI (violet accent) and carries
-  confidence. Design tokens live in `tailwind.config.js`.
+  confidence. Every derived metric shows an honest source badge (Official /
+  Cuddy CV / Approx. CV / Heuristic) via `src/components/SourceBadge.tsx`.
+  Design tokens live in `tailwind.config.js`.
 - Keep the LLM provider swappable behind `backend/app/llm.py`; send compact,
   anonymized (numeric-ID) context, never raw video.
-- Schema changes ship as Alembic migrations (see `backend/alembic/`).
+- Schema changes ship as Alembic migrations (see `backend/alembic/`); head is
+  `0005_finding`. Migrations must be idempotent and preserve existing rows.
 
 ## Commands
 
@@ -233,7 +264,11 @@ Run from `football-analysis/`:
 - Backend data (SQLite, media, tracks, logs) lives under `%LOCALAPPDATA%\Cuddy`
   (override with `FA_DATA_DIR`); backend logs at
   `%LOCALAPPDATA%\Cuddy\logs\backend.log`.
-- Natural-language query needs `ANTHROPIC_API_KEY` in the backend environment.
+- Structured query + evidence/clips (`/investigate`) work with **no** LLM key.
+  A key (`GROQ_API_KEY`, or `ANTHROPIC_API_KEY` with `FA_LLM_PROVIDER=anthropic`)
+  only adds a written explanation over the already-computed evidence.
+- Backend tests: `cd backend && .venv/Scripts/python -m pytest tests/` (install
+  dev deps once with `pip install -r requirements-dev.txt`).
 - The packaged sidecar (`cuddy-backend.exe`, built from `backend/cuddy-backend.spec`)
   bundles the full CV/ML stack (CPU PyTorch) so the installed app needs no
   Python/Node/Rust. New backend code needs `npm run build:windows` (or at least
@@ -1068,6 +1103,14 @@ detection/tracking/teams, positional heatmaps, possession/passing/shot
 analytics, and natural-language querying. See
 [docs/architecture.md](docs/architecture.md).
 
+- **Analyst workstation (in progress)** — event provenance (`EventRevision`,
+  `EventRelation`), an AI **review queue** (accept/reject with keyboard flow),
+  an evidence-grounded query engine (`/investigate`: deterministic clips +
+  metrics, LLM only explains — works with no AI key), a layered **timeline**
+  (manual vs AI lanes, zoom, scrub), honest per-metric **source labels**,
+  event-provenance in XML/CSV export, and **Findings** (observations linked to
+  evidence). DB head: migration `0005_finding`.
+
 > The CV stack is a separate install — see [docs/setup.md](docs/setup.md#cv--ml-dependencies-phase-2).
 ```
 
@@ -1375,6 +1418,163 @@ def upgrade() -> None:
 def downgrade() -> None:
     with op.batch_alter_table("event") as batch:
         batch.drop_column("detector")
+```
+
+
+## `football-analysis/backend/alembic/versions/0004_event_provenance.py`
+
+```python
+"""Add event provenance: updated_at + analysis_run_id, revisions, relations.
+
+Revision ID: 0004_event_provenance
+Revises: 0003_event_detector
+Create Date: 2026-09-18
+
+Additive and backwards-compatible: existing rows keep their data, older
+projects still open. New Event columns are backfilled (updated_at := created_at),
+and the two new tables are created only if absent.
+"""
+
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "0004_event_provenance"
+down_revision = "0003_event_detector"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+
+    event_cols = {c["name"] for c in insp.get_columns("event")}
+
+    if "updated_at" not in event_cols:
+        with op.batch_alter_table("event") as batch:
+            batch.add_column(sa.Column("updated_at", sa.DateTime, nullable=True))
+        # Backfill: an event that has never been edited was last "updated" when
+        # it was created. Leave nothing NULL so ORM reads stay well-typed.
+        op.execute("UPDATE event SET updated_at = created_at WHERE updated_at IS NULL")
+
+    if "analysis_run_id" not in event_cols:
+        with op.batch_alter_table("event") as batch:
+            batch.add_column(sa.Column("analysis_run_id", sa.Integer, nullable=True))
+        op.create_index(
+            "ix_event_analysis_run_id", "event", ["analysis_run_id"], unique=False
+        )
+
+    existing_tables = set(insp.get_table_names())
+
+    if "eventrevision" not in existing_tables:
+        op.create_table(
+            "eventrevision",
+            sa.Column("id", sa.Integer, primary_key=True),
+            sa.Column(
+                "event_id",
+                sa.Integer,
+                sa.ForeignKey("event.id"),
+                nullable=False,
+                index=True,
+            ),
+            sa.Column("previous_values", sa.JSON, nullable=False),
+            sa.Column("new_values", sa.JSON, nullable=False),
+            sa.Column("actor_type", sa.String, nullable=False, server_default="manual"),
+            sa.Column("reason", sa.String, nullable=False, server_default=""),
+            sa.Column("created_at", sa.DateTime, nullable=False),
+        )
+
+    if "eventrelation" not in existing_tables:
+        op.create_table(
+            "eventrelation",
+            sa.Column("id", sa.Integer, primary_key=True),
+            sa.Column(
+                "from_event_id",
+                sa.Integer,
+                sa.ForeignKey("event.id"),
+                nullable=False,
+                index=True,
+            ),
+            sa.Column(
+                "to_event_id",
+                sa.Integer,
+                sa.ForeignKey("event.id"),
+                nullable=False,
+                index=True,
+            ),
+            sa.Column("relation_type", sa.String, nullable=False),
+            sa.Column("created_at", sa.DateTime, nullable=False),
+        )
+
+
+def downgrade() -> None:
+    insp = sa.inspect(op.get_bind())
+    existing_tables = set(insp.get_table_names())
+    if "eventrelation" in existing_tables:
+        op.drop_table("eventrelation")
+    if "eventrevision" in existing_tables:
+        op.drop_table("eventrevision")
+
+    event_cols = {c["name"] for c in insp.get_columns("event")}
+    with op.batch_alter_table("event") as batch:
+        if "analysis_run_id" in event_cols:
+            batch.drop_column("analysis_run_id")
+        if "updated_at" in event_cols:
+            batch.drop_column("updated_at")
+```
+
+
+## `football-analysis/backend/alembic/versions/0005_finding.py`
+
+```python
+"""Add the finding table (analyst observations linked to evidence).
+
+Revision ID: 0005_finding
+Revises: 0004_event_provenance
+Create Date: 2026-09-18
+
+Additive: creates one new table only, if absent. Existing data untouched.
+"""
+
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "0005_finding"
+down_revision = "0004_event_provenance"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    insp = sa.inspect(op.get_bind())
+    if "finding" not in set(insp.get_table_names()):
+        op.create_table(
+            "finding",
+            sa.Column("id", sa.Integer, primary_key=True),
+            sa.Column(
+                "video_id",
+                sa.Integer,
+                sa.ForeignKey("video.id"),
+                nullable=False,
+                index=True,
+            ),
+            sa.Column("title", sa.String, nullable=False),
+            sa.Column("description", sa.String, nullable=False, server_default=""),
+            sa.Column("event_ids", sa.JSON, nullable=False),
+            sa.Column("start_ms", sa.Integer, nullable=True),
+            sa.Column("end_ms", sa.Integer, nullable=True),
+            sa.Column("created_at", sa.DateTime, nullable=False),
+        )
+
+
+def downgrade() -> None:
+    insp = sa.inspect(op.get_bind())
+    if "finding" in set(insp.get_table_names()):
+        op.drop_table("finding")
 ```
 
 
@@ -2434,6 +2634,126 @@ def get_session() -> Iterator[Session]:
 ```
 
 
+## `football-analysis/backend/app/football.py`
+
+```python
+"""Shared football terminology + semantics.
+
+A single source of truth for zones, phases, event families and the team/period
+vocabulary, so the query planner, analytics and filters agree on the same words
+instead of scattering hard-coded strings across the codebase.
+
+Kept deliberately small and configurable — extend the maps here rather than
+inventing new strings elsewhere.
+"""
+
+from __future__ import annotations
+
+# --- Teams -----------------------------------------------------------------
+# Internally teams are 0 (home / "Team A") and 1 (away / "Team B").
+TEAM_HOME = 0
+TEAM_AWAY = 1
+TEAM_LABELS = {TEAM_HOME: "Team A", TEAM_AWAY: "Team B"}
+
+# Words an analyst uses for each side. "we/our/us" default to the home team.
+HOME_WORDS = ("home", "we", "our", "us", "ourselves", "team a")
+AWAY_WORDS = ("away", "they", "their", "them", "opponent", "opposition", "team b")
+
+
+# --- Zones -----------------------------------------------------------------
+# Thirds run along the length of the pitch (attack direction is +x for home).
+DEFENSIVE_THIRD = "defensive_third"
+MIDDLE_THIRD = "middle_third"
+FINAL_THIRD = "final_third"
+LEFT = "left"
+CENTER = "center"
+RIGHT = "right"
+
+THIRDS = (DEFENSIVE_THIRD, MIDDLE_THIRD, FINAL_THIRD)
+CHANNELS = (LEFT, CENTER, RIGHT)
+
+# Phrase -> canonical zone. Order matters: check longer phrases first.
+ZONE_PHRASES: dict[str, str] = {
+    "defensive third": DEFENSIVE_THIRD,
+    "defending third": DEFENSIVE_THIRD,
+    "own third": DEFENSIVE_THIRD,
+    "middle third": MIDDLE_THIRD,
+    "central third": MIDDLE_THIRD,
+    "midfield": MIDDLE_THIRD,
+    "final third": FINAL_THIRD,
+    "attacking third": FINAL_THIRD,
+    "opposition third": FINAL_THIRD,
+    "left side": LEFT,
+    "left wing": LEFT,
+    "left flank": LEFT,
+    "right side": RIGHT,
+    "right wing": RIGHT,
+    "right flank": RIGHT,
+    "central area": CENTER,
+    "centre": CENTER,
+    "center": CENTER,
+}
+
+
+def third_of_x(x: float, length: float, attack_positive: bool = True) -> str:
+    """Classify a pitch x-coordinate (metres) into a defensive/middle/final third.
+
+    `attack_positive` = the team attacks toward +x. For the away team the pitch
+    is mirrored, so the final third is the low-x end.
+    """
+    frac = x / length if length else 0.5
+    if not attack_positive:
+        frac = 1.0 - frac
+    if frac < 1 / 3:
+        return DEFENSIVE_THIRD
+    if frac < 2 / 3:
+        return MIDDLE_THIRD
+    return FINAL_THIRD
+
+
+def channel_of_y(y: float, width: float) -> str:
+    """Classify a pitch y-coordinate (metres) into left/center/right."""
+    frac = y / width if width else 0.5
+    if frac < 1 / 3:
+        return RIGHT  # low y = right when looking along +x
+    if frac < 2 / 3:
+        return CENTER
+    return LEFT
+
+
+# --- Phases ----------------------------------------------------------------
+PHASES = (
+    "possession",
+    "build_up",
+    "progression",
+    "final_third",
+    "transition",
+    "defensive",
+)
+
+
+# --- Event families --------------------------------------------------------
+# Canonical family -> the substrings that identify it in an event code/label.
+EVENT_FAMILIES: dict[str, tuple[str, ...]] = {
+    "pass": ("pass", "cross", "switch"),
+    "shot": ("shot", "strike", "effort", "header on goal"),
+    "goal": ("goal",),
+    "turnover": ("turnover", "loss", "lost ball", "giveaway", "dispossess"),
+    "recovery": ("recovery", "win", "regain", "interception", "tackle"),
+    "entry": ("entry", "final third entry", "box entry"),
+}
+
+
+def family_of(code: str) -> str | None:
+    """Best-effort event family from an event's code/label (case-insensitive)."""
+    low = (code or "").lower()
+    for family, needles in EVENT_FAMILIES.items():
+        if any(n in low for n in needles):
+            return family
+    return None
+```
+
+
 ## `football-analysis/backend/app/jobs.py`
 
 ```python
@@ -2623,6 +2943,27 @@ QUERY_SYSTEM = (
 )
 
 
+EXPLAIN_SYSTEM = (
+    "You are a football (soccer) match-analysis assistant. You are given a "
+    "question and an EVIDENCE package that was computed deterministically from "
+    "coded events and video analytics (summary, metrics with sources, matched "
+    "event count and clips). Write a short, plain explanation grounded ONLY in "
+    "this evidence. Do NOT invent numbers, events or clips beyond what is given. "
+    "If a metric is labelled heuristic or approximate, reflect that uncertainty. "
+    "Two or three sentences maximum."
+)
+
+
+def explain_evidence(question: str, evidence_json: str) -> str:
+    """Write prose over an already-computed evidence package. The analytics are
+    done; the LLM only explains. Never the source of the numbers."""
+    return _chat(
+        EXPLAIN_SYSTEM,
+        f"Question: {question}\n\nEvidence (JSON):\n{evidence_json}",
+        400,
+    )
+
+
 def query_clips(question: str, events_json: str) -> dict:
     """Translate a natural-language query into a selection of event clips + a
     one-line grounded summary. Context is the structured event record only."""
@@ -2734,6 +3075,7 @@ from .routes import (
     descriptors,
     events,
     export,
+    findings,
     projects,
     settings as settings_routes,
     templates,
@@ -2790,6 +3132,7 @@ app.include_router(categories.router)
 app.include_router(descriptors.router)
 app.include_router(events.router)
 app.include_router(export.router)
+app.include_router(findings.router)
 app.include_router(templates.router)
 app.include_router(analysis.router)
 app.include_router(settings_routes.router)
@@ -2974,11 +3317,74 @@ class Event(SQLModel, table=True):
     # Lets re-analysis refresh only unreviewed auto events without touching the
     # analyst's manual or accepted ones.
     detector: Optional[str] = None
+    # Which analysis run produced this event (for AI events); None for manual.
+    # Lets derived outputs be traced to the run/config that generated them.
+    analysis_run_id: Optional[int] = Field(
+        default=None, foreign_key="analysisrun.id", index=True
+    )
 
     created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
     video: Optional[Video] = Relationship(back_populates="events")
     category: Optional[Category] = Relationship(back_populates="events")
+    revisions: list["EventRevision"] = Relationship(
+        back_populates="event",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class EventRevision(SQLModel, table=True):
+    """An immutable record of one change to an Event.
+
+    Every edit an analyst (or the system) makes to an Event appends a revision
+    holding the before/after values, so an AI suggestion is never silently
+    destroyed when it is corrected — the original is recoverable from history.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    event_id: int = Field(foreign_key="event.id", index=True)
+    previous_values: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    new_values: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    actor_type: str = "manual"  # "manual" | "system"
+    reason: str = ""
+    created_at: datetime = Field(default_factory=_utcnow)
+
+    event: Optional[Event] = Relationship(back_populates="revisions")
+
+
+class EventRelation(SQLModel, table=True):
+    """A typed link between two Events (e.g. a recovery that leads to a shot).
+
+    Powers lightweight sequence queries ("possessions ending in a shot") without
+    a second analytics system — relationships are data, not LLM inference.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    from_event_id: int = Field(foreign_key="event.id", index=True)
+    to_event_id: int = Field(foreign_key="event.id", index=True)
+    # e.g. follows | causes | assist_for | shot_from | turnover_to |
+    # possession_start | possession_end | same_sequence | related_clip
+    relation_type: str
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
+class Finding(SQLModel, table=True):
+    """An analyst-saved observation linked to its evidence.
+
+    e.g. "Repeated left-side turnovers in the first phase" tied to the events
+    and time range that support it. The lightweight basis for report generation
+    — it references events rather than duplicating them.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    video_id: int = Field(foreign_key="video.id", index=True)
+    title: str
+    description: str = ""
+    event_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+    start_ms: Optional[int] = None
+    end_ms: Optional[int] = None
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 class AnalysisRun(SQLModel, table=True):
@@ -3614,6 +4020,395 @@ def fetch_match(query: str) -> dict:
 ```
 
 
+## `football-analysis/backend/app/query.py`
+
+```python
+"""Deterministic query planner + evidence engine.
+
+The architecture the spec mandates:
+
+    question -> QUERY PLANNER -> STRUCTURED QUERY -> DETERMINISTIC ANALYTICS
+             -> EVIDENCE PACKAGE -> (optional) LLM EXPLANATION
+
+The LLM is NOT the analytics engine. `plan_query` turns a natural-language
+question into a constrained `StructuredQuery` using rules (no network, no key),
+and `resolve_query` answers it from the actual coded events + computed
+analytics, returning events, metrics and clips that are all real. The LLM, when
+configured, only writes prose over this evidence — it can never invent a clip.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Literal, Optional
+
+from pydantic import BaseModel
+
+from . import football
+
+Intent = Literal[
+    "metric_comparison",
+    "event_lookup",
+    "event_count",
+    "event_filter",
+    "sequence_lookup",
+    "shot_analysis",
+    "possession_analysis",
+    "pass_analysis",
+    "turnover_analysis",
+    "zone_analysis",
+    "player_analysis",
+    "time_range_analysis",
+    "clip_lookup",
+]
+
+
+class StructuredQuery(BaseModel):
+    intent: Intent = "event_filter"
+    team: Optional[Literal["home", "away", "both"]] = None
+    period: Optional[int] = None  # 1 or 2
+    zones: list[str] = []
+    event_types: list[str] = []  # football families: pass/shot/turnover/...
+    source: Optional[Literal["manual", "ai"]] = None
+    reviewed: Optional[bool] = None
+    time_range_ms: Optional[tuple[int, int]] = None
+    metric: Optional[str] = None  # xg / possession / shots / passes / turnovers
+    wants_clips: bool = False
+    limit: int = 50
+
+
+class Metric(BaseModel):
+    label: str
+    value: float | int | str
+    source: str  # e.g. "cuddy_video_analysis", "heuristic", "approximate_cv"
+
+
+class Clip(BaseModel):
+    event_id: int
+    start_ms: int
+    end_ms: int
+    label: str
+    reason: str = ""
+
+
+class EvidencePackage(BaseModel):
+    question: str
+    query: StructuredQuery
+    summary: str
+    metrics: list[Metric] = []
+    events: list[int] = []  # matched event ids
+    clips: list[Clip] = []
+    warnings: list[str] = []
+
+
+# --- Planner ---------------------------------------------------------------
+
+# First half is conventionally 0..45' + stoppage; use 45:00 as the split when a
+# real period boundary is unknown. (Kept explicit rather than a magic number.)
+FIRST_HALF_END_MS = 45 * 60 * 1000
+
+_INTENT_KEYWORDS: list[tuple[str, Intent]] = [
+    ("sequence", "sequence_lookup"),
+    ("leading to", "sequence_lookup"),
+    ("ending in", "sequence_lookup"),
+    ("build up to", "sequence_lookup"),
+    ("build-up to", "sequence_lookup"),
+    ("possession ending", "sequence_lookup"),
+    ("turnover", "turnover_analysis"),
+    ("lost the ball", "turnover_analysis"),
+    ("lose the ball", "turnover_analysis"),
+    ("giveaway", "turnover_analysis"),
+    ("recovery", "event_filter"),
+    ("possession", "possession_analysis"),
+    ("pass network", "pass_analysis"),
+    ("passing", "pass_analysis"),
+    ("passes", "pass_analysis"),
+    ("xg", "metric_comparison"),
+    ("expected goals", "metric_comparison"),
+    ("shot", "shot_analysis"),
+    ("how many", "event_count"),
+    ("how often", "event_count"),
+]
+
+
+def _detect_team(q: str) -> Optional[str]:
+    if any(w in q for w in football.AWAY_WORDS):
+        return "away"
+    if any(w in q for w in football.HOME_WORDS):
+        return "home"
+    return None
+
+
+def _detect_zones(q: str) -> list[str]:
+    zones: list[str] = []
+    for phrase, zone in football.ZONE_PHRASES.items():
+        if phrase in q and zone not in zones:
+            zones.append(zone)
+    return zones
+
+
+def _detect_period(q: str) -> Optional[int]:
+    if "first half" in q or "1st half" in q:
+        return 1
+    if "second half" in q or "2nd half" in q:
+        return 2
+    return None
+
+
+def _detect_families(q: str) -> list[str]:
+    fams: list[str] = []
+    for family, needles in football.EVENT_FAMILIES.items():
+        if any(n in q for n in needles) and family not in fams:
+            fams.append(family)
+    return fams
+
+
+def plan_query(question: str) -> StructuredQuery:
+    """Rule-based NL -> StructuredQuery. Deterministic; no LLM."""
+    q = (question or "").lower().strip()
+
+    intent: Intent = "event_filter"
+    for needle, mapped in _INTENT_KEYWORDS:
+        if needle in q:
+            intent = mapped
+            break
+
+    wants_clips = q.startswith("show me") or "show me" in q or "clips" in q
+
+    metric = None
+    if intent == "metric_comparison" or "xg" in q or "expected goals" in q:
+        metric = "xg"
+    elif "possession" in q:
+        metric = "possession"
+
+    zones = _detect_zones(q)
+    families = _detect_families(q)
+    period = _detect_period(q)
+    team = _detect_team(q)
+
+    # A "show me ... shots/turnovers" reads as a clip lookup filtered by family.
+    if wants_clips and intent in ("event_filter", "event_count"):
+        intent = "clip_lookup"
+
+    source: Optional[str] = None
+    if "ai" in q.split() or "suggested" in q or "detector" in q:
+        source = "ai"
+    elif "manual" in q:
+        source = "manual"
+
+    reviewed: Optional[bool] = None
+    if "unreviewed" in q or "not reviewed" in q:
+        reviewed = False
+    elif "reviewed" in q or "accepted" in q:
+        reviewed = True
+
+    return StructuredQuery(
+        intent=intent,
+        team=team,
+        period=period,
+        zones=zones,
+        event_types=families,
+        source=source,  # type: ignore[arg-type]
+        reviewed=reviewed,
+        metric=metric,
+        wants_clips=wants_clips,
+    )
+
+
+# --- Engine ----------------------------------------------------------------
+
+
+@dataclass
+class EventLite:
+    """The minimum an event needs to be filtered/clipped. Decoupled from the ORM
+    so the engine is unit-testable without a database."""
+
+    id: int
+    code: str
+    start_ms: int
+    end_ms: int
+    source: str = "manual"
+    reviewed: bool = False
+    descriptors: list[str] = field(default_factory=list)
+
+
+@dataclass
+class QueryContext:
+    """Everything the engine may read. Analytics/shots are optional (may be
+    None when the video has not been analysed yet). `relations` are (from, to)
+    event-id pairs powering sequence lookups."""
+
+    events: list[EventLite]
+    analytics: Optional[dict] = None
+    shots: Optional[dict] = None
+    relations: list[tuple[int, int]] = field(default_factory=list)
+
+
+def _text_of(ev: EventLite) -> str:
+    return " ".join([ev.code or ""] + list(ev.descriptors or [])).lower()
+
+
+def _matches(ev: EventLite, q: StructuredQuery) -> bool:
+    if q.source and ev.source != q.source:
+        return False
+    if q.reviewed is not None and ev.reviewed != q.reviewed:
+        return False
+    if q.period == 1 and ev.start_ms >= FIRST_HALF_END_MS:
+        return False
+    if q.period == 2 and ev.start_ms < FIRST_HALF_END_MS:
+        return False
+    if q.time_range_ms:
+        lo, hi = q.time_range_ms
+        if ev.end_ms < lo or ev.start_ms > hi:
+            return False
+    if q.event_types:
+        fam = football.family_of(ev.code)
+        text = _text_of(ev)
+        if fam not in q.event_types and not any(f in text for f in q.event_types):
+            return False
+    if q.zones:
+        text = _text_of(ev)
+        # Zone match is descriptor-text based (events carry no coordinates);
+        # only shots have true positions and are handled in shot_analysis.
+        if not any(z.replace("_", " ") in text or z in text for z in q.zones):
+            return False
+    return True
+
+
+def _clip(ev: EventLite, reason: str = "") -> Clip:
+    return Clip(
+        event_id=ev.id,
+        start_ms=ev.start_ms,
+        end_ms=ev.end_ms,
+        label=ev.code or "Event",
+        reason=reason,
+    )
+
+
+def _resolve_sequences(
+    question: str, q: StructuredQuery, ctx: QueryContext
+) -> EvidencePackage:
+    """Reconstruct event chains from relations. If the query names a family
+    (e.g. "ending in a shot"), keep only sequences that contain it."""
+    pkg = EvidencePackage(question=question, query=q, summary="")
+    by_id = {e.id: e for e in ctx.events}
+    if not ctx.relations:
+        pkg.summary = "No event sequences recorded. Link related events first."
+        return pkg
+
+    # Follow from->to chains. Nodes that are a `to` but never a `from` start no
+    # chain; walk forward from each chain head (a `from` never seen as a `to`).
+    succ: dict[int, list[int]] = {}
+    tos: set[int] = set()
+    for a, b in ctx.relations:
+        succ.setdefault(a, []).append(b)
+        tos.add(b)
+    heads = [a for a in succ if a not in tos] or list(succ)
+
+    sequences: list[list[int]] = []
+    for head in heads:
+        chain: list[int] = [head]
+        cur = head
+        seen = {head}
+        while cur in succ:
+            nxt = succ[cur][0]
+            if nxt in seen:
+                break
+            chain.append(nxt)
+            seen.add(nxt)
+            cur = nxt
+        sequences.append(chain)
+
+    def contains_family(chain: list[int]) -> bool:
+        if not q.event_types:
+            return True
+        for eid in chain:
+            e = by_id.get(eid)
+            if e and football.family_of(e.code) in q.event_types:
+                return True
+        return False
+
+    kept = [c for c in sequences if contains_family(c)]
+    # Flatten to clips (deduped, time-ordered) for playback.
+    ids: list[int] = []
+    for c in kept:
+        for eid in c:
+            if eid not in ids and eid in by_id:
+                ids.append(eid)
+    events = sorted((by_id[i] for i in ids), key=lambda e: e.start_ms)
+    pkg.events = [e.id for e in events]
+    pkg.clips = [_clip(e, "sequence") for e in events]
+    label = (" ending in " + ", ".join(q.event_types)) if q.event_types else ""
+    pkg.summary = (
+        f"{len(kept)} sequence(s){label}." if kept else "No matching sequences found."
+    )
+    return pkg
+
+
+def resolve_query(question: str, q: StructuredQuery, ctx: QueryContext) -> EvidencePackage:
+    """Answer a structured query deterministically from real data."""
+    warnings: list[str] = []
+    matched = [e for e in ctx.events if _matches(e, q)]
+    matched.sort(key=lambda e: e.start_ms)
+    if q.limit:
+        matched = matched[: q.limit]
+
+    metrics: list[Metric] = []
+    pkg = EvidencePackage(question=question, query=q, summary="")
+
+    if q.intent == "sequence_lookup":
+        return _resolve_sequences(question, q, ctx)
+
+    if q.intent == "metric_comparison" and q.metric == "xg":
+        if ctx.shots and ctx.shots.get("team_xg"):
+            txg = ctx.shots["team_xg"]
+            a, b = float(txg.get("0", 0)), float(txg.get("1", 0))
+            metrics.append(Metric(label="xG — Team A", value=round(a, 2), source="cuddy_video_analysis"))
+            metrics.append(Metric(label="xG — Team B", value=round(b, 2), source="cuddy_video_analysis"))
+            lead = "Team A" if a > b else "Team B" if b > a else "Neither team"
+            pkg.summary = f"{lead} created more xG ({round(a,2)} vs {round(b,2)}), by Cuddy's distance/angle model."
+        else:
+            warnings.append("No shot/xG data — run shot analysis first.")
+            pkg.summary = "No xG data available yet."
+
+    elif q.intent == "possession_analysis":
+        if ctx.analytics and ctx.analytics.get("possession_pct"):
+            pp = ctx.analytics["possession_pct"]
+            a, b = float(pp.get("0", 0)), float(pp.get("1", 0))
+            metrics.append(Metric(label="Possession — Team A", value=f"{round(a)}%", source="heuristic"))
+            metrics.append(Metric(label="Possession — Team B", value=f"{round(b)}%", source="heuristic"))
+            pkg.summary = f"Possession {round(a)}% / {round(b)}% (heuristic: nearest-player ball assignment)."
+        else:
+            warnings.append("No possession data — run analytics first.")
+            pkg.summary = "No possession data available yet."
+
+    elif q.intent == "shot_analysis":
+        shot_events = matched or [e for e in ctx.events if football.family_of(e.code) == "shot"]
+        pkg.clips = [_clip(e, "shot") for e in shot_events][: q.limit]
+        pkg.events = [e.id for e in shot_events][: q.limit]
+        if ctx.shots:
+            metrics.append(Metric(label="Shots", value=len(ctx.shots.get("shots", [])), source="cuddy_video_analysis"))
+        pkg.summary = f"{len(pkg.clips)} shot event(s)." if pkg.clips else "No shot events found."
+
+    else:
+        # event_count / event_filter / clip_lookup / turnover_analysis / etc.
+        pkg.events = [e.id for e in matched]
+        if q.wants_clips or q.intent in ("clip_lookup", "turnover_analysis", "event_filter", "sequence_lookup"):
+            pkg.clips = [_clip(e, q.intent) for e in matched]
+        label = ", ".join(q.event_types) if q.event_types else "matching"
+        if matched:
+            pkg.summary = f"{len(matched)} {label} event(s)" + (
+                f" in {', '.join(z.replace('_', ' ') for z in q.zones)}" if q.zones else ""
+            ) + "."
+        else:
+            pkg.summary = "No matching evidence found."
+
+    pkg.metrics = metrics
+    pkg.warnings = warnings
+    return pkg
+```
+
+
 ## `football-analysis/backend/app/routes/__init__.py`
 
 ```python
@@ -3647,7 +4442,7 @@ from ..cv.analytics import compute_analytics
 from ..cv.pitch import autotag_final_third, build_pitch_data, build_player_heatmap
 from ..cv.shots import detect_shots
 from ..db import get_session
-from ..llm import answer_question, query_clips
+from ..llm import answer_question, explain_evidence, query_clips
 from ..models import Category, Event, Video
 from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
@@ -3720,6 +4515,26 @@ def get_tracks(video_id: int):
     if not path.is_file():
         raise HTTPException(404, "No analysis for this video yet")
     return FileResponse(path, media_type="application/json")
+
+
+@router.get("/videos/{video_id}/tracks/window")
+def get_tracks_window(video_id: int, start_ms: int, end_ms: int):
+    """Only the frames within [start_ms, end_ms] plus the track metadata.
+
+    Lets the overlay load a time window near the playhead instead of pulling the
+    whole match into browser memory (spec §18). Metadata mirrors /tracks/summary.
+    """
+    path = _tracks_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    if end_ms < start_ms:
+        raise HTTPException(422, "end_ms must be >= start_ms")
+    data = json.loads(path.read_text())
+    frames = [
+        f for f in data.get("frames", []) if start_ms <= f.get("t_ms", -1) <= end_ms
+    ]
+    meta = {k: v for k, v in data.items() if k != "frames"}
+    return meta | {"frames": frames, "window": [start_ms, end_ms], "n_total": len(data.get("frames", []))}
 
 
 @router.get("/videos/{video_id}/segments")
@@ -4033,6 +4848,126 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
                 "label": code_of(ev), "reason": str(c.get("reason", "")),
             })
     return {"summary": result.get("summary", ""), "clips": clips, "question": payload.question}
+
+
+# --- Structured, evidence-grounded query (planner -> deterministic -> LLM) ---
+
+# Cache deterministic query results keyed by (video, question, data signature).
+# When the underlying events/analytics change, the signature changes and the old
+# entry is bypassed. Caches structured evidence (incl. any explanation), never
+# provider prose as a source of truth (spec §45). Bounded, in-process.
+import hashlib as _hashlib
+from collections import OrderedDict as _OrderedDict
+
+_QUERY_CACHE: "_OrderedDict[str, dict]" = _OrderedDict()
+_QUERY_CACHE_MAX = 128
+
+
+def _data_signature(lite, relations, ap, sp) -> str:
+    parts = [
+        (e.id, e.start_ms, e.end_ms, e.source, e.reviewed, e.code) for e in lite
+    ]
+    mt = []
+    for p in (ap, sp):
+        try:
+            mt.append(p.stat().st_mtime_ns if p.is_file() else 0)
+        except OSError:
+            mt.append(0)
+    blob = json.dumps([parts, sorted(relations), mt], default=str, sort_keys=True)
+    return _hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+@router.post("/videos/{video_id}/investigate")
+def investigate(
+    video_id: int, payload: AskRequest, session: Session = Depends(get_session)
+):
+    """Answer a question with deterministic evidence + clips.
+
+    The clips and metrics come from real coded events / computed analytics via
+    the query engine — never from the LLM. The LLM (if a key is configured) only
+    adds a short explanation. Works fully offline without an AI key.
+    """
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+
+    from ..query import EventLite, QueryContext, plan_query, resolve_query
+
+    cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
+    events = session.exec(
+        select(Event).where(Event.video_id == video_id).order_by(Event.start_ms)
+    ).all()
+
+    def code_of(e: Event) -> str:
+        return (cats.get(e.category_id) if e.category_id else None) or e.label or "Event"
+
+    lite = [
+        EventLite(
+            id=e.id,
+            code=code_of(e),
+            start_ms=e.start_ms,
+            end_ms=e.end_ms,
+            source=e.source,
+            reviewed=e.reviewed,
+            descriptors=list(e.descriptors or []),
+        )
+        for e in events
+    ]
+
+    analytics = None
+    ap = _analytics_path(video_id)
+    if ap.is_file():
+        try:
+            analytics = json.loads(ap.read_text())
+        except (ValueError, OSError):
+            analytics = None
+    shots = None
+    sp = _shots_path(video_id)
+    if sp.is_file():
+        try:
+            shots = json.loads(sp.read_text())
+        except (ValueError, OSError):
+            shots = None
+
+    from ..models import EventRelation
+
+    relations = [
+        (r.from_event_id, r.to_event_id)
+        for r in session.exec(select(EventRelation)).all()
+        if r.from_event_id in {e.id for e in events}
+    ]
+
+    # Cache lookup: same question over the same data returns instantly and skips
+    # the provider call.
+    sig = _data_signature(lite, relations, ap, sp)
+    key = f"{video_id}|{payload.question.strip().lower()}|{sig}"
+    if key in _QUERY_CACHE:
+        _QUERY_CACHE.move_to_end(key)
+        return {**_QUERY_CACHE[key], "cached": True}
+
+    query = plan_query(payload.question)
+    pkg = resolve_query(
+        payload.question, query, QueryContext(lite, analytics, shots, relations)
+    )
+
+    result = pkg.model_dump()
+    # Optional prose over the evidence — additive, never the source of numbers.
+    explanation = None
+    if user_settings.has_llm_key():
+        try:
+            explanation = explain_evidence(
+                payload.question, json.dumps(result, default=str)
+            )
+        except Exception as exc:  # noqa: BLE001 - explanation is best-effort
+            pkg.warnings.append(f"Explanation unavailable: {type(exc).__name__}")
+            result["warnings"] = pkg.warnings
+    result["explanation"] = explanation
+    result["cached"] = False
+
+    _QUERY_CACHE[key] = result
+    _QUERY_CACHE.move_to_end(key)
+    while len(_QUERY_CACHE) > _QUERY_CACHE_MAX:
+        _QUERY_CACHE.popitem(last=False)
+    return result
 
 
 # --- Real match data from API-Football (score, formations, lineups, stats) ---
@@ -4390,22 +5325,78 @@ def delete_descriptor(descriptor_id: int, session: Session = Depends(get_session
 ## `football-analysis/backend/app/routes/events.py`
 
 ```python
-"""Event (timeline tag) CRUD.
+"""Event (timeline tag) CRUD + provenance and review actions.
 
-Manual and AI events share this endpoint set; filter by `source` to review the
-AI-suggested tags separately.
+Manual and AI events share this endpoint set — one canonical Event model — so
+filtering by `source` is how the AI-suggested tags are reviewed separately.
+
+Edits append an immutable EventRevision (before/after values) so an AI
+suggestion is never silently overwritten; accept/reject drive the review
+workflow; EventRelation links events into sequences.
 """
 
 from __future__ import annotations
+
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from ..db import get_session
-from ..models import Event
-from ..schemas import EventCreate, EventUpdate
+from ..models import Event, EventRelation, EventRevision
+from ..schemas import EventCreate, EventRelationCreate, EventUpdate
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+# Event fields whose changes are worth recording in the provenance trail.
+_TRACKED_FIELDS = (
+    "category_id",
+    "label",
+    "start_ms",
+    "end_ms",
+    "notes",
+    "descriptors",
+    "reviewed",
+)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _record_revision(
+    session: Session,
+    event: Event,
+    changes: dict,
+    *,
+    actor_type: str = "manual",
+    reason: str = "",
+) -> None:
+    """Append a revision capturing only the fields that actually changed.
+
+    Call BEFORE mutating `event`, passing the incoming changes; no-op writes
+    (same value) are skipped so the history stays meaningful.
+    """
+    previous: dict = {}
+    new: dict = {}
+    for key, value in changes.items():
+        if key not in _TRACKED_FIELDS:
+            continue
+        current = getattr(event, key, None)
+        if current != value:
+            previous[key] = current
+            new[key] = value
+    if not new:
+        return
+    session.add(
+        EventRevision(
+            event_id=event.id,
+            previous_values=previous,
+            new_values=new,
+            actor_type=actor_type,
+            reason=reason,
+        )
+    )
 
 
 @router.get("", response_model=list[Event])
@@ -4436,12 +5427,54 @@ def update_event(
     event = session.get(Event, event_id)
     if not event:
         raise HTTPException(404, "Event not found")
-    for key, value in payload.model_dump(exclude_none=True).items():
+    changes = payload.model_dump(exclude_none=True)
+    _record_revision(session, event, changes, reason="edit")
+    for key, value in changes.items():
         setattr(event, key, value)
+    event.updated_at = _utcnow()
     session.add(event)
     session.commit()
     session.refresh(event)
     return event
+
+
+@router.post("/{event_id}/accept", response_model=Event)
+def accept_event(event_id: int, session: Session = Depends(get_session)):
+    """Mark an AI suggestion as reviewed/accepted (keeps it on the timeline)."""
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(404, "Event not found")
+    _record_revision(
+        session, event, {"reviewed": True}, actor_type="manual", reason="accept"
+    )
+    event.reviewed = True
+    event.updated_at = _utcnow()
+    session.add(event)
+    session.commit()
+    session.refresh(event)
+    return event
+
+
+@router.post("/{event_id}/reject", status_code=204)
+def reject_event(event_id: int, session: Session = Depends(get_session)):
+    """Reject a suggestion: removes the event (and its revision trail) from the
+    timeline. The analyst has judged it wrong."""
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(404, "Event not found")
+    session.delete(event)
+    session.commit()
+
+
+@router.get("/{event_id}/revisions", response_model=list[EventRevision])
+def list_revisions(event_id: int, session: Session = Depends(get_session)):
+    """Provenance trail for an event, newest first."""
+    stmt = (
+        select(EventRevision)
+        .where(EventRevision.event_id == event_id)
+        .order_by(EventRevision.created_at.desc())
+    )
+    return session.exec(stmt).all()
 
 
 @router.delete("/{event_id}", status_code=204)
@@ -4450,6 +5483,41 @@ def delete_event(event_id: int, session: Session = Depends(get_session)):
     if not event:
         raise HTTPException(404, "Event not found")
     session.delete(event)
+    session.commit()
+
+
+# --- Relations (event sequences) ---
+
+
+@router.get("/{event_id}/relations", response_model=list[EventRelation])
+def list_relations(event_id: int, session: Session = Depends(get_session)):
+    stmt = select(EventRelation).where(
+        (EventRelation.from_event_id == event_id)
+        | (EventRelation.to_event_id == event_id)
+    )
+    return session.exec(stmt).all()
+
+
+@router.post("/relations", response_model=EventRelation, status_code=201)
+def create_relation(
+    payload: EventRelationCreate, session: Session = Depends(get_session)
+):
+    for eid in (payload.from_event_id, payload.to_event_id):
+        if not session.get(Event, eid):
+            raise HTTPException(404, f"Event {eid} not found")
+    relation = EventRelation(**payload.model_dump())
+    session.add(relation)
+    session.commit()
+    session.refresh(relation)
+    return relation
+
+
+@router.delete("/relations/{relation_id}", status_code=204)
+def delete_relation(relation_id: int, session: Session = Depends(get_session)):
+    relation = session.get(EventRelation, relation_id)
+    if not relation:
+        raise HTTPException(404, "Relation not found")
+    session.delete(relation)
     session.commit()
 ```
 
@@ -4496,6 +5564,14 @@ def _load(
     return video, events, cats
 
 
+def _labelled(parent: Element, group: str, text: str) -> None:
+    """A SportsCode/Nacsport <label><group/><text/></label> tag — the standard
+    way extra metadata rides along an instance, so provenance round-trips."""
+    label = SubElement(parent, "label")
+    SubElement(label, "group").text = group
+    SubElement(label, "text").text = text
+
+
 def _build_xml(video: Video, events: list[Event], cats: dict[int, Category]) -> bytes:
     root = Element("file")
     instances = SubElement(root, "ALL_INSTANCES")
@@ -4509,6 +5585,14 @@ def _build_xml(video: Video, events: list[Event], cats: dict[int, Category]) -> 
         for descriptor in ev.descriptors:
             label = SubElement(inst, "label")
             SubElement(label, "text").text = descriptor
+        # Provenance rides as grouped labels so the origin of each event survives
+        # the export (and is honest about being Cuddy-derived, not official).
+        _labelled(inst, "source", ev.source)
+        if ev.detector:
+            _labelled(inst, "detector", ev.detector)
+        if ev.confidence is not None:
+            _labelled(inst, "confidence", f"{ev.confidence:.3f}")
+        _labelled(inst, "reviewed", "true" if ev.reviewed else "false")
     return b'<?xml version="1.0" encoding="UTF-8"?>\n' + tostring(root, encoding="utf-8")
 
 
@@ -4516,17 +5600,18 @@ def _build_csv(events: list[Event], cats: dict[int, Category]) -> str:
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(
-        ["id", "code", "label", "start_s", "end_s", "duration_s",
-         "descriptors", "source", "confidence", "notes"]
+        ["id", "code", "category", "label", "start_s", "end_s", "duration_s",
+         "descriptors", "source", "detector", "confidence", "reviewed", "notes"]
     )
     for ev in events:
         code = cats[ev.category_id].name if ev.category_id in cats else ""
         writer.writerow([
-            ev.id, code, ev.label,
+            ev.id, code, code, ev.label,
             f"{ev.start_ms / 1000:.2f}", f"{ev.end_ms / 1000:.2f}",
             f"{(ev.end_ms - ev.start_ms) / 1000:.2f}",
-            "; ".join(ev.descriptors), ev.source,
-            "" if ev.confidence is None else f"{ev.confidence:.3f}", ev.notes,
+            "; ".join(ev.descriptors), ev.source, ev.detector or "",
+            "" if ev.confidence is None else f"{ev.confidence:.3f}",
+            "true" if ev.reviewed else "false", ev.notes,
         ])
     return buf.getvalue()
 
@@ -4570,6 +5655,143 @@ def export_selection_xml(payload: SelectionExport, session: Session = Depends(ge
 def export_selection_csv(payload: SelectionExport, session: Session = Depends(get_session)):
     video, events, cats = _load(payload.video_id, session, payload.event_ids)
     return _csv_response(f"{video.name}_selection", _build_csv(events, cats))
+```
+
+
+## `football-analysis/backend/app/routes/findings.py`
+
+```python
+"""Findings: analyst observations linked to their supporting evidence.
+
+A Finding references events (by id) plus an optional time range; it never
+duplicates event data. This is the lightweight substrate for reporting.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
+
+from ..config import settings
+from ..db import get_session
+from ..models import Category, Event, Finding, Video
+from ..schemas import FindingCreate
+
+router = APIRouter(tags=["findings"])
+
+
+@router.get("/videos/{video_id}/findings", response_model=list[Finding])
+def list_findings(video_id: int, session: Session = Depends(get_session)):
+    stmt = (
+        select(Finding)
+        .where(Finding.video_id == video_id)
+        .order_by(Finding.created_at.desc())
+    )
+    return session.exec(stmt).all()
+
+
+@router.post("/videos/{video_id}/findings", response_model=Finding, status_code=201)
+def create_finding(
+    video_id: int, payload: FindingCreate, session: Session = Depends(get_session)
+):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    if not payload.title.strip():
+        raise HTTPException(422, "A finding needs a title")
+    finding = Finding(video_id=video_id, **payload.model_dump())
+    session.add(finding)
+    session.commit()
+    session.refresh(finding)
+    return finding
+
+
+@router.delete("/findings/{finding_id}", status_code=204)
+def delete_finding(finding_id: int, session: Session = Depends(get_session)):
+    finding = session.get(Finding, finding_id)
+    if not finding:
+        raise HTTPException(404, "Finding not found")
+    session.delete(finding)
+    session.commit()
+
+
+def _match_summary(video_id: int) -> dict | None:
+    """Compact, validated match facts from the saved API-Football data, if any."""
+    path = settings.tracks_dir / f"{video_id}_matchdata.json"
+    if not path.exists():
+        return None
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return None
+    return {
+        "competition": d.get("competition"),
+        "date": d.get("date"),
+        "score": d.get("score"),
+        "home": (d.get("home") or {}).get("name"),
+        "away": (d.get("away") or {}).get("name"),
+        "source": "official_match_data",
+    }
+
+
+@router.get("/videos/{video_id}/report")
+def build_report(video_id: int, session: Session = Depends(get_session)):
+    """Assemble a structured report payload: match facts + findings with their
+    evidence resolved to real event clips. Structured JSON first (spec §56) —
+    a publishing engine can render this later."""
+    video = session.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+
+    cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
+    events = {
+        e.id: e
+        for e in session.exec(select(Event).where(Event.video_id == video_id)).all()
+    }
+
+    def code_of(e: Event) -> str:
+        return (cats.get(e.category_id) if e.category_id else None) or e.label or "Event"
+
+    findings = session.exec(
+        select(Finding)
+        .where(Finding.video_id == video_id)
+        .order_by(Finding.created_at.desc())
+    ).all()
+
+    def clips_for(ids: list[int]) -> list[dict]:
+        out = []
+        for eid in ids:
+            e = events.get(eid)
+            if e:
+                out.append({
+                    "event_id": e.id,
+                    "label": code_of(e),
+                    "start_ms": e.start_ms,
+                    "end_ms": e.end_ms,
+                    "source": e.source,
+                })
+        return out
+
+    return {
+        "title": video.name,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "match": _match_summary(video_id),
+        "findings": [
+            {
+                "id": f.id,
+                "title": f.title,
+                "description": f.description,
+                "start_ms": f.start_ms,
+                "end_ms": f.end_ms,
+                "clips": clips_for(f.event_ids),
+            }
+            for f in findings
+        ],
+        "notes": "Cuddy-derived clips reference the analyst's coded events; "
+        "CV-derived spatial metrics are approximate, not official data.",
+    }
 ```
 
 
@@ -5131,6 +6353,20 @@ class EventUpdate(BaseModel):
     notes: Optional[str] = None
     descriptors: Optional[list[str]] = None
     reviewed: Optional[bool] = None
+
+
+class EventRelationCreate(BaseModel):
+    from_event_id: int
+    to_event_id: int
+    relation_type: str
+
+
+class FindingCreate(BaseModel):
+    title: str
+    description: str = ""
+    event_ids: list[int] = []
+    start_ms: Optional[int] = None
+    end_ms: Optional[int] = None
 ```
 
 
@@ -5345,10 +6581,13 @@ hiddenimports = [
     "app.routes.descriptors",
     "app.routes.events",
     "app.routes.export",
+    "app.routes.findings",
     "app.routes.projects",
     "app.routes.settings",
     "app.routes.templates",
     "app.routes.videos",
+    "app.query",
+    "app.football",
     "validation.harness",
     "validation.service",
     "validation.run",
@@ -5431,6 +6670,16 @@ lapx==0.5.11
 ```
 
 
+## `football-analysis/backend/requirements-dev.txt`
+
+```
+# Dev/test-only dependencies (not bundled into the packaged sidecar).
+# Install into the backend venv:  .venv/Scripts/python -m pip install -r requirements-dev.txt
+pytest>=8
+httpx>=0.27
+```
+
+
 ## `football-analysis/backend/requirements.txt`
 
 ```
@@ -5499,6 +6748,520 @@ if __name__ == "__main__":
     except Exception:  # noqa: BLE001 - record the traceback before exiting
         log.critical("Cuddy backend failed to start:\n%s", traceback.format_exc())
         sys.exit(1)
+```
+
+
+## `football-analysis/backend/tests/conftest.py`
+
+```python
+"""Test fixtures.
+
+Point the app at a throwaway data dir BEFORE any app module imports, so the
+SQLite engine (created at import time from settings.db_path) uses an isolated
+DB and the real user DB under %LOCALAPPDATA%\\Cuddy is never touched.
+"""
+
+from __future__ import annotations
+
+import os
+import tempfile
+from pathlib import Path
+
+# Must run before `app.config`/`app.db` are imported anywhere.
+_TMP = Path(tempfile.mkdtemp(prefix="cuddy-test-"))
+os.environ["FA_DATA_DIR"] = str(_TMP)
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+
+@pytest.fixture()
+def client():
+    """A TestClient that runs the app lifespan (which calls init_db/migrations)."""
+    from app.main import app
+
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture()
+def video(client):
+    """A project + video to hang events off of. Returns the video id.
+
+    The video route validates that the path is a real file, so point it at a
+    throwaway one.
+    """
+    fake = _TMP / "match.mp4"
+    fake.write_bytes(b"\x00")
+    p = client.post("/projects", json={"name": "Test"}).json()
+    v = client.post(
+        "/videos",
+        json={"project_id": p["id"], "name": "match", "path": str(fake)},
+    ).json()
+    return v["id"]
+```
+
+
+## `football-analysis/backend/tests/test_events_provenance.py`
+
+```python
+"""Provenance, review actions, and relations on the unified Event model."""
+
+from __future__ import annotations
+
+
+def _make_ai_event(client, video_id, **over):
+    body = {
+        "video_id": video_id,
+        "label": "shot",
+        "start_ms": 1000,
+        "end_ms": 4000,
+        "source": "ai",
+        "confidence": 0.42,
+    }
+    body.update(over)
+    r = client.post("/events", json=body)
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def test_edit_records_revision(client, video):
+    ev = _make_ai_event(client, video)
+    # No history yet.
+    assert client.get(f"/events/{ev['id']}/revisions").json() == []
+
+    r = client.patch(f"/events/{ev['id']}", json={"label": "header", "end_ms": 5000})
+    assert r.status_code == 200
+    assert r.json()["label"] == "header"
+
+    revs = client.get(f"/events/{ev['id']}/revisions").json()
+    assert len(revs) == 1
+    rev = revs[0]
+    assert rev["previous_values"] == {"label": "shot", "end_ms": 4000}
+    assert rev["new_values"] == {"label": "header", "end_ms": 5000}
+    assert rev["actor_type"] == "manual"
+    assert rev["reason"] == "edit"
+
+
+def test_no_op_edit_records_no_revision(client, video):
+    ev = _make_ai_event(client, video)
+    client.patch(f"/events/{ev['id']}", json={"label": "shot"})  # same value
+    assert client.get(f"/events/{ev['id']}/revisions").json() == []
+
+
+def test_accept_marks_reviewed_and_keeps_event(client, video):
+    ev = _make_ai_event(client, video)
+    assert ev["reviewed"] is False
+    r = client.post(f"/events/{ev['id']}/accept")
+    assert r.status_code == 200
+    assert r.json()["reviewed"] is True
+    # Event survives and carries an accept revision.
+    revs = client.get(f"/events/{ev['id']}/revisions").json()
+    assert revs[0]["reason"] == "accept"
+
+
+def test_reject_removes_event(client, video):
+    ev = _make_ai_event(client, video)
+    r = client.post(f"/events/{ev['id']}/reject")
+    assert r.status_code == 204
+    assert client.get("/events", params={"video_id": video}).json() == []
+
+
+def test_relations_link_events(client, video):
+    a = _make_ai_event(client, video, label="recovery", start_ms=0, end_ms=2000)
+    b = _make_ai_event(client, video, label="shot", start_ms=8000, end_ms=11000)
+    r = client.post(
+        "/events/relations",
+        json={
+            "from_event_id": a["id"],
+            "to_event_id": b["id"],
+            "relation_type": "same_sequence",
+        },
+    )
+    assert r.status_code == 201
+    rels = client.get(f"/events/{a['id']}/relations").json()
+    assert len(rels) == 1
+    assert rels[0]["relation_type"] == "same_sequence"
+    # Visible from the other end too.
+    assert len(client.get(f"/events/{b['id']}/relations").json()) == 1
+
+
+def test_relation_requires_existing_events(client, video):
+    a = _make_ai_event(client, video)
+    r = client.post(
+        "/events/relations",
+        json={"from_event_id": a["id"], "to_event_id": 99999, "relation_type": "follows"},
+    )
+    assert r.status_code == 404
+```
+
+
+## `football-analysis/backend/tests/test_export.py`
+
+```python
+"""Export carries event provenance (source/detector/confidence/reviewed)."""
+
+from __future__ import annotations
+
+
+def _seed(client, video):
+    client.post(
+        "/events",
+        json={
+            "video_id": video,
+            "label": "Shot",
+            "start_ms": 2000,
+            "end_ms": 5000,
+            "source": "ai",
+            "confidence": 0.82,
+            "descriptors": ["goal"],
+        },
+    )
+    # mark it reviewed via accept so reviewed=true and detector stays None
+    ev = client.get("/events", params={"video_id": video}).json()[0]
+    client.post(f"/events/{ev['id']}/accept")
+    return ev["id"]
+
+
+def test_csv_includes_provenance_columns(client, video):
+    _seed(client, video)
+    r = client.get(f"/export/videos/{video}/csv")
+    assert r.status_code == 200
+    text = r.text
+    header = text.splitlines()[0]
+    for col in ("source", "detector", "confidence", "reviewed", "category"):
+        assert col in header, header
+    row = text.splitlines()[1]
+    assert "ai" in row
+    assert "0.820" in row
+    assert "true" in row  # reviewed after accept
+
+
+def test_xml_includes_provenance_labels(client, video):
+    _seed(client, video)
+    r = client.get(f"/export/videos/{video}/xml")
+    assert r.status_code == 200
+    xml = r.text
+    assert "<group>source</group>" in xml
+    assert "<text>ai</text>" in xml
+    assert "<group>confidence</group>" in xml
+    assert "<group>reviewed</group>" in xml
+```
+
+
+## `football-analysis/backend/tests/test_findings.py`
+
+```python
+"""Findings CRUD, linked to events by id."""
+
+from __future__ import annotations
+
+
+def test_create_list_delete_finding(client, video):
+    e = client.post(
+        "/events",
+        json={"video_id": video, "label": "Turnover", "start_ms": 1000, "end_ms": 4000},
+    ).json()
+
+    r = client.post(
+        f"/videos/{video}/findings",
+        json={
+            "title": "Left-side turnovers",
+            "description": "Repeated losses on the left in the first phase.",
+            "event_ids": [e["id"]],
+            "start_ms": 0,
+            "end_ms": 60000,
+        },
+    )
+    assert r.status_code == 201, r.text
+    f = r.json()
+    assert f["title"] == "Left-side turnovers"
+    assert f["event_ids"] == [e["id"]]
+
+    listed = client.get(f"/videos/{video}/findings").json()
+    assert len(listed) == 1
+
+    assert client.delete(f"/findings/{f['id']}").status_code == 204
+    assert client.get(f"/videos/{video}/findings").json() == []
+
+
+def test_finding_requires_title(client, video):
+    r = client.post(f"/videos/{video}/findings", json={"title": "   "})
+    assert r.status_code == 422
+
+
+def test_report_assembles_findings_with_clips(client, video):
+    e = client.post(
+        "/events",
+        json={"video_id": video, "label": "Shot", "start_ms": 2000, "end_ms": 5000},
+    ).json()
+    client.post(
+        f"/videos/{video}/findings",
+        json={"title": "Chances created", "event_ids": [e["id"]], "start_ms": 2000, "end_ms": 5000},
+    )
+    r = client.get(f"/videos/{video}/report")
+    assert r.status_code == 200
+    report = r.json()
+    assert report["title"]
+    assert report["generated_at"]
+    assert len(report["findings"]) == 1
+    f = report["findings"][0]
+    assert f["title"] == "Chances created"
+    assert f["clips"][0]["event_id"] == e["id"]
+    assert f["clips"][0]["label"] == "Shot"
+    assert f["clips"][0]["start_ms"] == 2000
+```
+
+
+## `football-analysis/backend/tests/test_investigate_route.py`
+
+```python
+"""Integration: the /investigate endpoint returns real evidence offline.
+
+No AI key is configured in the test env, so this proves the deterministic path
+works without an LLM (spec acceptance F: manual/query workflow with no LLM key).
+"""
+
+from __future__ import annotations
+
+
+def _ai_turnover(client, video_id, start_ms, descriptors):
+    return client.post(
+        "/events",
+        json={
+            "video_id": video_id,
+            "label": "Turnover",
+            "start_ms": start_ms,
+            "end_ms": start_ms + 3000,
+            "source": "ai",
+            "confidence": 0.5,
+            "descriptors": descriptors,
+        },
+    ).json()
+
+
+def test_investigate_returns_grounded_clips_without_llm(client, video):
+    # First half, middle third -> should match.
+    a = _ai_turnover(client, video, 10_000, ["middle third"])
+    # Second half, final third -> should NOT match a first-half middle-third query.
+    _ai_turnover(client, video, 50 * 60_000, ["final third"])
+
+    r = client.post(
+        f"/videos/{video}/investigate",
+        json={"question": "Show me every turnover in the middle third in the first half"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+
+    assert body["events"] == [a["id"]]
+    assert len(body["clips"]) == 1
+    clip = body["clips"][0]
+    assert clip["event_id"] == a["id"]
+    assert clip["start_ms"] == 10_000
+    # Deterministic summary present; no LLM configured so explanation is null.
+    assert body["summary"]
+    assert body["explanation"] is None
+    # The structured query is echoed back for transparency.
+    assert body["query"]["period"] == 1
+    assert "middle_third" in body["query"]["zones"]
+
+
+def test_investigate_cache_hit_then_invalidation(client, video):
+    _ai_turnover(client, video, 10_000, ["middle third"])
+    q = {"question": "Show me turnovers in the middle third"}
+
+    first = client.post(f"/videos/{video}/investigate", json=q).json()
+    assert first["cached"] is False
+    second = client.post(f"/videos/{video}/investigate", json=q).json()
+    assert second["cached"] is True
+    assert second["events"] == first["events"]
+
+    # Adding an event changes the data signature -> cache is bypassed.
+    _ai_turnover(client, video, 20_000, ["middle third"])
+    third = client.post(f"/videos/{video}/investigate", json=q).json()
+    assert third["cached"] is False
+    assert len(third["events"]) == 2
+
+
+def test_investigate_no_match_is_honest(client, video):
+    r = client.post(
+        f"/videos/{video}/investigate",
+        json={"question": "Show me every corner"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["clips"] == []
+    assert "No matching evidence" in body["summary"]
+```
+
+
+## `football-analysis/backend/tests/test_query.py`
+
+```python
+"""Deterministic query planner + evidence engine (no LLM, no DB)."""
+
+from __future__ import annotations
+
+from app.query import (
+    EventLite,
+    QueryContext,
+    plan_query,
+    resolve_query,
+)
+
+
+# --- Planner ---------------------------------------------------------------
+
+
+def test_plan_turnover_middle_third_first_half():
+    q = plan_query("Show me every turnover in the middle third in the first half")
+    assert q.intent in ("turnover_analysis", "clip_lookup")
+    assert "turnover" in q.event_types
+    assert "middle_third" in q.zones
+    assert q.period == 1
+    assert q.wants_clips is True
+
+
+def test_plan_xg_comparison():
+    q = plan_query("Which team had more xG?")
+    assert q.intent == "metric_comparison"
+    assert q.metric == "xg"
+
+
+def test_plan_team_detection():
+    assert plan_query("show me our attacks on the right").team == "home"
+    assert plan_query("how many shots did the opponent take").team == "away"
+
+
+def test_plan_possession():
+    q = plan_query("What was the possession split?")
+    assert q.intent == "possession_analysis"
+
+
+# --- Engine ----------------------------------------------------------------
+
+
+def _events():
+    return [
+        EventLite(1, "Turnover", 10_000, 13_000, descriptors=["middle third"]),
+        EventLite(2, "Turnover", 50 * 60_000, 50 * 60_000 + 3000, descriptors=["final third"]),
+        EventLite(3, "Shot", 20_000, 23_000),
+        EventLite(4, "Pass", 5_000, 6_000, source="ai", reviewed=False),
+    ]
+
+
+def test_engine_turnover_filter_by_zone_and_half():
+    q = plan_query("Show me turnovers in the middle third in the first half")
+    pkg = resolve_query("q", q, QueryContext(events=_events()))
+    assert pkg.events == [1]  # event 2 is final third + second half
+    assert len(pkg.clips) == 1
+    assert pkg.clips[0].event_id == 1
+    assert pkg.clips[0].start_ms == 10_000
+
+
+def test_engine_no_match_says_so():
+    q = plan_query("Show me every corner")
+    q.event_types = ["corner"]  # a family with no matching events
+    pkg = resolve_query("q", q, QueryContext(events=_events()))
+    assert pkg.clips == []
+    assert "No matching evidence" in pkg.summary
+
+
+def test_engine_xg_uses_real_shot_data_not_llm():
+    q = plan_query("Which team created more xG?")
+    ctx = QueryContext(events=_events(), shots={"team_xg": {"0": 1.4, "1": 0.6}})
+    pkg = resolve_query("q", q, ctx)
+    assert any(m.label == "xG — Team A" for m in pkg.metrics)
+    assert "Team A" in pkg.summary
+
+
+def test_engine_xg_warns_when_missing():
+    q = plan_query("Which team created more xG?")
+    pkg = resolve_query("q", q, QueryContext(events=_events()))
+    assert pkg.warnings
+    assert pkg.metrics == []
+
+
+def test_plan_sequence_lookup():
+    q = plan_query("Show me every sequence ending in a shot")
+    assert q.intent == "sequence_lookup"
+    assert "shot" in q.event_types
+
+
+def test_engine_sequence_lookup_filters_by_family():
+    events = [
+        EventLite(1, "Recovery", 0, 1000),
+        EventLite(2, "Pass", 2000, 3000),
+        EventLite(3, "Shot", 4000, 5000),
+        EventLite(4, "Recovery", 20000, 21000),
+        EventLite(5, "Pass", 22000, 23000),  # sequence with no shot
+    ]
+    relations = [(1, 2), (2, 3), (4, 5)]
+    q = plan_query("Show me sequences ending in a shot")
+    pkg = resolve_query("q", q, QueryContext(events=events, relations=relations))
+    assert pkg.events == [1, 2, 3]  # only the chain containing a shot
+    assert "1 sequence" in pkg.summary
+
+
+def test_engine_sequence_lookup_no_relations():
+    q = plan_query("Show me every sequence")
+    pkg = resolve_query("q", q, QueryContext(events=[EventLite(1, "Pass", 0, 1000)]))
+    assert pkg.clips == []
+    assert "No event sequences" in pkg.summary
+
+
+def test_engine_source_filter():
+    q = plan_query("show me ai suggested passes")
+    pkg = resolve_query("q", q, QueryContext(events=_events()))
+    # only event 4 is source=ai
+    assert pkg.events == [4]
+```
+
+
+## `football-analysis/backend/tests/test_tracks_window.py`
+
+```python
+"""Windowed track access returns only the frames in range (spec §18)."""
+
+from __future__ import annotations
+
+import json
+
+
+def _write_tracks(video_id: int):
+    from app.config import settings
+
+    settings.ensure_dirs()
+    path = settings.tracks_dir / f"{video_id}.json"
+    frames = [{"t_ms": t, "dets": []} for t in range(0, 10001, 1000)]  # 0..10s
+    path.write_text(json.dumps({
+        "video": "x", "src_fps": 25, "stride": 5, "width": 1280, "height": 720,
+        "target_fps": 5, "n_tracks": 3, "teams": 2, "frames": frames,
+    }))
+
+
+def test_window_returns_only_frames_in_range(client, video):
+    _write_tracks(video)
+    r = client.get(f"/videos/{video}/tracks/window", params={"start_ms": 3000, "end_ms": 6000})
+    assert r.status_code == 200
+    body = r.json()
+    ts = [f["t_ms"] for f in body["frames"]]
+    assert ts == [3000, 4000, 5000, 6000]
+    assert body["n_total"] == 11  # full track has 11 frames
+    assert body["window"] == [3000, 6000]
+    assert body["n_tracks"] == 3  # metadata preserved
+    assert "frames" not in {k for k in body if k == "framez"}  # sanity
+
+
+def test_window_rejects_inverted_range(client, video):
+    _write_tracks(video)
+    r = client.get(f"/videos/{video}/tracks/window", params={"start_ms": 6000, "end_ms": 3000})
+    assert r.status_code == 422
+
+
+def test_window_404_without_analysis(client, video):
+    r = client.get(f"/videos/{video}/tracks/window", params={"start_ms": 0, "end_ms": 1000})
+    assert r.status_code == 404
 ```
 
 
@@ -6310,7 +8073,7 @@ export default {
   6. Build the Tauri application (`npm run app:build`).
   7. Report the resulting installer path.
 
-  Run from the repository's football-analysis/ directory, or anywhere — the
+  Run from the repository's football-analysis/ directory, or anywhere - the
   script resolves paths relative to its own location.
 
 .EXAMPLE
@@ -6392,10 +8155,10 @@ if (-not $SkipBackend) {
     # silently-broken exe whose migrations fall back to create_all at runtime.
     Write-Host "  Verifying backend dependencies import..."
     & $py -c "from alembic import command, config; import torch, cv2, ultralytics, anthropic, sqlmodel, fastapi, uvicorn"
-    if ($LASTEXITCODE -ne 0) { throw "Backend dependency verification failed — a required package did not install." }
+    if ($LASTEXITCODE -ne 0) { throw "Backend dependency verification failed - a required package did not install." }
 
     # ---- 4. Build cuddy-backend.exe ---------------------------------------
-    Write-Step "Building cuddy-backend.exe (PyInstaller — several minutes)"
+    Write-Step "Building cuddy-backend.exe (PyInstaller - several minutes)"
     Push-Location $backend
     try {
         & $py -m PyInstaller cuddy-backend.spec --noconfirm --clean
@@ -6419,7 +8182,7 @@ if (-not $SkipBackend) {
     Write-Step "Skipping backend build (-SkipBackend)"
     $dest = Join-Path $binariesDir $sidecarName
     if (-not (Test-Path $dest)) {
-        throw "No existing sidecar at $dest — run without -SkipBackend first."
+        throw "No existing sidecar at $dest - run without -SkipBackend first."
     }
 }
 
@@ -6686,7 +8449,7 @@ fn main() {
 
 ```ts
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useStore } from "./store";
 import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
@@ -6701,6 +8464,7 @@ const STAGE_MESSAGE: Record<string, string> = {
 export default function App() {
   const { checkHealth, loadProjects, health, resetHealthCheck, refreshSettings } =
     useStore();
+  const reducedMotion = useStore((s) => s.reducedMotion);
 
   useEffect(() => {
     // Poll health until online, then load projects. Stops polling once the
@@ -6739,6 +8503,7 @@ export default function App() {
   };
 
   return (
+    <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
     <div className="min-h-screen flex flex-col bg-ink-900 text-mist-100">
       <TitleBar />
       <div className="flex-1 flex">
@@ -6809,6 +8574,7 @@ export default function App() {
       </div>
       <SettingsPanel />
     </div>
+    </MotionConfig>
   );
 }
 ```
@@ -6821,33 +8587,37 @@ import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
 import { api } from "../lib/api";
-import type { QueryResult } from "../lib/types";
+import type { EvidencePackage } from "../lib/types";
 import { fmtClock } from "../lib/time";
 import SectionHeader from "./SectionHeader";
+import SourceBadge from "./SourceBadge";
 
-type Mode = "ask" | "find";
+type Mode = "ask" | "show";
 
 const SUGGESTIONS: Record<Mode, string[]> = {
   ask: [
     "Which team had more possession?",
-    "How many shots did each team have?",
-    "Summarise the key moments.",
+    "Which team created more xG?",
+    "How many turnovers in the first half?",
   ],
-  find: [
-    "Every turnover in the second half",
-    "All shot attempts",
-    "Show the counter-attacks",
+  show: [
+    "Show me every turnover in the middle third",
+    "Show me all shots",
+    "Show me our attacks in the final third",
   ],
 };
 
 const PLACEHOLDER: Record<Mode, string> = {
   ask: "e.g. Which team created more xG?",
-  find: "e.g. every turnover in the second half",
+  show: "e.g. show me every turnover in the second half",
 };
 
 /**
- * Unified AI panel: ask a grounded question about the match, or find a reel of
- * clips — both answer over coded events only (never raw video), via Claude.
+ * Unified AI surface. Both "Ask" and "Show me" run the SAME grounded engine
+ * (/investigate): deterministic evidence (metrics + real event clips) computed
+ * from coded data, with optional LLM prose over it. The model never invents a
+ * clip or a metric, and the panel works with no AI key (explanation is just
+ * omitted).
  */
 export default function AIPanel() {
   const videoId = useStore((s) => s.currentVideoId);
@@ -6859,12 +8629,10 @@ export default function AIPanel() {
 
   const [mode, setMode] = useState<Mode>("ask");
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [result, setResult] = useState<QueryResult | null>(null);
+  const [result, setResult] = useState<EvidencePackage | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  // Monotonic token: results from a superseded request (mode switch or a newer
-  // submit) are dropped so an in-flight Ask answer never lands under Find clips.
+  // Monotonic token: a superseded request's result is dropped.
   const reqId = useRef(0);
 
   const switchMode = (m: Mode) => {
@@ -6872,7 +8640,6 @@ export default function AIPanel() {
     reqId.current += 1;
     setBusy(false);
     setMode(m);
-    setAnswer(null);
     setResult(null);
     setErr(null);
   };
@@ -6880,21 +8647,15 @@ export default function AIPanel() {
   const run = async (q: string) => {
     if (!videoId || !q.trim()) return;
     const myId = (reqId.current += 1);
-    const myMode = mode;
     setBusy(true);
     setErr(null);
-    setAnswer(null);
     setResult(null);
     try {
-      if (myMode === "ask") {
-        const res = await api.ask(videoId, q.trim());
-        if (reqId.current === myId) setAnswer(res.answer);
-      } else {
-        const res = await api.query(videoId, q.trim());
-        if (reqId.current === myId) setResult(res);
-      }
+      const res = await api.investigate(videoId, q.trim());
+      if (reqId.current === myId) setResult(res);
     } catch (e) {
-      if (reqId.current === myId) setErr(e instanceof Error ? e.message : "Request failed");
+      if (reqId.current === myId)
+        setErr(e instanceof Error ? e.message : "Request failed");
     } finally {
       if (reqId.current === myId) setBusy(false);
     }
@@ -6913,11 +8674,7 @@ export default function AIPanel() {
         right={
           <div className="flex items-center gap-1 rounded-lg bg-ink-900/60 p-0.5">
             <ModeTab label="Ask" active={mode === "ask"} onClick={() => switchMode("ask")} />
-            <ModeTab
-              label="Find clips"
-              active={mode === "find"}
-              onClick={() => switchMode("find")}
-            />
+            <ModeTab label="Show me" active={mode === "show"} onClick={() => switchMode("show")} />
           </div>
         }
       />
@@ -6928,7 +8685,7 @@ export default function AIPanel() {
           className="mb-2 w-full text-left card px-3 py-2 text-xs text-mist-300 hover:bg-ink-600 transition-colors flex items-center gap-2"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-          Add a free Groq API key in Settings to use AI.
+          Evidence &amp; clips work without a key. Add a free Groq key in Settings for written answers.
         </button>
       )}
 
@@ -6946,7 +8703,7 @@ export default function AIPanel() {
           disabled={busy || !videoId || !question.trim()}
           onClick={() => run(question)}
         >
-          {busy ? (mode === "ask" ? "Thinking…" : "Finding…") : mode === "ask" ? "Ask" : "Find"}
+          {busy ? "Working…" : mode === "ask" ? "Ask" : "Show me"}
         </button>
       </div>
 
@@ -6966,16 +8723,6 @@ export default function AIPanel() {
         ))}
       </div>
 
-      {answer && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card p-3 mt-3 text-sm text-mist-100 whitespace-pre-wrap leading-relaxed"
-        >
-          {answer}
-        </motion.div>
-      )}
-
       {result && (
         <motion.div
           initial={{ opacity: 0, y: 4 }}
@@ -6983,7 +8730,31 @@ export default function AIPanel() {
           className="mt-3 flex flex-col gap-2"
         >
           <p className="text-sm text-mist-100 leading-relaxed">{result.summary}</p>
-          {result.clips.length > 0 ? (
+
+          {result.explanation && (
+            <div className="card p-2.5 text-sm text-mist-200 whitespace-pre-wrap leading-relaxed">
+              {result.explanation}
+            </div>
+          )}
+
+          {result.metrics.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {result.metrics.map((m, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between card px-2.5 py-1.5 text-sm"
+                >
+                  <span className="text-mist-200">{m.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-mist-100 tabular-nums">{m.value}</span>
+                    <SourceBadge source={m.source} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {result.clips.length > 0 && (
             <>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] uppercase text-mist-400">
@@ -6993,7 +8764,7 @@ export default function AIPanel() {
                   className="btn h-7 py-0"
                   onClick={() => setPlaylist(result.clips.map((c) => c.event_id))}
                 >
-                  Load as reel →
+                  Play all →
                 </button>
               </div>
               <div className="flex flex-col gap-1">
@@ -7009,15 +8780,20 @@ export default function AIPanel() {
                       </span>
                       {c.label}
                     </div>
-                    {c.reason && (
-                      <div className="text-xs text-mist-400 mt-0.5">{c.reason}</div>
-                    )}
                   </button>
                 ))}
               </div>
             </>
-          ) : (
-            <p className="text-xs text-mist-400">No matching clips.</p>
+          )}
+
+          {result.warnings.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {result.warnings.map((w, i) => (
+                <p key={i} className="text-xs text-amber-300/90 leading-relaxed">
+                  ⚠ {w}
+                </p>
+              ))}
+            </div>
           )}
         </motion.div>
       )}
@@ -7323,6 +9099,7 @@ export default function AnalyticsPanel() {
   const analytics = useStore((s) => s.analytics);
   const computeAnalytics = useStore((s) => s.computeAnalytics);
   const tagTurnovers = useStore((s) => s.tagTurnovers);
+  const requestSeek = useStore((s) => s.requestSeek);
 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -7391,26 +9168,34 @@ export default function AnalyticsPanel() {
             <Stat label="Turnovers" value={analytics.turnovers} />
           </div>
 
-          {/* top pass combinations */}
+          {/* top pass combinations — click to jump to that pass in the video */}
           {analytics.pass_edges.length > 0 && (
             <div>
               <div className="text-[11px] uppercase text-mist-400 mb-1">
                 Top pass combinations
               </div>
               <div className="flex flex-col gap-1">
-                {analytics.pass_edges.slice(0, 5).map((e, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 text-xs text-mist-200"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ background: TEAM_COLORS[e.team] }}
-                    />
-                    #{e.from} → #{e.to}
-                    <span className="text-mist-400">×{e.count}</span>
-                  </div>
-                ))}
+                {analytics.pass_edges.slice(0, 5).map((e, i) => {
+                  const first = analytics.pass_events.find(
+                    (p) => p.team === e.team && p.from === e.from && p.to === e.to,
+                  );
+                  return (
+                    <button
+                      key={i}
+                      disabled={!first}
+                      onClick={() => first && requestSeek(first.t_ms)}
+                      title={first ? "Jump to this pass" : "No clip for this pass"}
+                      className="flex items-center gap-2 text-xs text-mist-200 text-left rounded px-1 -mx-1 hover:bg-ink-600 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ background: TEAM_COLORS[e.team] }}
+                      />
+                      #{e.from} → #{e.to}
+                      <span className="text-mist-400">×{e.count}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -7459,9 +9244,18 @@ function Stat({ label, value, color }: { label: string; value: number; color?: s
 ```ts
 import { motion } from "framer-motion";
 import { useStore } from "../store";
+import type { OverlayMode } from "../lib/types";
 
 export const TEAM_COLORS = ["#4C9BFF", "#FF6B4C"]; // team 0 (blue), team 1 (orange-red)
 export const BALL_COLOR = "#FFE14D"; // lit yellow
+
+const OVERLAY_MODES: { value: OverlayMode; label: string }[] = [
+  { value: "off", label: "Off" },
+  { value: "players", label: "Players" },
+  { value: "ball", label: "Ball" },
+  { value: "both", label: "Both" },
+  { value: "analysis", label: "Analysis" },
+];
 
 const STAGE_LABELS: Record<string, string> = {
   triage: "Triage",
@@ -7475,9 +9269,9 @@ export default function AnalyzePanel() {
   const job = useStore((s) => s.analysisJob);
   const tracks = useStore((s) => s.tracks);
   const segments = useStore((s) => s.segments);
-  const overlay = useStore((s) => s.overlay);
+  const overlayMode = useStore((s) => s.overlayMode);
   const analyzeVideo = useStore((s) => s.analyzeVideo);
-  const setOverlay = useStore((s) => s.setOverlay);
+  const setOverlayMode = useStore((s) => s.setOverlayMode);
 
   const running = job?.status === "running" || job?.status === "pending";
   const pct = Math.round((job?.progress ?? 0) * 100);
@@ -7490,14 +9284,22 @@ export default function AnalyzePanel() {
           AI analysis
         </span>
         {tracks && (
-          <label className="flex items-center gap-1.5 text-xs text-mist-300">
-            <input
-              type="checkbox"
-              checked={overlay}
-              onChange={(e) => setOverlay(e.target.checked)}
-            />
-            Overlay
-          </label>
+          <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/60 p-0.5">
+            {OVERLAY_MODES.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setOverlayMode(m.value)}
+                title={`Overlay: ${m.label}`}
+                className={`px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wide transition-colors ${
+                  overlayMode === m.value
+                    ? "bg-ink-600 text-mist-100"
+                    : "text-mist-400 hover:text-mist-200"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -7868,27 +9670,54 @@ export default function DescriptorManager() {
 ## `football-analysis/src/components/EventEditPanel.tsx`
 
 ```ts
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "../store";
+import { api } from "../lib/api";
+import type { EventRevision } from "../lib/types";
 import { fmtClock } from "../lib/time";
+import { BAND_CLASS, BAND_LABEL, confidenceBand, confidencePct } from "../lib/confidence";
 
 interface Props {
   playheadMs: number;
   onSeek: (ms: number) => void;
 }
 
-/** Inline editor for the selected event: boundaries, label, notes, descriptors. */
+/** Inline inspector for the selected event: boundaries, label, notes,
+ *  descriptors, AI provenance (source/detector/confidence + change history),
+ *  and review actions that preserve provenance. */
 export default function EventEditPanel({ playheadMs, onSeek }: Props) {
   const ev = useStore((s) => s.selectedEvent());
   const categories = useStore((s) => s.categories);
   const descriptorGroups = useStore((s) => s.descriptorGroups);
   const updateEvent = useStore((s) => s.updateEvent);
   const removeEvent = useStore((s) => s.removeEvent);
+  const acceptEvent = useStore((s) => s.acceptEvent);
+  const rejectEvent = useStore((s) => s.rejectEvent);
   const toggleEventDescriptor = useStore((s) => s.toggleEventDescriptor);
   const selectEvent = useStore((s) => s.selectEvent);
 
+  const [showHistory, setShowHistory] = useState(false);
+  const [revisions, setRevisions] = useState<EventRevision[] | null>(null);
+
+  const evId = ev?.id;
+  const evUpdatedAt = ev?.updated_at;
+  // (Re)load history when opened, or when this event changes underneath it.
+  useEffect(() => {
+    if (!showHistory || evId == null) return;
+    let alive = true;
+    api
+      .listRevisions(evId)
+      .then((r) => alive && setRevisions(r))
+      .catch(() => alive && setRevisions([]));
+    return () => {
+      alive = false;
+    };
+  }, [showHistory, evId, evUpdatedAt]);
+
   if (!ev) return null;
   const cat = categories.find((c) => c.id === ev.category_id);
+  const band = confidenceBand(ev.confidence);
 
   const setSec = (field: "start_ms" | "end_ms", secText: string) => {
     const ms = Math.max(0, Math.round(parseFloat(secText) * 1000));
@@ -7903,18 +9732,23 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
       style={{ borderColor: cat ? `${cat.color}55` : undefined }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span
-            className="w-2.5 h-2.5 rounded-full"
+            className="w-2.5 h-2.5 rounded-full shrink-0"
             style={{ background: cat?.color ?? "#8A90A0" }}
           />
-          <span className="text-sm font-medium text-mist-100">
-            {cat?.name ?? "Event"}
+          <span className="text-sm font-medium text-mist-100 truncate">
+            {cat?.name ?? ev.label ?? "Event"}
           </span>
-          {ev.source === "ai" && (
-            <span className="text-[10px] text-violet-300 uppercase">
-              AI {Math.round((ev.confidence ?? 0) * 100)}%
+          {ev.source === "ai" ? (
+            <span
+              className={`px-1.5 py-0.5 rounded text-[10px] shrink-0 ${BAND_CLASS[band]}`}
+              title={BAND_LABEL[band]}
+            >
+              AI {confidencePct(ev.confidence)}
             </span>
+          ) : (
+            <span className="text-[10px] text-mist-500 uppercase shrink-0">Manual</span>
           )}
         </div>
         <button
@@ -7924,6 +9758,14 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
           ✕
         </button>
       </div>
+
+      {/* provenance line for AI events */}
+      {ev.source === "ai" && (
+        <div className="text-[11px] text-mist-400 mb-3 -mt-1">
+          {ev.detector ? `${ev.detector} detector` : "detector: unknown"} ·{" "}
+          {BAND_LABEL[band]}
+        </div>
+      )}
 
       {/* boundaries */}
       <div className="grid grid-cols-2 gap-2 mb-3">
@@ -8011,17 +9853,44 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
       {ev.source === "ai" && !ev.reviewed && (
         <div className="card p-2.5 mb-3 flex items-center gap-2 border-violet-400/30">
           <span className="text-xs text-violet-300 flex-1">
-            AI suggestion — confirm or reject
+            AI suggestion — accept or reject
           </span>
-          <button
-            className="btn-accent"
-            onClick={() => updateEvent(ev.id, { reviewed: true })}
-          >
-            Confirm (Y)
+          <button className="btn-accent" onClick={() => acceptEvent(ev.id)}>
+            Accept
           </button>
-          <button className="btn" onClick={() => removeEvent(ev.id)}>
-            Reject (N)
+          <button className="btn text-rose-300" onClick={() => rejectEvent(ev.id)}>
+            Reject
           </button>
+        </div>
+      )}
+
+      {/* provenance / change history */}
+      <button
+        className="text-[11px] text-mist-400 hover:text-mist-200 mb-2"
+        onClick={() => setShowHistory((v) => !v)}
+      >
+        {showHistory ? "▾" : "▸"} History
+      </button>
+      {showHistory && (
+        <div className="card p-2 mb-3 flex flex-col gap-1.5 max-h-40 overflow-auto">
+          {revisions == null ? (
+            <span className="text-xs text-mist-500">Loading…</span>
+          ) : revisions.length === 0 ? (
+            <span className="text-xs text-mist-500">No changes recorded yet.</span>
+          ) : (
+            revisions.map((r) => (
+              <div key={r.id} className="text-[11px] text-mist-300">
+                <span className="text-mist-100">{r.reason || "edit"}</span>{" "}
+                <span className="text-mist-500">({r.actor_type})</span>
+                {Object.keys(r.new_values).length > 0 && (
+                  <span className="text-mist-400">
+                    {" "}
+                    — {Object.keys(r.new_values).join(", ")}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -8247,6 +10116,180 @@ export default function FilterBar() {
         <button className="btn h-7 py-0" onClick={clearFilter}>
           Clear
         </button>
+      )}
+    </div>
+  );
+}
+```
+
+
+## `football-analysis/src/components/FindingsPanel.tsx`
+
+```ts
+import { useState } from "react";
+import { useStore } from "../store";
+import { api, downloadText } from "../lib/api";
+import { fmtClock } from "../lib/time";
+import SectionHeader from "./SectionHeader";
+
+/**
+ * Findings: save an observation tied to its evidence. The currently selected
+ * playlist events become the supporting events, and the time range is derived
+ * from them. Clicking a finding loads its events as the reel and seeks to the
+ * start — evidence you can always get back to.
+ */
+export default function FindingsPanel() {
+  const findings = useStore((s) => s.findings);
+  const addFinding = useStore((s) => s.addFinding);
+  const removeFinding = useStore((s) => s.removeFinding);
+  const events = useStore((s) => s.events);
+  const playlist = useStore((s) => s.playlist);
+  const setPlaylist = useStore((s) => s.setPlaylist);
+  const requestSeek = useStore((s) => s.requestSeek);
+  const selectEvent = useStore((s) => s.selectEvent);
+  const videoId = useStore((s) => s.currentVideoId);
+
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const supporting = events.filter((e) => playlist.includes(e.id));
+  const range =
+    supporting.length > 0
+      ? {
+          start_ms: Math.min(...supporting.map((e) => e.start_ms)),
+          end_ms: Math.max(...supporting.map((e) => e.end_ms)),
+        }
+      : { start_ms: null, end_ms: null };
+
+  const save = async () => {
+    if (!title.trim()) return;
+    setBusy(true);
+    try {
+      await addFinding({
+        title: title.trim(),
+        description: desc.trim(),
+        event_ids: playlist,
+        start_ms: range.start_ms,
+        end_ms: range.end_ms,
+      });
+      setTitle("");
+      setDesc("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openFinding = (eventIds: number[], startMs: number | null) => {
+    if (eventIds.length) setPlaylist(eventIds);
+    if (startMs != null) {
+      selectEvent(eventIds[0] ?? null);
+      requestSeek(startMs);
+    }
+  };
+
+  if (!videoId) return null;
+
+  return (
+    <div className="panel p-3">
+      <SectionHeader
+        label="Findings"
+        className="mb-2"
+        right={
+          <div className="flex items-center gap-2">
+            {findings.length > 0 && (
+              <button
+                className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors"
+                onClick={async () => {
+                  const report = await api.getReport(videoId);
+                  downloadText(
+                    JSON.stringify(report, null, 2),
+                    `${report.title || "match"}-report.json`,
+                  );
+                }}
+              >
+                Export report
+              </button>
+            )}
+            <span className="text-[11px] text-mist-400 tabular-nums">
+              {findings.length}
+            </span>
+          </div>
+        }
+      />
+
+      <div className="flex flex-col gap-2 mb-3">
+        <input
+          className="input"
+          placeholder="Finding title — e.g. Left-side turnovers in the first phase"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && save()}
+        />
+        <textarea
+          className="input resize-none"
+          rows={2}
+          placeholder="Notes (optional)"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-mist-400">
+            {supporting.length > 0
+              ? `${supporting.length} supporting event${supporting.length === 1 ? "" : "s"} · ${fmtClock(range.start_ms ?? 0)}–${fmtClock(range.end_ms ?? 0)}`
+              : "Select events (▶ playlist) to attach evidence"}
+          </span>
+          <button
+            className="btn-accent h-7 py-0"
+            disabled={busy || !title.trim()}
+            onClick={save}
+          >
+            Save finding
+          </button>
+        </div>
+      </div>
+
+      {findings.length === 0 ? (
+        <p className="text-xs text-mist-400">
+          No findings yet. Capture what the evidence shows so you can return to it.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {findings.map((f) => (
+            <div key={f.id} className="card px-2.5 py-2">
+              <div className="flex items-start justify-between gap-2">
+                <button
+                  className="text-left flex-1 min-w-0"
+                  onClick={() => openFinding(f.event_ids, f.start_ms)}
+                >
+                  <div className="text-sm text-mist-100 flex items-center gap-2">
+                    {f.start_ms != null && (
+                      <span className="tabular-nums text-teal-300 text-xs shrink-0">
+                        {fmtClock(f.start_ms)}
+                      </span>
+                    )}
+                    <span className="truncate">{f.title}</span>
+                  </div>
+                  {f.description && (
+                    <div className="text-xs text-mist-400 mt-0.5">{f.description}</div>
+                  )}
+                  {f.event_ids.length > 0 && (
+                    <div className="text-[11px] text-mist-500 mt-0.5">
+                      {f.event_ids.length} event{f.event_ids.length === 1 ? "" : "s"} · click to load reel
+                    </div>
+                  )}
+                </button>
+                <button
+                  className="text-mist-500 hover:text-signal-live text-sm shrink-0"
+                  onClick={() => removeFinding(f.id)}
+                  aria-label="Delete finding"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -8817,6 +10860,241 @@ export default function PlaylistBar({ presenting, onPlay, onStop }: Props) {
 ```
 
 
+## `football-analysis/src/components/ReviewQueue.tsx`
+
+```ts
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useStore } from "../store";
+import type { Category, MatchEvent } from "../lib/types";
+import { fmtClock } from "../lib/time";
+import { BAND_CLASS, BAND_LABEL, confidenceBand, confidencePct } from "../lib/confidence";
+import SectionHeader from "./SectionHeader";
+
+type QueueFilter = "all" | "high" | "medium" | "low";
+
+/**
+ * AI Review Queue: process machine-generated suggestions fast.
+ *
+ * Shows the UNREVIEWED AI events (source="ai", reviewed=false). Accept keeps the
+ * event on the timeline and marks it reviewed; reject removes it. Both auto-
+ * advance to the next item. Keyboard (only while the queue is focused, never
+ * while typing in a field):
+ *   Enter = accept · Delete/Backspace = reject · ↑/↓ = prev/next · Space = seek
+ */
+export default function ReviewQueue() {
+  const events = useStore((s) => s.events);
+  const categories = useStore((s) => s.categories);
+  const acceptEvent = useStore((s) => s.acceptEvent);
+  const rejectEvent = useStore((s) => s.rejectEvent);
+  const selectEvent = useStore((s) => s.selectEvent);
+  const requestSeek = useStore((s) => s.requestSeek);
+  const selectedEventId = useStore((s) => s.selectedEventId);
+
+  const [filter, setFilter] = useState<QueueFilter>("all");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const catName = useMemo(() => {
+    const m = new Map<number, string>();
+    categories.forEach((c: Category) => c.id && m.set(c.id, c.name));
+    return m;
+  }, [categories]);
+
+  const codeOf = useCallback(
+    (e: MatchEvent) =>
+      (e.category_id ? catName.get(e.category_id) : null) || e.label || "Event",
+    [catName],
+  );
+
+  // Unreviewed AI suggestions, sorted by time, optionally by confidence band.
+  const queue = useMemo(() => {
+    return events
+      .filter((e) => e.source === "ai" && !e.reviewed)
+      .filter((e) => filter === "all" || confidenceBand(e.confidence) === filter)
+      .sort((a, b) => a.start_ms - b.start_ms);
+  }, [events, filter]);
+
+  // Track which queue item is the cursor. Default to the selected event if it's
+  // in the queue, else the first item.
+  const [cursor, setCursor] = useState(0);
+  useEffect(() => {
+    const idx = queue.findIndex((e) => e.id === selectedEventId);
+    if (idx >= 0) setCursor(idx);
+    else if (cursor >= queue.length) setCursor(Math.max(0, queue.length - 1));
+  }, [queue, selectedEventId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const current = queue[cursor];
+
+  const focusItem = useCallback(
+    (idx: number) => {
+      const clamped = Math.max(0, Math.min(idx, queue.length - 1));
+      setCursor(clamped);
+      const ev = queue[clamped];
+      if (ev) selectEvent(ev.id);
+    },
+    [queue, selectEvent],
+  );
+
+  const doAccept = useCallback(async () => {
+    if (!current) return;
+    await acceptEvent(current.id); // leaves the queue -> next item shifts into `cursor`
+    setCursor(Math.min(cursor, Math.max(0, queue.length - 2)));
+  }, [current, cursor, acceptEvent, queue.length]);
+
+  const doReject = useCallback(async () => {
+    if (!current) return;
+    await rejectEvent(current.id);
+    setCursor(Math.min(cursor, Math.max(0, queue.length - 2)));
+  }, [current, cursor, rejectEvent, queue.length]);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    // Never hijack typing.
+    const t = e.target as HTMLElement;
+    if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void doAccept();
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      void doReject();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      focusItem(cursor + 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      focusItem(cursor - 1);
+    } else if (e.key === " ") {
+      e.preventDefault();
+      if (current) requestSeek(current.start_ms);
+    }
+  };
+
+  return (
+    <div className="panel p-3">
+      <SectionHeader
+        label="Review queue"
+        className="mb-2"
+        right={
+          <span className="text-[11px] text-mist-400 tabular-nums">
+            {queue.length} to review
+          </span>
+        }
+      />
+
+      {events.some((e) => e.source === "ai") ? (
+        <>
+          <div className="flex items-center gap-1 mb-2 rounded-lg bg-ink-900/60 p-0.5 w-fit">
+            {(["all", "high", "medium", "low"] as QueueFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-2.5 py-1 rounded-md text-xs capitalize transition-colors ${
+                  filter === f ? "bg-ink-600 text-mist-100" : "text-mist-400 hover:text-mist-200"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {queue.length === 0 ? (
+            <p className="text-xs text-mist-400 py-2">
+              Nothing left to review in this filter. ✓
+            </p>
+          ) : (
+            <div
+              ref={containerRef}
+              tabIndex={0}
+              onKeyDown={onKeyDown}
+              className="flex flex-col gap-1 outline-none focus:ring-1 focus:ring-violet-500/40 rounded-lg"
+            >
+              {queue.map((e, i) => {
+                const band = confidenceBand(e.confidence);
+                const active = i === cursor;
+                return (
+                  <div
+                    key={e.id}
+                    onClick={() => {
+                      focusItem(i);
+                      requestSeek(e.start_ms);
+                    }}
+                    className={`card px-2.5 py-1.5 cursor-pointer transition-colors ${
+                      active ? "ring-1 ring-violet-500/50 bg-ink-600" : "hover:bg-ink-600"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm text-mist-100 min-w-0">
+                        <span className="tabular-nums text-teal-300 text-xs shrink-0">
+                          {fmtClock(e.start_ms)}
+                        </span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                        <span className="truncate">{codeOf(e)}</span>
+                      </div>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] shrink-0 ${BAND_CLASS[band]}`}
+                        title={BAND_LABEL[band]}
+                      >
+                        {confidencePct(e.confidence)}
+                      </span>
+                    </div>
+                    {e.detector && (
+                      <div className="text-[11px] text-mist-400 mt-0.5">
+                        {e.detector} · {BAND_LABEL[band]}
+                      </div>
+                    )}
+                    {active && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <button
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            void doAccept();
+                          }}
+                          className="btn h-7 py-0 text-teal-300"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            void doReject();
+                          }}
+                          className="btn h-7 py-0 text-rose-300"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            selectEvent(e.id);
+                            requestSeek(e.start_ms);
+                          }}
+                          className="btn h-7 py-0"
+                        >
+                          Watch
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <p className="text-[10px] text-mist-500 mt-2 leading-relaxed">
+            Focus the list, then: <b>Enter</b> accept · <b>Del</b> reject ·{" "}
+            <b>↑↓</b> move · <b>Space</b> seek
+          </p>
+        </>
+      ) : (
+        <p className="text-xs text-mist-400 py-2">
+          No AI suggestions yet. Run analysis to generate reviewable events.
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+
 ## `football-analysis/src/components/SectionHeader.tsx`
 
 ```ts
@@ -8872,6 +11150,8 @@ export default function SettingsPanel() {
   const setProvider = useStore((s) => s.setProvider);
   const saveApiFootballKey = useStore((s) => s.saveApiFootballKey);
   const refreshSettings = useStore((s) => s.refreshSettings);
+  const reducedMotion = useStore((s) => s.reducedMotion);
+  const setReducedMotion = useStore((s) => s.setReducedMotion);
 
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
@@ -9115,6 +11395,25 @@ export default function SettingsPanel() {
                 </div>
               </>
             )}
+
+            <div className="border-t border-ink-500/50 my-4" />
+
+            {/* Interface preferences */}
+            <label className="text-xs font-medium text-mist-200">Interface</label>
+            <label className="flex items-center justify-between gap-3 mt-2 cursor-pointer">
+              <span className="text-xs text-mist-300 leading-relaxed">
+                Reduced motion
+                <span className="block text-[11px] text-mist-500">
+                  Minimise animation across the app.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                className="w-4 h-4"
+                checked={reducedMotion}
+                onChange={(e) => setReducedMotion(e.target.checked)}
+              />
+            </label>
           </motion.div>
         </motion.div>
       )}
@@ -9149,12 +11448,21 @@ function ProviderTab({
 
 ```ts
 import { useEffect, useRef } from "react";
-import type { ShotsData } from "../lib/types";
+import type { Shot, ShotsData } from "../lib/types";
 import { TEAM_COLORS } from "./AnalyzePanel";
 
-/** Top-down pitch with shot markers sized by xG. */
-export default function ShotMap({ shots }: { shots: ShotsData }) {
+/** Top-down pitch with shot markers sized by xG. Clicking a marker seeks the
+ *  video to that shot (spec §25) — pitch becomes a control surface. */
+export default function ShotMap({
+  shots,
+  onSeek,
+}: {
+  shots: ShotsData;
+  onSeek?: (ms: number) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Screen-space marker geometry, kept for click hit-testing.
+  const hitsRef = useRef<{ x: number; y: number; r: number; shot: Shot }[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -9185,6 +11493,7 @@ export default function ShotMap({ shots }: { shots: ShotsData }) {
     // shots
     const sx = cw / shots.length;
     const sy = ch / shots.width;
+    const hits: { x: number; y: number; r: number; shot: Shot }[] = [];
     for (const s of shots.shots) {
       const x = s.X * sx;
       const y = s.Y * sy;
@@ -9197,10 +11506,32 @@ export default function ShotMap({ shots }: { shots: ShotsData }) {
       ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      hits.push({ x, y, r: Math.max(r, 8), shot: s });
     }
+    hitsRef.current = hits;
   }, [shots]);
 
-  return <canvas ref={canvasRef} className="w-full rounded-lg" />;
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onSeek) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    // Nearest marker within its radius.
+    let best: { d: number; shot: Shot } | null = null;
+    for (const h of hitsRef.current) {
+      const d = Math.hypot(px - h.x, py - h.y);
+      if (d <= h.r && (!best || d < best.d)) best = { d, shot: h.shot };
+    }
+    if (best) onSeek(best.shot.t_ms);
+  };
+
+  return (
+    <canvas
+      ref={canvasRef}
+      onClick={handleClick}
+      className={`w-full rounded-lg ${onSeek ? "cursor-pointer" : ""}`}
+    />
+  );
 }
 ```
 
@@ -9220,6 +11551,7 @@ export default function ShotsPanel() {
   const shots = useStore((s) => s.shots);
   const computeShots = useStore((s) => s.computeShots);
   const tagShots = useStore((s) => s.tagShots);
+  const requestSeek = useStore((s) => s.requestSeek);
 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -9289,7 +11621,7 @@ export default function ShotsPanel() {
             />
           </div>
 
-          <ShotMap shots={shots} />
+          <ShotMap shots={shots} onSeek={requestSeek} />
           <p className="text-[11px] text-mist-500">
             Dot size ∝ xG. Heuristic estimate — not a trained model.
           </p>
@@ -9481,6 +11813,48 @@ export default function Sidebar() {
 ```
 
 
+## `football-analysis/src/components/SourceBadge.tsx`
+
+```ts
+// A small, honest badge for where a number came from. Approximate/heuristic
+// sources are amber (check me); validated/official sources are teal.
+//
+// Shared by the AI panel and the match overview so data provenance reads the
+// same everywhere (spec §13/§58).
+
+export const SOURCE_LABEL: Record<string, string> = {
+  official_match_data: "Official",
+  cuddy_video_analysis: "Cuddy CV",
+  approximate_cv: "Approx. CV",
+  heuristic: "Heuristic",
+};
+
+const APPROX = new Set(["approximate_cv", "heuristic"]);
+
+const TITLE: Record<string, string> = {
+  official_match_data: "Validated official match data (API-Football)",
+  cuddy_video_analysis: "Derived from Cuddy's video analysis",
+  approximate_cv: "Approximate — spatial CV, not measured data",
+  heuristic: "Heuristic estimate from tracking",
+};
+
+export default function SourceBadge({ source }: { source: string }) {
+  const label = SOURCE_LABEL[source] ?? source;
+  const approx = APPROX.has(source);
+  return (
+    <span
+      className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide ${
+        approx ? "bg-amber-500/15 text-amber-300" : "bg-teal-500/15 text-teal-300"
+      }`}
+      title={TITLE[source] ?? "Data source"}
+    >
+      {label}
+    </span>
+  );
+}
+```
+
+
 ## `football-analysis/src/components/StatsDashboard.tsx`
 
 ```ts
@@ -9489,12 +11863,15 @@ import { motion } from "framer-motion";
 import { useStore } from "../store";
 import { api } from "../lib/api";
 import SectionHeader from "./SectionHeader";
+import SourceBadge from "./SourceBadge";
 import { teamCode } from "./TeamBits";
 import type {
+  Analytics,
   MatchFixtureSummary,
   MatchTeam,
   PlayerHeatmap,
   PlayerStat,
+  ShotsData,
   TracksData,
 } from "../lib/types";
 
@@ -9545,6 +11922,8 @@ export default function StatsDashboard() {
   const currentVideoId = useStore((s) => s.currentVideoId);
   const assignments = useStore((s) => s.assignments);
   const assignPlayer = useStore((s) => s.assignPlayer);
+  const analytics = useStore((s) => s.analytics);
+  const shots = useStore((s) => s.shots);
 
   const [query, setQuery] = useState("");
   const [side, setSide] = useState<"both" | "home" | "away">("both");
@@ -9658,7 +12037,7 @@ export default function StatsDashboard() {
       {/* Team statistics (scoreline + KPIs live in the full-width MatchHero) */}
       <SectionHeader
         label="Team Statistics"
-        className="mb-2.5"
+        className="mb-1"
         right={
           <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/70 p-0.5">
             <SideTab label="Both" active={side === "both"} onClick={() => setSide("both")} />
@@ -9667,6 +12046,9 @@ export default function StatsDashboard() {
           </div>
         }
       />
+      <div className="mb-2.5">
+        <SourceBadge source="official_match_data" />
+      </div>
 
       {statKeys.length > 0 && side === "both" && (
         <>
@@ -9694,6 +12076,10 @@ export default function StatsDashboard() {
           ))}
         </div>
       )}
+
+      {/* Cuddy video-derived analytics — clearly separated from official data
+          and labelled by how each number was produced (spec §13/§58). */}
+      <CuddyAnalysisSection homeCode={homeCode} awayCode={awayCode} analytics={analytics} shots={shots} />
 
       {/* Lineups — both XIs for "Both", one otherwise. Names are clickable to
           show that player's real match stats (once loaded). */}
@@ -10038,6 +12424,92 @@ function MiniHeatmap({ hm }: { hm: PlayerHeatmap }) {
         {hm.n_points} tracked positions · approximate spatial layer, not measured data.
       </p>
     </div>
+  );
+}
+
+/** Video-derived metrics, each tagged with how it was produced. Kept visually
+ *  distinct from the official API-Football table above so the two data sources
+ *  are never conflated. */
+function CuddyAnalysisSection({
+  homeCode,
+  awayCode,
+  analytics,
+  shots,
+}: {
+  homeCode: string;
+  awayCode: string;
+  analytics: Analytics | null;
+  shots: ShotsData | null;
+}) {
+  const rows: { label: string; value: string; source: string }[] = [];
+  if (analytics?.possession_pct) {
+    const p = analytics.possession_pct;
+    rows.push({
+      label: "Possession",
+      value: `${Math.round(p["0"])}% / ${Math.round(p["1"])}%`,
+      source: "heuristic",
+    });
+  }
+  if (analytics?.passes) {
+    rows.push({
+      label: "Passes",
+      value: `${analytics.passes["0"]} / ${analytics.passes["1"]}`,
+      source: "heuristic",
+    });
+  }
+  if (analytics && typeof analytics.turnovers === "number") {
+    rows.push({ label: "Turnovers", value: String(analytics.turnovers), source: "heuristic" });
+  }
+  if (shots?.team_xg) {
+    rows.push({
+      label: "xG",
+      value: `${shots.team_xg["0"].toFixed(2)} / ${shots.team_xg["1"].toFixed(2)}`,
+      source: "cuddy_video_analysis",
+    });
+  }
+  if (shots?.team_shots) {
+    rows.push({
+      label: "Shots (detected)",
+      value: `${shots.team_shots["0"]} / ${shots.team_shots["1"]}`,
+      source: "cuddy_video_analysis",
+    });
+  }
+
+  return (
+    <>
+      <SectionHeader
+        label="Cuddy Video Analysis"
+        className="mt-5 mb-1"
+        right={
+          <span className="text-[10px] uppercase tracking-wide text-mist-500">
+            {homeCode} / {awayCode}
+          </span>
+        }
+      />
+      {rows.length === 0 ? (
+        <p className="text-xs text-mist-400">
+          Run analysis to compute video-derived metrics (possession, xG, turnovers).
+          These are approximate, not official data.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((r) => (
+            <div
+              key={r.label}
+              className="flex items-center justify-between card px-2.5 py-1.5 text-sm"
+            >
+              <span className="text-mist-300 text-[11px] uppercase tracking-wide">
+                {r.label}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="tabular-nums text-mist-100">{r.value}</span>
+                <SourceBadge source={r.source} />
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -10987,10 +13459,11 @@ export function TeamHead({
 ## `football-analysis/src/components/Timeline.tsx`
 
 ```ts
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useStore, useFilteredEvents } from "../store";
-import type { Category } from "../lib/types";
+import type { Category, MatchEvent } from "../lib/types";
 import { fmtClock } from "../lib/time";
+import { confidencePct } from "../lib/confidence";
 import SectionHeader from "./SectionHeader";
 
 interface Props {
@@ -11001,9 +13474,19 @@ interface Props {
 
 type Drag = { id: number; edge: "start" | "end"; start: number; end: number } | null;
 
+// Zoom presets: visible span in ms (0 = fit whole match).
+const ZOOMS: { label: string; span: number }[] = [
+  { label: "Fit", span: 0 },
+  { label: "10m", span: 10 * 60_000 },
+  { label: "5m", span: 5 * 60_000 },
+  { label: "1m", span: 60_000 },
+];
+
 /**
- * Horizontal timeline of coded events. Click a block to select + seek; drag its
- * edges to adjust the event boundaries. AI events are dashed/tinted for review.
+ * The timeline spine. Two lanes separate manual coding from AI suggestions;
+ * click empty space to seek + seed the composer, click a block to select+seek,
+ * drag block edges to adjust boundaries, drag the playhead to scrub. Zoom scales
+ * the track inside a horizontal scroller and the playhead auto-follows playback.
  */
 export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const events = useFilteredEvents();
@@ -11012,13 +13495,25 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const selectEvent = useStore((s) => s.selectEvent);
   const updateEvent = useStore((s) => s.updateEvent);
   const setComposeSeed = useStore((s) => s.setComposeSeed);
-  const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
+  // Memoize per-render allocations: the category map and lane splits only change
+  // when categories/events do, not on every playhead tick (spec §35).
+  const catById = useMemo(
+    () => new Map<number, Category>(categories.map((c) => [c.id, c])),
+    [categories],
+  );
 
+  const scrollRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag>(null);
+  const [zoom, setZoom] = useState(0); // index into ZOOMS
 
   const dur = durationMs || 1;
+  const span = ZOOMS[zoom].span || dur;
+  const widthPct = Math.max(100, (dur / span) * 100); // track width vs viewport
   const pct = (ms: number) => `${Math.min(100, Math.max(0, (ms / dur) * 100))}%`;
+
+  const manual = useMemo(() => events.filter((e) => e.source !== "ai"), [events]);
+  const ai = useMemo(() => events.filter((e) => e.source === "ai"), [events]);
 
   const msFromClientX = (clientX: number) => {
     const rect = trackRef.current!.getBoundingClientRect();
@@ -11026,15 +13521,33 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
     return Math.max(0, Math.min(dur, ratio * dur));
   };
 
-  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (drag) return;
-    const ms = msFromClientX(e.clientX);
+  // Keep the playhead in view when zoomed and playing.
+  useLayoutEffect(() => {
+    if (zoom === 0 || !scrollRef.current || !trackRef.current) return;
+    const scroller = scrollRef.current;
+    const x = (playheadMs / dur) * trackRef.current.scrollWidth;
+    const margin = scroller.clientWidth * 0.15;
+    if (x < scroller.scrollLeft + margin) scroller.scrollLeft = x - margin;
+    else if (x > scroller.scrollLeft + scroller.clientWidth - margin)
+      scroller.scrollLeft = x - scroller.clientWidth + margin;
+  }, [playheadMs, zoom, dur]);
+
+  // When switching to a zoomed level, center on the playhead once.
+  useEffect(() => {
+    if (zoom === 0 || !scrollRef.current || !trackRef.current) return;
+    const scroller = scrollRef.current;
+    const x = (playheadMs / dur) * trackRef.current.scrollWidth;
+    scroller.scrollLeft = Math.max(0, x - scroller.clientWidth / 2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom]);
+
+  const seekAndSeed = (clientX: number) => {
+    const ms = msFromClientX(clientX);
     onSeek(ms);
-    // Prefill the Add-event form's time with the clicked position.
     setComposeSeed({ ms: Math.round(ms) });
   };
 
-  const beginDrag = (
+  const beginBoundaryDrag = (
     e: React.MouseEvent,
     id: number,
     edge: "start" | "end",
@@ -11044,7 +13557,6 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
     e.stopPropagation();
     const state: Drag = { id, edge, start, end };
     setDrag(state);
-
     const onMove = (me: MouseEvent) => {
       const ms = Math.round(msFromClientX(me.clientX));
       if (edge === "start") state!.start = Math.min(ms, state!.end - 100);
@@ -11061,84 +13573,157 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
     window.addEventListener("mouseup", onUp);
   };
 
+  const beginPlayheadDrag = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const onMove = (me: MouseEvent) => onSeek(Math.round(msFromClientX(me.clientX)));
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const renderBlock = (ev: MatchEvent) => {
+    const cat = ev.category_id ? catById.get(ev.category_id) : undefined;
+    const color = cat?.color ?? "#8A90A0";
+    const isAi = ev.source === "ai";
+    const selected = ev.id === selectedId;
+    const start = drag?.id === ev.id ? drag.start : ev.start_ms;
+    const end = drag?.id === ev.id ? drag.end : ev.end_ms;
+    const title = isAi
+      ? `${cat?.name ?? ev.label} — ${fmtClock(start)} · AI ${confidencePct(ev.confidence)}`
+      : `${cat?.name ?? ev.label} — ${fmtClock(start)}`;
+    return (
+      <div
+        key={ev.id}
+        onClick={(e) => {
+          e.stopPropagation();
+          selectEvent(ev.id);
+          onSeek(start);
+          setComposeSeed({
+            ms: Math.round(start),
+            label: ev.label ?? undefined,
+            categoryId: ev.category_id ?? undefined,
+          });
+        }}
+        title={title}
+        className="absolute top-1 bottom-1 rounded-md group"
+        style={{
+          left: pct(start),
+          width: `${Math.max(0.4, ((end - start) / dur) * 100)}%`,
+          background: isAi ? `${color}44` : `${color}CC`,
+          border: `${selected ? 2 : 1}px ${isAi ? "dashed" : "solid"} ${
+            selected ? "#EAECF2" : isAi ? "#A78BFA" : color
+          }`,
+        }}
+      >
+        <span
+          onMouseDown={(e) => beginBoundaryDrag(e, ev.id, "start", ev.start_ms, ev.end_ms)}
+          className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-l"
+        />
+        <span
+          onMouseDown={(e) => beginBoundaryDrag(e, ev.id, "end", ev.start_ms, ev.end_ms)}
+          className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-r"
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="panel p-3">
       <SectionHeader
         label="Timeline"
         className="mb-2 px-1"
         right={
-          <span className="text-xs text-mist-400 tabular-nums">
-            {fmtClock(playheadMs)} / {fmtClock(durationMs)}
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/60 p-0.5">
+              {ZOOMS.map((z, i) => (
+                <button
+                  key={z.label}
+                  onClick={() => setZoom(i)}
+                  className={`px-2 py-0.5 rounded-md text-[11px] transition-colors ${
+                    zoom === i ? "bg-ink-600 text-mist-100" : "text-mist-400 hover:text-mist-200"
+                  }`}
+                  disabled={z.span > 0 && z.span >= dur}
+                >
+                  {z.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-mist-400 tabular-nums">
+              {fmtClock(playheadMs)} / {fmtClock(durationMs)}
+            </span>
+          </div>
         }
       />
-      <p className="text-[10px] text-mist-500 px-1 mb-2">
-        click a marker to jump &amp; auto-fill the event form
-      </p>
 
-      <div
-        ref={trackRef}
-        className="relative h-16 rounded-xl bg-ink-900/70 border border-ink-500/50 cursor-pointer overflow-hidden select-none"
-        onClick={handleTrackClick}
-      >
-        {events.map((ev) => {
-          const cat = ev.category_id ? catById.get(ev.category_id) : undefined;
-          const color = cat?.color ?? "#8A90A0";
-          const isAi = ev.source === "ai";
-          const selected = ev.id === selectedId;
-          const start = drag?.id === ev.id ? drag.start : ev.start_ms;
-          const end = drag?.id === ev.id ? drag.end : ev.end_ms;
-          return (
-            <div
-              key={ev.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                selectEvent(ev.id);
-                onSeek(start);
-                // Prefill the Add-event form to quickly log a similar event here.
-                setComposeSeed({
-                  ms: Math.round(start),
-                  label: ev.label ?? undefined,
-                  categoryId: ev.category_id ?? undefined,
-                });
-              }}
-              title={`${cat?.name ?? ev.label} — ${fmtClock(start)}`}
-              className="absolute top-2 bottom-2 rounded-md group"
-              style={{
-                left: pct(start),
-                width: `${Math.max(0.6, ((end - start) / dur) * 100)}%`,
-                background: isAi ? `${color}44` : `${color}CC`,
-                border: `${selected ? 2 : 1}px ${isAi ? "dashed" : "solid"} ${
-                  selected ? "#EAECF2" : color
-                }`,
-              }}
-            >
-              {/* resize handles */}
-              <span
-                onMouseDown={(e) => beginDrag(e, ev.id, "start", ev.start_ms, ev.end_ms)}
-                className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-l"
-              />
-              <span
-                onMouseDown={(e) => beginDrag(e, ev.id, "end", ev.start_ms, ev.end_ms)}
-                className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-r"
-              />
-            </div>
-          );
-        })}
-
-        {/* Plain div + CSS transition — a motion `animate` here re-ran a
-            tween on every timeupdate (many times/sec) for no visual gain. */}
+      <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden">
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-teal-300 shadow-glow pointer-events-none transition-[left] duration-100 ease-linear"
-          style={{ left: pct(playheadMs) }}
-        />
+          ref={trackRef}
+          className="relative select-none"
+          style={{ width: `${widthPct}%` }}
+        >
+          {/* lane labels */}
+          <div className="flex flex-col gap-1">
+            <Lane label="Manual" accent="#8A90A0">
+              <div
+                className="relative h-8 w-full cursor-pointer"
+                onClick={(e) => !drag && seekAndSeed(e.clientX)}
+              >
+                {manual.map(renderBlock)}
+              </div>
+            </Lane>
+            <Lane label="AI" accent="#A78BFA">
+              <div
+                className="relative h-8 w-full cursor-pointer"
+                onClick={(e) => !drag && seekAndSeed(e.clientX)}
+              >
+                {ai.map(renderBlock)}
+              </div>
+            </Lane>
+          </div>
+
+          {/* playhead spans both lanes; drag to scrub */}
+          <div
+            onMouseDown={beginPlayheadDrag}
+            className="absolute top-0 bottom-0 w-1 -ml-0.5 bg-teal-300 shadow-glow cursor-ew-resize transition-[left] duration-100 ease-linear"
+            style={{ left: pct(playheadMs) }}
+          />
+        </div>
       </div>
 
+      <p className="text-[10px] text-mist-500 px-1 mt-2">
+        Click a lane to seek &amp; seed an event · drag block edges to trim · drag the playhead to scrub
+      </p>
+
       {events.length === 0 && (
-        <p className="text-mist-400 text-xs mt-2 px-1">
+        <p className="text-mist-400 text-xs mt-1 px-1">
           No events match — code the match below, or adjust the filter.
         </p>
       )}
+    </div>
+  );
+}
+
+function Lane({
+  label,
+  accent,
+  children,
+}: {
+  label: string;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative rounded-lg bg-ink-900/70 border border-ink-500/50">
+      <span
+        className="absolute left-1 top-1 z-10 text-[9px] uppercase tracking-wide px-1 rounded pointer-events-none"
+        style={{ color: accent, background: "#0000004D" }}
+      >
+        {label}
+      </span>
+      {children}
     </div>
   );
 }
@@ -11562,7 +14147,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     const boxRef = useRef<HTMLDivElement>(null);
 
     const tracks = useStore((s) => s.tracks);
-    const overlay = useStore((s) => s.overlay);
+    const overlayMode = useStore((s) => s.overlayMode);
     const studioTool = useStore((s) => s.studioTool);
     const calibrationMode = useStore((s) => s.calibrationMode);
     const calibrationPoints = useStore((s) => s.calibrationPoints);
@@ -11588,8 +14173,12 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
         if (canvas.height !== ch) canvas.height = ch;
         ctx.clearRect(0, 0, cw, ch);
 
-        // detection overlay
-        if (overlay && tracks) {
+        // detection overlay — per-mode: players / ball / both / analysis
+        const showPlayers =
+          overlayMode === "players" || overlayMode === "both" || overlayMode === "analysis";
+        const showBall =
+          overlayMode === "ball" || overlayMode === "both" || overlayMode === "analysis";
+        if (overlayMode !== "off" && tracks) {
           const frame = nearestFrame(tracks.frames, ms);
           if (frame) {
             const sx = cw / tracks.width;
@@ -11598,6 +14187,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             ctx.textBaseline = "middle";
             for (const d of frame.dets) {
               const isBall = d.cls === 32;
+              if (isBall ? !showBall : !showPlayers) continue;
               const color = isBall ? BALL_COLOR : TEAM_COLORS[d.team] ?? "#8A90A0";
               const x = d.x * sx;
               const y = d.y * sy;
@@ -11670,7 +14260,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           });
         }
       },
-      [overlay, tracks, calibrationMode, calibrationPoints, nativeW, nativeH],
+      [overlayMode, tracks, calibrationMode, calibrationPoints, nativeW, nativeH],
     );
 
     useEffect(() => {
@@ -11919,6 +14509,8 @@ import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
 import AnalysisTabs from "./AnalysisTabs";
 import AIPanel from "./AIPanel";
+import ReviewQueue from "./ReviewQueue";
+import FindingsPanel from "./FindingsPanel";
 import AddEventPanel from "./AddEventPanel";
 import StudioToolbar from "./StudioToolbar";
 import MatchHero from "./MatchHero";
@@ -12146,6 +14738,8 @@ export default function Workspace() {
             onStop={stopPresentation}
           />
           <AIPanel />
+          <ReviewQueue />
+          <FindingsPanel />
           {analyzed && <ValidationPanel />}
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />
@@ -12242,6 +14836,10 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  EventRelation,
+  EventRevision,
+  EvidencePackage,
+  Finding,
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
@@ -12250,11 +14848,13 @@ import type {
   PlayerStatsDoc,
   Project,
   QueryResult,
+  ReportPayload,
   SegmentMap,
   SettingsStatus,
   ShotsData,
   StudioDoc,
   TracksData,
+  TracksWindow,
   ValidationResult,
   Video,
 } from "./types";
@@ -12354,6 +14954,57 @@ export const api = {
   deleteEvent: (id: number) =>
     request<void>(`/events/${id}`, { method: "DELETE" }),
 
+  // Review actions on AI suggestions (same canonical Event model)
+  acceptEvent: (id: number) =>
+    request<MatchEvent>(`/events/${id}/accept`, { method: "POST" }),
+  rejectEvent: (id: number) =>
+    request<void>(`/events/${id}/reject`, { method: "POST" }),
+
+  // Provenance trail (before/after values per edit), newest first
+  listRevisions: (id: number) =>
+    request<EventRevision[]>(`/events/${id}/revisions`),
+
+  // Event relations (sequences)
+  listRelations: (eventId: number) =>
+    request<EventRelation[]>(`/events/${eventId}/relations`),
+  createRelation: (
+    fromEventId: number,
+    toEventId: number,
+    relationType: string,
+  ) =>
+    request<EventRelation>(`/events/relations`, {
+      method: "POST",
+      body: JSON.stringify({
+        from_event_id: fromEventId,
+        to_event_id: toEventId,
+        relation_type: relationType,
+      }),
+    }),
+  deleteRelation: (relationId: number) =>
+    request<void>(`/events/relations/${relationId}`, { method: "DELETE" }),
+
+  // Findings (analyst observations linked to evidence)
+  listFindings: (videoId: number) =>
+    request<Finding[]>(`/videos/${videoId}/findings`),
+  createFinding: (
+    videoId: number,
+    input: {
+      title: string;
+      description?: string;
+      event_ids?: number[];
+      start_ms?: number | null;
+      end_ms?: number | null;
+    },
+  ) =>
+    request<Finding>(`/videos/${videoId}/findings`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  deleteFinding: (id: number) =>
+    request<void>(`/findings/${id}`, { method: "DELETE" }),
+  getReport: (videoId: number) =>
+    request<ReportPayload>(`/videos/${videoId}/report`),
+
   // Descriptors
   listDescriptorGroups: (projectId: number) =>
     request<DescriptorGroup[]>(`/descriptor-groups?project_id=${projectId}`),
@@ -12393,6 +15044,11 @@ export const api = {
   pickVideoFile: () =>
     request<{ path: string | null }>("/videos/pick", { method: "POST" }),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  // Windowed track access (spec §18): only frames near the playhead.
+  getTracksWindow: (videoId: number, startMs: number, endMs: number) =>
+    request<TracksWindow>(
+      `/videos/${videoId}/tracks/window?start_ms=${Math.max(0, Math.round(startMs))}&end_ms=${Math.round(endMs)}`,
+    ),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
 
@@ -12436,6 +15092,13 @@ export const api = {
     }),
   query: (videoId: number, question: string) =>
     request<QueryResult>(`/videos/${videoId}/query`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
+  // Structured, evidence-grounded query: deterministic clips/metrics first,
+  // optional LLM explanation. Works with no AI key.
+  investigate: (videoId: number, question: string) =>
+    request<EvidencePackage>(`/videos/${videoId}/investigate`, {
       method: "POST",
       body: JSON.stringify({ question }),
     }),
@@ -12526,6 +15189,47 @@ function triggerDownload(blob: Blob, filename: string) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+```
+
+
+## `football-analysis/src/lib/confidence.ts`
+
+```ts
+// Confidence display helpers.
+//
+// These bands are a DISPLAY aid over the detector's own confidence score — not
+// a validated accuracy claim. Wording deliberately says "review recommended" /
+// "verify" rather than implying calibrated precision (spec §9/§607).
+
+export type ConfidenceBand = "high" | "medium" | "low" | "none";
+
+export function confidenceBand(confidence: number | null): ConfidenceBand {
+  if (confidence == null) return "none";
+  if (confidence >= 0.75) return "high";
+  if (confidence >= 0.5) return "medium";
+  return "low";
+}
+
+export const BAND_LABEL: Record<ConfidenceBand, string> = {
+  high: "High confidence",
+  medium: "Review recommended",
+  low: "Low — verify",
+  none: "No confidence score",
+};
+
+/** Tailwind classes for a confidence chip. AI accent (violet) for the value,
+ *  amber/red as the band lowers to signal "check this". */
+export const BAND_CLASS: Record<ConfidenceBand, string> = {
+  high: "bg-teal-500/15 text-teal-300",
+  medium: "bg-amber-500/15 text-amber-300",
+  low: "bg-rose-500/15 text-rose-300",
+  none: "bg-ink-600 text-mist-400",
+};
+
+export function confidencePct(confidence: number | null): string {
+  if (confidence == null) return "—";
+  return `${Math.round(confidence * 100)}%`;
 }
 ```
 
@@ -12786,7 +15490,69 @@ export interface MatchEvent {
   source: EventSource;
   confidence: number | null;
   reviewed: boolean;
+  detector: string | null;
+  analysis_run_id: number | null;
   created_at: string;
+  updated_at: string;
+}
+
+/** One recorded change to an event (before/after), for the provenance trail. */
+export interface EventRevision {
+  id: number;
+  event_id: number;
+  previous_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
+  actor_type: "manual" | "system";
+  reason: string;
+  created_at: string;
+}
+
+export type EventRelationType =
+  | "follows"
+  | "causes"
+  | "assist_for"
+  | "shot_from"
+  | "turnover_to"
+  | "possession_start"
+  | "possession_end"
+  | "same_sequence"
+  | "related_clip";
+
+/** A typed link between two events (powers sequence queries). */
+export interface EventRelation {
+  id: number;
+  from_event_id: number;
+  to_event_id: number;
+  relation_type: EventRelationType | string;
+  created_at: string;
+}
+
+/** An analyst observation linked to its supporting events + time range. */
+export interface Finding {
+  id: number;
+  video_id: number;
+  title: string;
+  description: string;
+  event_ids: number[];
+  start_ms: number | null;
+  end_ms: number | null;
+  created_at: string;
+}
+
+/** Structured report payload (spec §56) — findings + resolved evidence clips. */
+export interface ReportPayload {
+  title: string;
+  generated_at: string;
+  match: Record<string, unknown> | null;
+  findings: {
+    id: number;
+    title: string;
+    description: string;
+    start_ms: number | null;
+    end_ms: number | null;
+    clips: { event_id: number; label: string; start_ms: number; end_ms: number; source: string }[];
+  }[];
+  notes: string;
 }
 
 // Portable coding template (categories + descriptor groups).
@@ -12838,6 +15604,17 @@ export interface TracksData {
   teams: number;
   frames: TrackFrame[];
 }
+
+/** A time-windowed slice of tracks (spec §18): metadata + only the frames in
+ *  [window[0], window[1]], to avoid loading the whole match into memory. */
+export interface TracksWindow extends TracksData {
+  window: [number, number];
+  n_total: number;
+}
+
+/** Video overlay mode (spec §19). "analysis" adds the spatial layer on top of
+ *  players+ball where available. */
+export type OverlayMode = "off" | "players" | "ball" | "both" | "analysis";
 
 // --- Studio: telestration graphics drawn over the video ---
 
@@ -13002,6 +15779,64 @@ export interface QueryResult {
   question: string;
 }
 
+// --- Structured, evidence-grounded query (deterministic engine) ---
+
+export type QueryIntent =
+  | "metric_comparison"
+  | "event_lookup"
+  | "event_count"
+  | "event_filter"
+  | "sequence_lookup"
+  | "shot_analysis"
+  | "possession_analysis"
+  | "pass_analysis"
+  | "turnover_analysis"
+  | "zone_analysis"
+  | "player_analysis"
+  | "time_range_analysis"
+  | "clip_lookup";
+
+export interface StructuredQuery {
+  intent: QueryIntent;
+  team: "home" | "away" | "both" | null;
+  period: number | null;
+  zones: string[];
+  event_types: string[];
+  source: EventSource | null;
+  reviewed: boolean | null;
+  time_range_ms: [number, number] | null;
+  metric: string | null;
+  wants_clips: boolean;
+  limit: number;
+}
+
+export interface EvidenceMetric {
+  label: string;
+  value: number | string;
+  /** e.g. cuddy_video_analysis | heuristic | approximate_cv | official_match_data */
+  source: string;
+}
+
+export interface EvidenceClip {
+  event_id: number;
+  start_ms: number;
+  end_ms: number;
+  label: string;
+  reason: string;
+}
+
+/** Deterministic evidence package; `explanation` is optional LLM prose over it. */
+export interface EvidencePackage {
+  question: string;
+  query: StructuredQuery;
+  summary: string;
+  metrics: EvidenceMetric[];
+  events: number[];
+  clips: EvidenceClip[];
+  warnings: string[];
+  explanation: string | null;
+}
+
 export interface ValidationResult {
   video_id: number;
   events: {
@@ -13126,7 +15961,9 @@ import type {
   CodingTemplate,
   DescriptorGroup,
   Filter,
+  Finding,
   MatchData,
+  OverlayMode,
   MatchEvent,
   MatchFixtureSummary,
   PitchData,
@@ -13177,6 +16014,19 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
 
 type Health = "checking" | "online" | "offline" | "failed";
 
+const RM_KEY = "cuddy.reducedMotion";
+
+/** Initial reduced-motion: a stored choice wins, else the OS preference. */
+function initialReducedMotion(): boolean {
+  try {
+    const stored = localStorage.getItem(RM_KEY);
+    if (stored != null) return stored === "1";
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
 const EMPTY_FILTER: Filter = {
   categoryIds: [],
   descriptors: [],
@@ -13204,7 +16054,7 @@ interface AppState {
   // Phase 2: CV analysis
   analysisJob: AnalysisJob | null;
   tracks: TracksData | null;
-  overlay: boolean;
+  overlayMode: OverlayMode; // off | players | ball | both | analysis
   segments: SegmentMap | null; // triage: main-camera vs filler
 
   // Phase 2b: pitch calibration
@@ -13249,6 +16099,22 @@ interface AppState {
   removeEvent: (id: number) => Promise<void>;
   toggleEventDescriptor: (id: number, label: string) => Promise<void>;
 
+  // AI review actions (same canonical Event; provenance kept on the backend).
+  acceptEvent: (id: number) => Promise<void>;
+  rejectEvent: (id: number) => Promise<void>;
+
+  // Findings (analyst observations linked to evidence)
+  findings: Finding[];
+  loadFindings: () => Promise<void>;
+  addFinding: (input: {
+    title: string;
+    description?: string;
+    event_ids?: number[];
+    start_ms?: number | null;
+    end_ms?: number | null;
+  }) => Promise<void>;
+  removeFinding: (id: number) => Promise<void>;
+
   selectEvent: (id: number | null) => void;
 
   // Add-event compose seed: clicking a timeline/list item prefills the form.
@@ -13272,7 +16138,7 @@ interface AppState {
   analyzeVideo: (targetFps?: number) => Promise<void>;
   loadTracks: () => Promise<void>;
   loadSegments: () => Promise<void>;
-  setOverlay: (on: boolean) => void;
+  setOverlayMode: (mode: OverlayMode) => void;
 
   setCalibrationMode: (on: boolean) => void;
   addCalibrationPoint: (x: number, y: number) => void;
@@ -13317,6 +16183,9 @@ interface AppState {
   keySource: "env" | "stored" | "none";
   apifootballKeySet: boolean;
   settingsOpen: boolean;
+  // UI preference: reduce/remove animation (accessibility + performance).
+  reducedMotion: boolean;
+  setReducedMotion: (on: boolean) => void;
   refreshSettings: () => Promise<void>;
   saveApiKey: (key: string, model?: string) => Promise<void>;
   saveGroqKey: (key: string) => Promise<void>;
@@ -13372,7 +16241,7 @@ export const useStore = create<AppState>((set, get) => ({
   requestSeekMs: null,
   analysisJob: null,
   tracks: null,
-  overlay: false, // tracked-player circles off by default; toggle in Analyse panel
+  overlayMode: "off", // overlay off by default; choose a mode in the Analyse panel
   segments: null,
   calibrationMode: false,
   calibrationPoints: [],
@@ -13392,6 +16261,7 @@ export const useStore = create<AppState>((set, get) => ({
   keySource: "none",
   apifootballKeySet: false,
   settingsOpen: false,
+  reducedMotion: initialReducedMotion(),
   composeSeed: null,
   matchData: null,
   matchDataLoading: false,
@@ -13473,6 +16343,15 @@ export const useStore = create<AppState>((set, get) => ({
   },
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+
+  setReducedMotion: (on) => {
+    try {
+      localStorage.setItem(RM_KEY, on ? "1" : "0");
+    } catch {
+      /* private mode / storage blocked — keep the in-memory choice */
+    }
+    set({ reducedMotion: on });
+  },
 
   loadMatchData: async () => {
     const vid = get().currentVideoId;
@@ -13710,9 +16589,11 @@ export const useStore = create<AppState>((set, get) => ({
       selectedPlayerName: null,
       assignments: {},
       videoMissing: false,
+      findings: [],
     });
     await Promise.all([
       get().loadEvents(),
+      get().loadFindings(),
       get().loadTracks(),
       get().loadSegments(),
       get().loadPitch(),
@@ -13777,6 +16658,47 @@ export const useStore = create<AppState>((set, get) => ({
 
   removeEvent: async (id) => {
     await api.deleteEvent(id);
+    set({
+      events: get().events.filter((e) => e.id !== id),
+      selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,
+      playlist: get().playlist.filter((p) => p !== id),
+    });
+  },
+
+  findings: [],
+  loadFindings: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ findings: [] });
+      return;
+    }
+    try {
+      const f = await api.listFindings(vid);
+      if (get().currentVideoId === vid) set({ findings: f });
+    } catch {
+      if (get().currentVideoId === vid) set({ findings: [] });
+    }
+  },
+  addFinding: async (input) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    const finding = await api.createFinding(vid, input);
+    set({ findings: [finding, ...get().findings] });
+  },
+  removeFinding: async (id) => {
+    await api.deleteFinding(id);
+    set({ findings: get().findings.filter((f) => f.id !== id) });
+  },
+
+  acceptEvent: async (id) => {
+    const event = await api.acceptEvent(id);
+    set({
+      events: get().events.map((e) => (e.id === id ? event : e)),
+    });
+  },
+
+  rejectEvent: async (id) => {
+    await api.rejectEvent(id);
     set({
       events: get().events.filter((e) => e.id !== id),
       selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,
@@ -13904,7 +16826,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  setOverlay: (on) => set({ overlay: on }),
+  setOverlayMode: (mode) => set({ overlayMode: mode }),
 
   setCalibrationMode: (on) =>
     set({ calibrationMode: on, calibrationPoints: on ? [] : get().calibrationPoints }),

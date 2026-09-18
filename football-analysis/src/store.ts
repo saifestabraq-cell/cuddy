@@ -13,7 +13,9 @@ import type {
   CodingTemplate,
   DescriptorGroup,
   Filter,
+  Finding,
   MatchData,
+  OverlayMode,
   MatchEvent,
   MatchFixtureSummary,
   PitchData,
@@ -64,6 +66,19 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
 
 type Health = "checking" | "online" | "offline" | "failed";
 
+const RM_KEY = "cuddy.reducedMotion";
+
+/** Initial reduced-motion: a stored choice wins, else the OS preference. */
+function initialReducedMotion(): boolean {
+  try {
+    const stored = localStorage.getItem(RM_KEY);
+    if (stored != null) return stored === "1";
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
 const EMPTY_FILTER: Filter = {
   categoryIds: [],
   descriptors: [],
@@ -91,7 +106,7 @@ interface AppState {
   // Phase 2: CV analysis
   analysisJob: AnalysisJob | null;
   tracks: TracksData | null;
-  overlay: boolean;
+  overlayMode: OverlayMode; // off | players | ball | both | analysis
   segments: SegmentMap | null; // triage: main-camera vs filler
 
   // Phase 2b: pitch calibration
@@ -136,6 +151,22 @@ interface AppState {
   removeEvent: (id: number) => Promise<void>;
   toggleEventDescriptor: (id: number, label: string) => Promise<void>;
 
+  // AI review actions (same canonical Event; provenance kept on the backend).
+  acceptEvent: (id: number) => Promise<void>;
+  rejectEvent: (id: number) => Promise<void>;
+
+  // Findings (analyst observations linked to evidence)
+  findings: Finding[];
+  loadFindings: () => Promise<void>;
+  addFinding: (input: {
+    title: string;
+    description?: string;
+    event_ids?: number[];
+    start_ms?: number | null;
+    end_ms?: number | null;
+  }) => Promise<void>;
+  removeFinding: (id: number) => Promise<void>;
+
   selectEvent: (id: number | null) => void;
 
   // Add-event compose seed: clicking a timeline/list item prefills the form.
@@ -159,7 +190,7 @@ interface AppState {
   analyzeVideo: (targetFps?: number) => Promise<void>;
   loadTracks: () => Promise<void>;
   loadSegments: () => Promise<void>;
-  setOverlay: (on: boolean) => void;
+  setOverlayMode: (mode: OverlayMode) => void;
 
   setCalibrationMode: (on: boolean) => void;
   addCalibrationPoint: (x: number, y: number) => void;
@@ -204,6 +235,9 @@ interface AppState {
   keySource: "env" | "stored" | "none";
   apifootballKeySet: boolean;
   settingsOpen: boolean;
+  // UI preference: reduce/remove animation (accessibility + performance).
+  reducedMotion: boolean;
+  setReducedMotion: (on: boolean) => void;
   refreshSettings: () => Promise<void>;
   saveApiKey: (key: string, model?: string) => Promise<void>;
   saveGroqKey: (key: string) => Promise<void>;
@@ -259,7 +293,7 @@ export const useStore = create<AppState>((set, get) => ({
   requestSeekMs: null,
   analysisJob: null,
   tracks: null,
-  overlay: false, // tracked-player circles off by default; toggle in Analyse panel
+  overlayMode: "off", // overlay off by default; choose a mode in the Analyse panel
   segments: null,
   calibrationMode: false,
   calibrationPoints: [],
@@ -279,6 +313,7 @@ export const useStore = create<AppState>((set, get) => ({
   keySource: "none",
   apifootballKeySet: false,
   settingsOpen: false,
+  reducedMotion: initialReducedMotion(),
   composeSeed: null,
   matchData: null,
   matchDataLoading: false,
@@ -360,6 +395,15 @@ export const useStore = create<AppState>((set, get) => ({
   },
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+
+  setReducedMotion: (on) => {
+    try {
+      localStorage.setItem(RM_KEY, on ? "1" : "0");
+    } catch {
+      /* private mode / storage blocked — keep the in-memory choice */
+    }
+    set({ reducedMotion: on });
+  },
 
   loadMatchData: async () => {
     const vid = get().currentVideoId;
@@ -597,9 +641,11 @@ export const useStore = create<AppState>((set, get) => ({
       selectedPlayerName: null,
       assignments: {},
       videoMissing: false,
+      findings: [],
     });
     await Promise.all([
       get().loadEvents(),
+      get().loadFindings(),
       get().loadTracks(),
       get().loadSegments(),
       get().loadPitch(),
@@ -664,6 +710,47 @@ export const useStore = create<AppState>((set, get) => ({
 
   removeEvent: async (id) => {
     await api.deleteEvent(id);
+    set({
+      events: get().events.filter((e) => e.id !== id),
+      selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,
+      playlist: get().playlist.filter((p) => p !== id),
+    });
+  },
+
+  findings: [],
+  loadFindings: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ findings: [] });
+      return;
+    }
+    try {
+      const f = await api.listFindings(vid);
+      if (get().currentVideoId === vid) set({ findings: f });
+    } catch {
+      if (get().currentVideoId === vid) set({ findings: [] });
+    }
+  },
+  addFinding: async (input) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    const finding = await api.createFinding(vid, input);
+    set({ findings: [finding, ...get().findings] });
+  },
+  removeFinding: async (id) => {
+    await api.deleteFinding(id);
+    set({ findings: get().findings.filter((f) => f.id !== id) });
+  },
+
+  acceptEvent: async (id) => {
+    const event = await api.acceptEvent(id);
+    set({
+      events: get().events.map((e) => (e.id === id ? event : e)),
+    });
+  },
+
+  rejectEvent: async (id) => {
+    await api.rejectEvent(id);
     set({
       events: get().events.filter((e) => e.id !== id),
       selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,
@@ -791,7 +878,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  setOverlay: (on) => set({ overlay: on }),
+  setOverlayMode: (mode) => set({ overlayMode: mode }),
 
   setCalibrationMode: (on) =>
     set({ calibrationMode: on, calibrationPoints: on ? [] : get().calibrationPoints }),

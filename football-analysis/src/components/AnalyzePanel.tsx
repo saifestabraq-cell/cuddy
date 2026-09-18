@@ -1,8 +1,17 @@
 import { motion } from "framer-motion";
 import { useStore } from "../store";
+import type { OverlayMode } from "../lib/types";
 
 export const TEAM_COLORS = ["#4C9BFF", "#FF6B4C"]; // team 0 (blue), team 1 (orange-red)
 export const BALL_COLOR = "#FFE14D"; // lit yellow
+
+const OVERLAY_MODES: { value: OverlayMode; label: string }[] = [
+  { value: "off", label: "Off" },
+  { value: "players", label: "Players" },
+  { value: "ball", label: "Ball" },
+  { value: "both", label: "Both" },
+  { value: "analysis", label: "Analysis" },
+];
 
 const STAGE_LABELS: Record<string, string> = {
   triage: "Triage",
@@ -16,9 +25,9 @@ export default function AnalyzePanel() {
   const job = useStore((s) => s.analysisJob);
   const tracks = useStore((s) => s.tracks);
   const segments = useStore((s) => s.segments);
-  const overlay = useStore((s) => s.overlay);
+  const overlayMode = useStore((s) => s.overlayMode);
   const analyzeVideo = useStore((s) => s.analyzeVideo);
-  const setOverlay = useStore((s) => s.setOverlay);
+  const setOverlayMode = useStore((s) => s.setOverlayMode);
 
   const running = job?.status === "running" || job?.status === "pending";
   const pct = Math.round((job?.progress ?? 0) * 100);
@@ -31,14 +40,22 @@ export default function AnalyzePanel() {
           AI analysis
         </span>
         {tracks && (
-          <label className="flex items-center gap-1.5 text-xs text-mist-300">
-            <input
-              type="checkbox"
-              checked={overlay}
-              onChange={(e) => setOverlay(e.target.checked)}
-            />
-            Overlay
-          </label>
+          <div className="flex items-center gap-0.5 rounded-lg bg-ink-900/60 p-0.5">
+            {OVERLAY_MODES.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setOverlayMode(m.value)}
+                title={`Overlay: ${m.label}`}
+                className={`px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wide transition-colors ${
+                  overlayMode === m.value
+                    ? "bg-ink-600 text-mist-100"
+                    : "text-mist-400 hover:text-mist-200"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 

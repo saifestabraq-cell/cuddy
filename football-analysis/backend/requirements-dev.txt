@@ -1,0 +1,4 @@
+# Dev/test-only dependencies (not bundled into the packaged sidecar).
+# Install into the backend venv:  .venv/Scripts/python -m pip install -r requirements-dev.txt
+pytest>=8
+httpx>=0.27
