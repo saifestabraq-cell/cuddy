@@ -182,6 +182,10 @@ export interface TracksWindow extends TracksData {
   n_total: number;
 }
 
+/** Video overlay mode (spec §19). "analysis" adds the spatial layer on top of
+ *  players+ball where available. */
+export type OverlayMode = "off" | "players" | "ball" | "both" | "analysis";
+
 // --- Studio: telestration graphics drawn over the video ---
 
 export type StudioTool =

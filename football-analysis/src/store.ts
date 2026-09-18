@@ -15,6 +15,7 @@ import type {
   Filter,
   Finding,
   MatchData,
+  OverlayMode,
   MatchEvent,
   MatchFixtureSummary,
   PitchData,
@@ -105,7 +106,7 @@ interface AppState {
   // Phase 2: CV analysis
   analysisJob: AnalysisJob | null;
   tracks: TracksData | null;
-  overlay: boolean;
+  overlayMode: OverlayMode; // off | players | ball | both | analysis
   segments: SegmentMap | null; // triage: main-camera vs filler
 
   // Phase 2b: pitch calibration
@@ -189,7 +190,7 @@ interface AppState {
   analyzeVideo: (targetFps?: number) => Promise<void>;
   loadTracks: () => Promise<void>;
   loadSegments: () => Promise<void>;
-  setOverlay: (on: boolean) => void;
+  setOverlayMode: (mode: OverlayMode) => void;
 
   setCalibrationMode: (on: boolean) => void;
   addCalibrationPoint: (x: number, y: number) => void;
@@ -292,7 +293,7 @@ export const useStore = create<AppState>((set, get) => ({
   requestSeekMs: null,
   analysisJob: null,
   tracks: null,
-  overlay: false, // tracked-player circles off by default; toggle in Analyse panel
+  overlayMode: "off", // overlay off by default; choose a mode in the Analyse panel
   segments: null,
   calibrationMode: false,
   calibrationPoints: [],
@@ -877,7 +878,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  setOverlay: (on) => set({ overlay: on }),
+  setOverlayMode: (mode) => set({ overlayMode: mode }),
 
   setCalibrationMode: (on) =>
     set({ calibrationMode: on, calibrationPoints: on ? [] : get().calibrationPoints }),
