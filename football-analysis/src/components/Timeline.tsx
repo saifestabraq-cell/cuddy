@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { useStore, useFilteredEvents } from "../store";
 import type { Category } from "../lib/types";
 import { fmtClock } from "../lib/time";
+import SectionHeader from "./SectionHeader";
 
 interface Props {
   durationMs: number;
@@ -22,6 +22,7 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const selectedId = useStore((s) => s.selectedEventId);
   const selectEvent = useStore((s) => s.selectEvent);
   const updateEvent = useStore((s) => s.updateEvent);
+  const setComposeSeed = useStore((s) => s.setComposeSeed);
   const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -38,7 +39,10 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
 
   const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (drag) return;
-    onSeek(msFromClientX(e.clientX));
+    const ms = msFromClientX(e.clientX);
+    onSeek(ms);
+    // Prefill the Add-event form's time with the clicked position.
+    setComposeSeed({ ms: Math.round(ms) });
   };
 
   const beginDrag = (
@@ -70,14 +74,18 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
 
   return (
     <div className="panel p-3">
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-xs uppercase tracking-wider text-mist-400">
-          Timeline
-        </span>
-        <span className="text-xs text-mist-400 tabular-nums">
-          {fmtClock(playheadMs)} / {fmtClock(durationMs)}
-        </span>
-      </div>
+      <SectionHeader
+        label="Timeline"
+        className="mb-2 px-1"
+        right={
+          <span className="text-xs text-mist-400 tabular-nums">
+            {fmtClock(playheadMs)} / {fmtClock(durationMs)}
+          </span>
+        }
+      />
+      <p className="text-[10px] text-mist-500 px-1 mb-2">
+        click a marker to jump &amp; auto-fill the event form
+      </p>
 
       <div
         ref={trackRef}
@@ -98,6 +106,12 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
                 e.stopPropagation();
                 selectEvent(ev.id);
                 onSeek(start);
+                // Prefill the Add-event form to quickly log a similar event here.
+                setComposeSeed({
+                  ms: Math.round(start),
+                  label: ev.label ?? undefined,
+                  categoryId: ev.category_id ?? undefined,
+                });
               }}
               title={`${cat?.name ?? ev.label} — ${fmtClock(start)}`}
               className="absolute top-2 bottom-2 rounded-md group"
@@ -123,11 +137,11 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
           );
         })}
 
-        <motion.div
-          className="absolute top-0 bottom-0 w-0.5 bg-teal-300 shadow-glow pointer-events-none"
+        {/* Plain div + CSS transition — a motion `animate` here re-ran a
+            tween on every timeupdate (many times/sec) for no visual gain. */}
+        <div
+          className="absolute top-0 bottom-0 w-0.5 bg-teal-300 shadow-glow pointer-events-none transition-[left] duration-100 ease-linear"
           style={{ left: pct(playheadMs) }}
-          animate={{ left: pct(playheadMs) }}
-          transition={{ duration: 0.1, ease: "linear" }}
         />
       </div>
 

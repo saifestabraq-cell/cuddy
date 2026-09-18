@@ -113,6 +113,87 @@ export interface TracksData {
   frames: TrackFrame[];
 }
 
+// --- Studio: telestration graphics drawn over the video ---
+
+export type StudioTool =
+  | "arrow"
+  | "highlight"
+  | "zone"
+  | "path"
+  | "shape"
+  | "box"
+  | "text"
+  | "link";
+
+/**
+ * A telestration graphic. `geom` is a list of normalized [0..1] points over the
+ * video box.
+ *
+ * - When `pinnedTrackId`/`pinPos` are set, the WHOLE shape translates each frame
+ *   by that tracked player's displacement (rigid follow).
+ * - When `vertexTracks` is set (one entry per geom point), each vertex follows
+ *   its own tracked player, so a shape connecting several players deforms as
+ *   they move relative to each other. A null entry keeps that vertex fixed.
+ */
+export interface StudioShape {
+  id: string;
+  type: StudioTool;
+  color: string;
+  geom: [number, number][];
+  label?: string;
+  pinnedTrackId?: number;
+  pinPos?: [number, number];
+  vertexTracks?: (number | null)[];
+}
+
+export interface StudioDoc {
+  shapes: StudioShape[];
+}
+
+// --- Per-player statistics (API-Football, real named players) ---
+
+export interface PlayerStat {
+  id: number | null;
+  name: string | null;
+  photo?: string | null;
+  number?: number | null;
+  position?: string | null;
+  minutes?: number | null;
+  rating?: number | null;
+  captain?: boolean;
+  goals: number;
+  assists: number;
+  shots: number;
+  shots_on: number;
+  passes: number;
+  pass_accuracy?: string | number | null;
+  key_passes: number;
+  tackles: number;
+  interceptions: number;
+  duels_won: number;
+  duels_total: number;
+  dribbles: number;
+  yellow: number;
+  red: number;
+}
+
+export interface PlayerStatsDoc {
+  fixture_id: number;
+  by_team: Record<string, { name: string | null; players: PlayerStat[] }>;
+}
+
+/** Per-player heatmap from CV tracks (pitch space if calibrated, else image). */
+export interface PlayerHeatmap {
+  track_id: number;
+  space: "pitch" | "image";
+  length: number;
+  width: number;
+  bins_x: number;
+  bins_y: number;
+  grid: number[][];
+  n_points: number;
+}
+
 export interface PitchData {
   length: number;
   width: number;
@@ -227,4 +308,58 @@ export interface AnalysisJob {
   stage?: string;
   completed_stages?: string[];
   stages?: string[];
+  // Wall-clock ms since the run started (for an ETA estimate).
+  elapsed_ms?: number;
+}
+
+export interface SettingsStatus {
+  anthropic_api_key_set: boolean;
+  groq_api_key_set: boolean;
+  provider: "groq" | "anthropic";
+  model: string;
+  key_source: "env" | "stored" | "none";
+  apifootball_key_set: boolean;
+}
+
+export interface MatchTeam {
+  id: number | null;
+  name: string | null;
+  logo: string | null;
+  formation: string | null;
+  start_xi: string[];
+  stats: Record<string, string | number | null>;
+}
+
+export interface MatchDataEvent {
+  minute: number | null;
+  team: string | null;
+  player: string | null;
+  type: string | null;
+  detail: string | null;
+}
+
+/** A fixture card in the browser (before loading full stats). */
+export interface MatchFixtureSummary {
+  fixture_id: number;
+  date: string | null;
+  status: string | null;
+  competition: string | null;
+  season: number | null;
+  home: string | null;
+  away: string | null;
+  home_logo: string | null;
+  away_logo: string | null;
+  score: string | null;
+}
+
+/** Real match data from API-Football (validated, not CV/LLM-derived). */
+export interface MatchData {
+  query: string;
+  fixture_id: number | null;
+  competition: string | null;
+  date: string | null;
+  score: string | null;
+  home: MatchTeam;
+  away: MatchTeam;
+  events: MatchDataEvent[];
 }

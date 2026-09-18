@@ -1,8 +1,9 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { fmtClockPrecise } from "../lib/time";
 import { useStore } from "../store";
+import { nearestFrame } from "../lib/tracks";
 import { TEAM_COLORS, BALL_COLOR } from "./AnalyzePanel";
-import type { TrackFrame } from "../lib/types";
+import StudioLayer from "./StudioLayer";
 
 interface Props {
   src: string | null;
@@ -12,30 +13,19 @@ interface Props {
 
 const CALIB_LABELS = ["TL", "TR", "BR", "BL"];
 
-/** Nearest track frame to a timestamp (binary search over sorted frames). */
-function nearestFrame(frames: TrackFrame[], ms: number): TrackFrame | null {
-  if (!frames.length) return null;
-  let lo = 0;
-  let hi = frames.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (frames[mid].t_ms < ms) lo = mid + 1;
-    else hi = mid;
-  }
-  const cand = [frames[lo], frames[Math.max(0, lo - 1)]];
-  return cand.reduce((a, b) =>
-    Math.abs(a.t_ms - ms) <= Math.abs(b.t_ms - ms) ? a : b,
-  );
-}
-
 const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
   ({ src, onTime, onMeta }, ref) => {
     const [playing, setPlaying] = useState(false);
     const [time, setTime] = useState(0);
+    const [zoom, setZoom] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [maximized, setMaximized] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const boxRef = useRef<HTMLDivElement>(null);
 
     const tracks = useStore((s) => s.tracks);
     const overlay = useStore((s) => s.overlay);
+    const studioTool = useStore((s) => s.studioTool);
     const calibrationMode = useStore((s) => s.calibrationMode);
     const calibrationPoints = useStore((s) => s.calibrationPoints);
     const addCalibrationPoint = useStore((s) => s.addCalibrationPoint);
@@ -66,8 +56,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           if (frame) {
             const sx = cw / tracks.width;
             const sy = ch / tracks.height;
-            ctx.lineWidth = 2;
-            ctx.font = "11px Inter, system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             for (const d of frame.dets) {
               const isBall = d.cls === 32;
               const color = isBall ? BALL_COLOR : TEAM_COLORS[d.team] ?? "#8A90A0";
@@ -76,17 +66,39 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
               const w = d.w * sx;
               const h = d.h * sy;
               if (isBall) {
+                // Lit ball marker: soft halo + bright core.
+                const bx = x + w / 2;
+                const by = y + h / 2;
+                const halo = ctx.createRadialGradient(bx, by, 0, bx, by, 16);
+                halo.addColorStop(0, "rgba(255,225,77,0.55)");
+                halo.addColorStop(1, "rgba(255,225,77,0)");
+                ctx.fillStyle = halo;
                 ctx.beginPath();
-                ctx.arc(x + w / 2, y + h / 2, Math.max(5, w / 2), 0, Math.PI * 2);
-                ctx.strokeStyle = color;
+                ctx.arc(bx, by, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(bx, by, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = "#ffffff";
                 ctx.stroke();
               } else {
-                ctx.strokeStyle = color;
-                ctx.strokeRect(x, y, w, h);
+                // Small numbered circular marker at the player's feet.
+                const cx = x + w / 2;
+                const cy = y + h;
+                const label = String(d.id);
+                const r = label.length > 2 ? 11 : 9;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
                 ctx.fillStyle = color;
-                ctx.fillRect(x, y - 12, 18, 12);
-                ctx.fillStyle = "#0E0F13";
-                ctx.fillText(String(d.id), x + 3, y - 2);
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = "rgba(9,11,17,0.7)";
+                ctx.stroke();
+                ctx.fillStyle = "#0A0C12";
+                ctx.font = `bold ${label.length > 2 ? 9 : 10}px Inter, system-ui, sans-serif`;
+                ctx.fillText(label, cx, cy + 0.5);
               }
             }
           }
@@ -132,7 +144,47 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     useEffect(() => {
       setTime(0);
       setPlaying(false);
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
     }, [src]);
+
+    useEffect(() => {
+      if (!maximized) return;
+      const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMaximized(false);
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [maximized]);
+
+    const clampPan = (x: number, y: number, z: number) => {
+      const rect = boxRef.current?.getBoundingClientRect();
+      const maxX = rect ? ((z - 1) * rect.width) / 2 : 0;
+      const maxY = rect ? ((z - 1) * rect.height) / 2 : 0;
+      return {
+        x: Math.max(-maxX, Math.min(maxX, x)),
+        y: Math.max(-maxY, Math.min(maxY, y)),
+      };
+    };
+
+    const setZoomLevel = (z: number) => {
+      const nz = Math.max(1, Math.min(4, z));
+      setZoom(nz);
+      setPan((p) => (nz === 1 ? { x: 0, y: 0 } : clampPan(p.x, p.y, nz)));
+    };
+
+    const startPan = (e: React.MouseEvent) => {
+      e.preventDefault();
+      const sx = e.clientX;
+      const sy = e.clientY;
+      const orig = pan;
+      const move = (ev: MouseEvent) =>
+        setPan(clampPan(orig.x + (ev.clientX - sx), orig.y + (ev.clientY - sy), zoom));
+      const up = () => {
+        window.removeEventListener("mousemove", move);
+        window.removeEventListener("mouseup", up);
+      };
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    };
 
     const toggle = () => {
       const v = el();
@@ -149,40 +201,67 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     };
 
     return (
-      <div className="panel overflow-hidden flex flex-col shrink-0">
-        <div className="relative bg-black aspect-video w-full">
+      <div
+        className={
+          maximized
+            ? "fixed inset-0 z-[60] bg-ink-900 flex flex-col justify-center overflow-hidden"
+            : "panel overflow-hidden flex flex-col shrink-0"
+        }
+      >
+        <div
+          ref={boxRef}
+          className={`relative bg-black w-full overflow-hidden ${
+            maximized ? "max-h-[calc(100vh-3.25rem)] aspect-video m-auto" : "aspect-video"
+          }`}
+        >
           {src ? (
             <>
-              <video
-                ref={ref}
-                src={src}
-                className="absolute inset-0 w-full h-full"
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onTimeUpdate={(e) => {
-                  const ms = e.currentTarget.currentTime * 1000;
-                  setTime(ms);
-                  onTime(ms);
-                  draw(ms);
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: "center center",
                 }}
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  onMeta({
-                    duration_ms: Math.round(v.duration * 1000),
-                    width: v.videoWidth,
-                    height: v.videoHeight,
-                  });
-                }}
-              />
-              <canvas
-                ref={canvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
-              />
-              {calibrationMode && (
+              >
+                <video
+                  ref={ref}
+                  src={src}
+                  className="absolute inset-0 w-full h-full"
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onTimeUpdate={(e) => {
+                    const ms = e.currentTarget.currentTime * 1000;
+                    setTime(ms);
+                    onTime(ms);
+                    draw(ms);
+                  }}
+                  onLoadedMetadata={(e) => {
+                    const v = e.currentTarget;
+                    onMeta({
+                      duration_ms: Math.round(v.duration * 1000),
+                      width: v.videoWidth,
+                      height: v.videoHeight,
+                    });
+                  }}
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                />
+                <StudioLayer getVideo={el} playing={playing} ms={time} />
+                {calibrationMode && (
+                  <div
+                    className="absolute inset-0 cursor-crosshair"
+                    onClick={onCalibClick}
+                    title="Click the pitch corners: TL, TR, BR, BL"
+                  />
+                )}
+              </div>
+              {/* Pan grabber — only when zoomed and no drawing tool is active. */}
+              {zoom > 1 && !calibrationMode && studioTool === null && (
                 <div
-                  className="absolute inset-0 cursor-crosshair"
-                  onClick={onCalibClick}
-                  title="Click the pitch corners: TL, TR, BR, BL"
+                  className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                  onMouseDown={startPan}
                 />
               )}
               {videoMissing && (
@@ -223,6 +302,41 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             J K L · , . frame · [ ] nudge
           </span>
           <div className="flex-1" />
+          <button
+            className="btn px-2.5 mr-1"
+            disabled={!src}
+            title={maximized ? "Exit maximize (Esc)" : "Maximize"}
+            onClick={() => setMaximized((v) => !v)}
+          >
+            {maximized ? "⤡ Exit" : "⤢ Maximize"}
+          </button>
+          {/* Zoom */}
+          <div className="flex items-center gap-1 mr-1">
+            <button
+              className="btn px-2"
+              disabled={!src || zoom <= 1}
+              title="Zoom out"
+              onClick={() => setZoomLevel(zoom - 0.5)}
+            >
+              −
+            </button>
+            <button
+              className="btn px-2 tabular-nums min-w-[3rem]"
+              disabled={!src}
+              title="Reset zoom"
+              onClick={() => setZoomLevel(1)}
+            >
+              {zoom.toFixed(1)}×
+            </button>
+            <button
+              className="btn px-2"
+              disabled={!src || zoom >= 4}
+              title="Zoom in"
+              onClick={() => setZoomLevel(zoom + 0.5)}
+            >
+              +
+            </button>
+          </div>
           {[-5, -1, 1, 5].map((sec) => (
             <button
               key={sec}

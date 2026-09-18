@@ -7,12 +7,18 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  MatchData,
   MatchEvent,
+  MatchFixtureSummary,
   PitchData,
+  PlayerHeatmap,
+  PlayerStatsDoc,
   Project,
   QueryResult,
   SegmentMap,
+  SettingsStatus,
   ShotsData,
+  StudioDoc,
   TracksData,
   ValidationResult,
   Video,
@@ -149,9 +155,19 @@ export const api = {
   getJob: (jobId: string) => request<AnalysisJob>(`/jobs/${jobId}`),
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
+  pickVideoFile: () =>
+    request<{ path: string | null }>("/videos/pick", { method: "POST" }),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
+
+  // Studio telestration graphics (persisted per video)
+  getStudio: (videoId: number) => request<StudioDoc>(`/videos/${videoId}/studio`),
+  putStudio: (videoId: number, doc: StudioDoc) =>
+    request<StudioDoc>(`/videos/${videoId}/studio`, {
+      method: "PUT",
+      body: JSON.stringify(doc),
+    }),
 
   // Pitch calibration / heatmaps / auto-tag (Phase 2b)
   calibrate: (videoId: number, imgPoints: number[][], length = 105, width = 68) =>
@@ -192,6 +208,56 @@ export const api = {
   // Validation harness (Phase 1): score AI events vs the manual reference
   getValidation: (videoId: number) =>
     request<ValidationResult>(`/videos/${videoId}/validation`),
+
+  // Real match data (API-Football)
+  getMatchData: (videoId: number) =>
+    request<MatchData | null>(`/videos/${videoId}/match-data`),
+  fetchMatchData: (videoId: number, description: string) =>
+    request<MatchData>(`/videos/${videoId}/match-data`, {
+      method: "POST",
+      body: JSON.stringify({ question: description }),
+    }),
+  fetchMatchDataById: (videoId: number, fixtureId: number) =>
+    request<MatchData>(`/videos/${videoId}/match-data`, {
+      method: "POST",
+      body: JSON.stringify({ fixture_id: fixtureId }),
+    }),
+  searchMatches: (videoId: number, query: string) =>
+    request<MatchFixtureSummary[]>(`/videos/${videoId}/match-search`, {
+      method: "POST",
+      body: JSON.stringify({ query }),
+    }),
+
+  // Per-player statistics (API-Football)
+  getPlayerStats: (videoId: number) =>
+    request<PlayerStatsDoc | null>(`/videos/${videoId}/player-stats`),
+  fetchPlayerStats: (videoId: number) =>
+    request<PlayerStatsDoc>(`/videos/${videoId}/player-stats`, { method: "POST" }),
+
+  // Per-player heatmap (from CV tracks) + player↔track assignments
+  getPlayerHeatmap: (videoId: number, trackId: number) =>
+    request<PlayerHeatmap>(`/videos/${videoId}/player-heatmap?track_id=${trackId}`),
+  getAssignments: (videoId: number) =>
+    request<{ map: Record<string, number> }>(`/videos/${videoId}/assignments`),
+  putAssignments: (videoId: number, map: Record<string, number>) =>
+    request<{ map: Record<string, number> }>(`/videos/${videoId}/assignments`, {
+      method: "PUT",
+      body: JSON.stringify({ map }),
+    }),
+
+  // User settings (API keys / model)
+  getSettings: () => request<SettingsStatus>("/settings"),
+  saveSettings: (input: {
+    anthropic_api_key?: string;
+    groq_api_key?: string;
+    provider?: "groq" | "anthropic";
+    model?: string;
+    apifootball_key?: string;
+  }) =>
+    request<SettingsStatus>("/settings", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
 };
 
 /** Download a selection (playlist) export as a file via a Blob. */

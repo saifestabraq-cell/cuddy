@@ -9,16 +9,17 @@ GET  /videos/{id}/tracks/exists -> lightweight check
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from .. import user_settings
 from ..config import settings
 from ..cv.analytics import compute_analytics
-from ..cv.pitch import autotag_final_third, build_pitch_data
+from ..cv.pitch import autotag_final_third, build_pitch_data, build_player_heatmap
 from ..cv.shots import detect_shots
 from ..db import get_session
 from ..llm import answer_question, query_clips
@@ -43,6 +44,22 @@ def _analytics_path(video_id: int) -> Path:
 
 def _shots_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}_shots.json"
+
+
+def _matchdata_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_matchdata.json"
+
+
+def _studio_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_studio.json"
+
+
+def _playerstats_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_playerstats.json"
+
+
+def _assign_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_assign.json"
 
 
 @router.post("/videos/{video_id}/analyze")
@@ -87,6 +104,53 @@ def get_segments(video_id: int):
     if not path.is_file():
         raise HTTPException(404, "No segmentation for this video yet")
     return json.loads(path.read_text())
+
+
+# --- Studio: telestration graphics drawn over the video ---
+
+
+class StudioShape(BaseModel):
+    id: str
+    type: str
+    color: str
+    geom: list[list[float]]
+    label: str | None = None
+    pinnedTrackId: int | None = None
+    pinPos: list[float] | None = None
+
+
+class StudioDoc(BaseModel):
+    shapes: list[StudioShape] = []
+
+
+@router.get("/videos/{video_id}/studio")
+def get_studio(video_id: int, session: Session = Depends(get_session)):
+    """Return the saved telestration graphics for this video (or an empty set)."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _studio_path(video_id)
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return {"shapes": []}
+
+
+@router.put("/videos/{video_id}/studio")
+def put_studio(
+    video_id: int, payload: StudioDoc, session: Session = Depends(get_session)
+):
+    """Persist the telestration graphics as a JSON file in the tracks dir."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    data = payload.model_dump(exclude_none=True)
+    try:
+        settings.ensure_dirs()
+        _studio_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as exc:
+        raise HTTPException(500, f"Could not save studio graphics: {exc}") from exc
+    return data
 
 
 @router.get("/videos/{video_id}/tracks/summary")
@@ -287,11 +351,10 @@ def _build_context(video_id: int, session: Session) -> str:
 def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_session)):
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not user_settings.has_llm_key():
         raise HTTPException(
             400,
-            "ANTHROPIC_API_KEY is not set on the backend. Set it in the "
-            "environment and restart the API to enable natural-language queries.",
+            "No AI provider key configured. Add a free Groq key in Settings to use AI chat.",
         )
     context = _build_context(video_id, session)
     try:
@@ -309,11 +372,10 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
     """Return a playable reel (event clips) + a one-line grounded summary."""
     if not session.get(Video, video_id):
         raise HTTPException(404, "Video not found")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not user_settings.has_llm_key():
         raise HTTPException(
             400,
-            "ANTHROPIC_API_KEY is not set on the backend. Set it and restart to "
-            "use natural-language queries.",
+            "No AI provider key configured. Add a free Groq key in Settings to use AI chat.",
         )
     cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
     events = session.exec(
@@ -346,6 +408,190 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
                 "label": code_of(ev), "reason": str(c.get("reason", "")),
             })
     return {"summary": result.get("summary", ""), "clips": clips, "question": payload.question}
+
+
+# --- Real match data from API-Football (score, formations, lineups, stats) ---
+
+
+@router.get("/videos/{video_id}/match-data")
+def get_match_data(video_id: int, session: Session = Depends(get_session)):
+    """Return previously-fetched real match data, or null if none saved."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _matchdata_path(video_id)
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return None
+
+
+class MatchSearchRequest(BaseModel):
+    query: str
+
+
+class MatchDataRequest(BaseModel):
+    # Either a free-text description, or a precise fixture id from the browser.
+    question: str = ""
+    fixture_id: int | None = None
+
+
+@router.post("/videos/{video_id}/match-search")
+def search_matches(
+    video_id: int, payload: MatchSearchRequest, session: Session = Depends(get_session)
+):
+    """Return candidate fixtures for a description so the user picks the exact one."""
+    from ..providers import apifootball
+
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    query = payload.query.strip()
+    if not query:
+        raise HTTPException(400, "Enter a team or 'Home vs Away' to search.")
+    try:
+        return apifootball.search_fixtures(query)
+    except apifootball.ProviderError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"Fixture search failed: {type(exc).__name__}: {exc}") from exc
+
+
+@router.post("/videos/{video_id}/match-data")
+def fetch_match_data(
+    video_id: int, payload: MatchDataRequest, session: Session = Depends(get_session)
+):
+    """Load real match data (lineups, formations, stats, events) from
+    API-Football and persist it — by exact fixture id, or from a description."""
+    from ..providers import apifootball
+
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    try:
+        if payload.fixture_id is not None:
+            data = apifootball.fetch_match_by_id(payload.fixture_id)
+        else:
+            description = payload.question.strip()
+            if not description:
+                raise HTTPException(400, "Provide a match description or a fixture id.")
+            data = apifootball.fetch_match(description)
+    except apifootball.ProviderError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001 - surface unexpected provider errors
+        raise HTTPException(502, f"Match-data lookup failed: {type(exc).__name__}: {exc}") from exc
+    try:
+        _matchdata_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+    return data
+
+
+# --- Per-player statistics (API-Football, real named players) ---
+
+
+@router.get("/videos/{video_id}/player-stats")
+def get_player_stats(video_id: int, session: Session = Depends(get_session)):
+    """Return cached per-player stats for this video, or null if none saved."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _playerstats_path(video_id)
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return None
+
+
+@router.post("/videos/{video_id}/player-stats")
+def fetch_player_stats(video_id: int, session: Session = Depends(get_session)):
+    """Fetch per-player stats for the fixture already loaded on this video.
+
+    Uses the fixture id from the saved match data, so the user loads a fixture
+    first (via the match browser) and this pulls the named player stat lines.
+    """
+    from ..providers import apifootball
+
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    md_path = _matchdata_path(video_id)
+    if not md_path.is_file():
+        raise HTTPException(400, "Load a match fixture first, then fetch player stats.")
+    try:
+        fixture_id = json.loads(md_path.read_text(encoding="utf-8")).get("fixture_id")
+    except (ValueError, OSError):
+        fixture_id = None
+    if not fixture_id:
+        raise HTTPException(400, "The loaded match has no fixture id to look up.")
+    try:
+        data = apifootball.fetch_player_stats(int(fixture_id))
+    except apifootball.ProviderError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"Player-stats lookup failed: {type(exc).__name__}: {exc}") from exc
+    try:
+        _playerstats_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+    return data
+
+
+# --- Per-player heatmap (from CV tracks) + player↔track assignments ---
+
+
+@router.get("/videos/{video_id}/player-heatmap")
+def player_heatmap(video_id: int, track_id: int, session: Session = Depends(get_session)):
+    """Heatmap for a single tracked player, in pitch space if the video is
+    calibrated, else normalized image space (approximate)."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    tpath = _tracks_path(video_id)
+    if not tpath.is_file():
+        raise HTTPException(400, "Analyse the video first to produce tracks.")
+    tracks = json.loads(tpath.read_text(encoding="utf-8"))
+    img_pts = None
+    ppath = _pitch_path(video_id)
+    if ppath.is_file():
+        try:
+            img_pts = json.loads(ppath.read_text(encoding="utf-8")).get("img_points")
+        except (ValueError, OSError):
+            img_pts = None
+    return build_player_heatmap(tracks, track_id, img_pts)
+
+
+class Assignments(BaseModel):
+    # player full name -> CV track id
+    map: dict[str, int] = {}
+
+
+@router.get("/videos/{video_id}/assignments")
+def get_assignments(video_id: int, session: Session = Depends(get_session)):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _assign_path(video_id)
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            pass
+    return {"map": {}}
+
+
+@router.put("/videos/{video_id}/assignments")
+def put_assignments(
+    video_id: int, payload: Assignments, session: Session = Depends(get_session)
+):
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    data = payload.model_dump()
+    try:
+        settings.ensure_dirs()
+        _assign_path(video_id).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as exc:
+        raise HTTPException(500, f"Could not save assignments: {exc}") from exc
+    return data
 
 
 # --- Phase 1: validation harness (score AI events vs the manual reference) ---

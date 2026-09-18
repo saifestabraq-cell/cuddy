@@ -97,24 +97,74 @@ compact JSON context and calls the Anthropic API (`app/llm.py`, model
 backend environment; without it the endpoint returns a clear 400.
 Endpoint: `POST /videos/{id}/ask`.
 
-## Production sidecar packaging (deferred)
+## Production backend packaging
 
-In development the sidecar runs from the venv (`npm run dev:api`). For a
-distributable build, the Python backend is frozen into a single executable and
-bundled as a Tauri **external binary**:
+### Development architecture
+```
+React (Vite :5173)  →  Tauri window  →  local Python FastAPI (npm run dev:api)
+```
+`npm run dev` runs the API and Vite together; `npm run app` (`tauri dev`) opens
+the desktop window against that same local backend. Developers never need
+PyInstaller — `src-tauri/src/lib.rs` only spawns the sidecar in **release**
+builds (`#[cfg(not(debug_assertions))]`).
 
-1. `pip install pyinstaller`
-2. `pyinstaller --onefile --name fa-sidecar backend/app/__main__.py`
-3. Copy the exe to `src-tauri/binaries/fa-sidecar-<target-triple>.exe`.
-4. Add to `tauri.conf.json`:
-   ```json
-   "bundle": { "externalBin": ["binaries/fa-sidecar"] }
-   ```
-5. `src-tauri/src/lib.rs` already spawns `fa-sidecar` on startup in release
-   builds via the shell plugin.
+### Production architecture
+```
+React  →  Tauri  →  bundled cuddy-backend.exe  →  FastAPI  →  CV/ML + SQLite
+```
+The Python backend is frozen into a single executable (`cuddy-backend.exe`,
+via PyInstaller + `backend/cuddy-backend.spec`) and shipped as a **Tauri
+external binary** (`sidecar`). On startup, `lib.rs` spawns it and tracks the
+child process so it can be terminated when the window closes (no orphaned
+`cuddy-backend.exe` after quitting). The frontend polls `GET /health` and
+shows a staged readiness UI: *Starting Cuddy Engine…* → *Connecting to
+Analysis Engine…* → *Engine ready*, or *Analysis Engine failed to start* with
+Retry / a pointer to the log file after ~20s of failed attempts.
 
-Until then, release builds open the window and report "Engine offline" until a
-backend is reachable — the app degrades gracefully rather than crashing.
+### Building the production installer
+
+```bash
+npm run build:windows   # full: backend .exe -> sidecar -> Tauri installer
+npm run build:backend   # backend .exe only (-BackendOnly), for iterating
+```
+
+Equivalent to running `scripts/build-windows.ps1` directly. It: verifies
+Python/Node/Rust, builds `backend/.venv-cpu` (CPU PyTorch + the full CV stack —
+CPU, not CUDA, so the resulting binary runs on any Windows PC), runs
+PyInstaller against `cuddy-backend.spec`, copies the result to
+`src-tauri/binaries/cuddy-backend-x86_64-pc-windows-msvc.exe`, then runs
+`npm run app:build`. Installer output:
+`src-tauri/target/release/bundle/nsis/Cuddy_<version>_x64-setup.exe`.
+
+`cuddy-backend.spec` `collect_all`s the native/plugin-heavy packages (torch,
+torchvision, ultralytics, cv2, supervision, sklearn, numpy, scipy, pandas,
+matplotlib) and bundles `alembic.ini` + `alembic/` as data (the frozen
+`app/migrations.py` resolves their path from `__file__`, which PyInstaller
+points at the extraction root — this must stay bundled at the executable's
+root, not nested).
+
+### Logging & troubleshooting
+
+The backend logs to `%LOCALAPPDATA%\Cuddy\logs\backend.log` (rotating, no
+terminal required) from the moment `sidecar_entry.py` starts, before any other
+import — so a crash during heavy CV imports, a missing model/DLL, or a DB init
+failure is still recorded.
+
+| Symptom | Likely cause | Check |
+|---|---|---|
+| Stuck "Starting Cuddy Engine…" past ~20s, then "failed to start" | Backend crashed on startup | `backend.log` for the traceback |
+| "port conflict" / nothing on 8765 | Another process holds 8765 | The backend binds `127.0.0.1:8765` only; free the port or check for a leftover `cuddy-backend.exe` in Task Manager |
+| Missing DLL / import error in the log | A native dependency wasn't collected | Add the package to `COLLECT_ALL` in `cuddy-backend.spec` and rebuild |
+| YOLO model fails to load offline | `yolov8n.pt` auto-downloads from Ultralytics on first analysis | Requires network on first run; not bundled (kept small + always current) |
+| Installer built but app won't launch on a clean machine | Missing WebView2 runtime (rare on modern Windows) | NSIS installer pulls WebView2 if absent; verify with a clean-VM install |
+
+### Security notes
+The backend binds to `127.0.0.1` only (never `0.0.0.0`) and is never exposed
+externally. No API key is embedded in the executable — `ANTHROPIC_API_KEY` is
+read from the environment at runtime, same as in development. The Tauri shell
+capability grants sidecar execution scoped specifically to
+`binaries/cuddy-backend` (`shell:allow-execute` with a `sidecar: true` scope
+entry) rather than the broader `shell:default`/arbitrary-command permissions.
 
 ## Design system
 

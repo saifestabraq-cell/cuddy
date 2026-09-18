@@ -6,18 +6,18 @@ import VideoBar from "./VideoBar";
 import VideoPlayer from "./VideoPlayer";
 import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
-import TagPad from "./TagPad";
 import AnalyzePanel from "./AnalyzePanel";
+import StatsDashboard from "./StatsDashboard";
 import DescriptorManager from "./DescriptorManager";
 import Dashboard from "./Dashboard";
 import EventList from "./EventList";
 import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
-import PitchPanel from "./PitchPanel";
-import AnalyticsPanel from "./AnalyticsPanel";
-import ShotsPanel from "./ShotsPanel";
-import AskPanel from "./AskPanel";
-import QueryPanel from "./QueryPanel";
+import AnalysisTabs from "./AnalysisTabs";
+import AIPanel from "./AIPanel";
+import AddEventPanel from "./AddEventPanel";
+import StudioToolbar from "./StudioToolbar";
+import MatchHero from "./MatchHero";
 import ValidationPanel from "./ValidationPanel";
 
 export default function Workspace() {
@@ -27,6 +27,7 @@ export default function Workspace() {
   const selectedEventId = useStore((s) => s.selectedEventId);
   const updateEvent = useStore((s) => s.updateEvent);
   const tracksFps = useStore((s) => s.tracks?.src_fps);
+  const analyzed = useStore((s) => s.tracks != null);
   const requestSeekMs = useStore((s) => s.requestSeekMs);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -194,7 +195,7 @@ export default function Workspace() {
 
   if (!currentProject) {
     return (
-      <div className="h-full grid place-items-center text-mist-300">
+      <div className="min-h-[70vh] grid place-items-center text-mist-300">
         Select or create a project to begin.
       </div>
     );
@@ -203,13 +204,14 @@ export default function Workspace() {
   const src = currentVideo ? streamUrl(currentVideo.id) : null;
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <VideoBar />
       <FilterBar />
+      <MatchHero />
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
         {/* left: video + timeline + coding */}
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto pr-1">
+        <div className="flex flex-col gap-3">
           <VideoPlayer
             ref={videoRef}
             src={src}
@@ -219,29 +221,28 @@ export default function Workspace() {
               if (currentVideo) setVideoMeta(currentVideo.id, meta);
             }}
           />
+          {currentVideo && <StudioToolbar />}
           <AnalyzePanel />
-          <PitchPanel />
-          <AnalyticsPanel />
-          <ShotsPanel />
+          {analyzed && <AnalysisTabs />}
           <Timeline
             durationMs={durationMs || currentVideo?.duration_ms || 0}
             playheadMs={playheadMs}
             onSeek={seek}
           />
-          <TagPad playheadMs={playheadMs} disabled={!currentVideo} />
+          <AddEventPanel playheadMs={playheadMs} disabled={!currentVideo} />
           <DescriptorManager />
         </div>
 
         {/* right: playlist + edit + dashboard + events */}
-        <div className="flex flex-col gap-3 min-h-0">
+        <div className="flex flex-col gap-3">
+          <StatsDashboard />
           <PlaylistBar
             presenting={presenting}
             onPlay={playPlaylist}
             onStop={stopPresentation}
           />
-          <QueryPanel />
-          <AskPanel />
-          <ValidationPanel />
+          <AIPanel />
+          {analyzed && <ValidationPanel />}
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />
           )}

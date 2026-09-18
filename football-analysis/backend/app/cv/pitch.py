@@ -127,6 +127,82 @@ def build_pitch_data(
     }
 
 
+def _blur(grid, passes: int = 2):
+    """Light separable [1,2,1] smoothing so sparse samples read as a bloom."""
+    import numpy as np
+
+    k = np.array([1.0, 2.0, 1.0])
+    k /= k.sum()
+    g = grid.astype(float)
+    for _ in range(passes):
+        g = np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 1, g)
+        g = np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 0, g)
+    return g
+
+
+def build_player_heatmap(
+    tracks: dict,
+    track_id: int,
+    img_pts: Optional[list[list[float]]] = None,
+    length: float = DEFAULT_LENGTH,
+    width: float = DEFAULT_WIDTH,
+    bin_size: float = 3.0,
+) -> dict:
+    """Heatmap for a single tracked player (by CV track id).
+
+    If a 4-point calibration is supplied the foot points are projected to pitch
+    metres (``space="pitch"``); otherwise a normalized image-space grid is built
+    (``space="image"``) — labelled approximate, per the project's CV principle.
+    """
+    import numpy as np
+
+    vw = float(tracks.get("width") or 1)
+    vh = float(tracks.get("height") or 1)
+    feet = [
+        (d["x"] + d["w"] / 2, d["y"] + d["h"])
+        for frame in tracks.get("frames", [])
+        for d in frame["dets"]
+        if d["cls"] != BALL and d["id"] == track_id
+    ]
+
+    if img_pts and len(img_pts) == 4:
+        space = "pitch"
+        H = homography_from_corners(img_pts, length, width)
+        nx = max(1, int(round(length / bin_size)))
+        ny = max(1, int(round(width / bin_size)))
+        grid = np.zeros((ny, nx))
+        n = 0
+        for x, y in feet:
+            fx, fy = _apply(H, x, y)
+            if 0 <= fx <= length and 0 <= fy <= width:
+                grid[min(ny - 1, int(fy / bin_size)), min(nx - 1, int(fx / bin_size))] += 1
+                n += 1
+    else:
+        space = "image"
+        nx, ny = 32, 18
+        grid = np.zeros((ny, nx))
+        n = 0
+        for x, y in feet:
+            gx = min(nx - 1, max(0, int(x / vw * nx)))
+            gy = min(ny - 1, max(0, int(y / vh * ny)))
+            grid[gy, gx] += 1
+            n += 1
+
+    grid = _blur(grid)
+    m = float(grid.max())
+    heat = (grid / m).round(4).tolist() if m > 0 else grid.tolist()
+    return {
+        "track_id": track_id,
+        "space": space,
+        "length": length,
+        "width": width,
+        "bins_x": nx,
+        "bins_y": ny,
+        "grid": heat,
+        "n_points": n,
+    }
+
+
 def autotag_final_third(
     pitch_data: dict, min_ms: int = 1500, gap_ms: int = 800
 ) -> list[dict]:

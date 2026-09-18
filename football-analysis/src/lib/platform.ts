@@ -26,3 +26,20 @@ export function baseName(path: string): string {
   const parts = path.split(/[\\/]/);
   return parts[parts.length - 1] || path;
 }
+
+/**
+ * Open a URL in the user's default browser. In the packaged app the Tauri
+ * shell plugin launches the system browser; in dev we fall back to a new tab.
+ */
+export async function openExternal(url: string): Promise<void> {
+  if (isTauri()) {
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+      return;
+    } catch {
+      /* fall through to window.open */
+    }
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}

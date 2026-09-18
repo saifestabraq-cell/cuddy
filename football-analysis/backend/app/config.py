@@ -47,10 +47,15 @@ class Settings(BaseSettings):
     def tracks_dir(self) -> Path:
         return self.data_dir / "tracks"
 
+    @property
+    def logs_dir(self) -> Path:
+        return self.data_dir / "logs"
+
     def ensure_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.media_dir.mkdir(parents=True, exist_ok=True)
         self.tracks_dir.mkdir(parents=True, exist_ok=True)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
 
 
 settings = Settings()

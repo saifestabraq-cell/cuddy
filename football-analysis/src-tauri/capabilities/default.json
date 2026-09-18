@@ -6,6 +6,12 @@
   "permissions": [
     "core:default",
     "dialog:default",
-    "shell:default"
+    "shell:allow-open",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "binaries/cuddy-backend", "sidecar": true }
+      ]
+    }
   ]
 }

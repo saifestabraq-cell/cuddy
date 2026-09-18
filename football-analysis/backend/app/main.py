@@ -23,6 +23,7 @@ from .routes import (
     events,
     export,
     projects,
+    settings as settings_routes,
     templates,
     videos,
 )
@@ -63,7 +64,12 @@ app.add_middleware(
 @app.get("/health", tags=["meta"])
 def health():
     """Liveness probe used by the frontend to confirm the sidecar is up."""
-    return {"status": "ok", "app": settings.app_name, "version": __version__}
+    return {
+        "status": "ok",
+        "service": "cuddy-backend",
+        "app": settings.app_name,
+        "version": __version__,
+    }
 
 
 app.include_router(projects.router)
@@ -74,3 +80,4 @@ app.include_router(events.router)
 app.include_router(export.router)
 app.include_router(templates.router)
 app.include_router(analysis.router)
+app.include_router(settings_routes.router)

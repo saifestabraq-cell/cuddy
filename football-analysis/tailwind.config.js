@@ -4,25 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep, soft charcoal surfaces — never pure black.
+        // Nocturne: a sharp, high-contrast dark blue-grey — not the old
+        // low-contrast charcoal. Cooler and deeper, with clearer steps.
         ink: {
-          900: "#0E0F13", // app background
-          800: "#141620", // panels
-          700: "#1A1D28", // raised cards
-          600: "#232735", // hover / borders-strong
-          500: "#2E3342", // hairline borders
+          // Nocturne, lightened ~20% for a less heavy ground.
+          900: "#14161F", // app background
+          800: "#1C2029", // panels
+          700: "#262B37", // raised cards
+          600: "#343B4F", // hover / strong border
+          500: "#444C66", // hairline borders
         },
         mist: {
-          100: "#EAECF2", // primary text
-          200: "#C3C7D2", // secondary text
-          300: "#8A90A0", // muted text
-          400: "#5C6273", // disabled
+          100: "#F5F7FB", // primary text (crisp)
+          200: "#CBD1E0", // secondary text
+          300: "#949CB4", // muted text
+          400: "#646C86", // disabled
         },
-        // Muted, desaturated accents.
+        // Blurple accent — used as fill, line and glow.
         teal: {
-          300: "#6EE7D6",
-          400: "#39C9B6",
-          500: "#2BA593",
+          300: "#8E93FF",
+          400: "#6E75F5",
+          500: "#565CE0",
         },
         violet: {
           300: "#B7A6F0",
@@ -30,12 +32,12 @@ export default {
         },
         signal: {
           ai: "#B7A6F0", // AI-generated events
-          live: "#F0A6C0", // live/recording accent
+          live: "#FF6B8A", // live/recording accent (sharper)
         },
       },
       borderRadius: {
-        xl: "14px",
-        "2xl": "18px",
+        xl: "10px",
+        "2xl": "12px",
       },
       fontFamily: {
         sans: [
@@ -48,8 +50,8 @@ export default {
         ],
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25)",
-        glow: "0 0 0 1px rgba(110,231,214,0.15), 0 0 24px rgba(110,231,214,0.08)",
+        soft: "0 1px 2px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.35)",
+        glow: "0 0 0 1px rgba(110,117,245,0.35), 0 0 28px rgba(110,117,245,0.18)",
       },
       transitionTimingFunction: {
         smooth: "cubic-bezier(0.22, 1, 0.36, 1)", // gentle ease-out, no bounce

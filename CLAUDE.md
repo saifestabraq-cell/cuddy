@@ -37,18 +37,24 @@ redistributes media.
 Run from `football-analysis/`:
 
 - `npm run dev` — Python API + Vite together (browser dev at localhost:5173)
-- `npm run app` — Tauri desktop app (dev)
-- `npm run app:build` — packaged Windows installer
-- `cd backend && .venv/Scripts/python -m app` — backend only
+- `npm run app` — Tauri desktop app (dev; spawns nothing extra, uses the dev backend)
+- `npm run app:build` — Tauri build only (expects a sidecar already in `src-tauri/binaries/`)
+- `npm run build:backend` — freeze the backend to `cuddy-backend.exe` and place it as the sidecar (no Tauri build)
+- `npm run build:windows` — full production build: backend .exe → sidecar → installer (`scripts/build-windows.ps1`)
+- `cd backend && .venv/Scripts/python -m app` — backend only, dev venv
 - `cd backend && .venv/Scripts/alembic upgrade head` — apply DB migrations
 
 ## Notes
 
-- Backend data (SQLite, media, tracks) lives under `%LOCALAPPDATA%\Cuddy`
-  (override with `FA_DATA_DIR`).
+- Backend data (SQLite, media, tracks, logs) lives under `%LOCALAPPDATA%\Cuddy`
+  (override with `FA_DATA_DIR`); backend logs at
+  `%LOCALAPPDATA%\Cuddy\logs\backend.log`.
 - Natural-language query needs `ANTHROPIC_API_KEY` in the backend environment.
-- The packaged sidecar is a PyInstaller onefile; new backend code needs a
-  rebuild (`npm run app:build`) to reach the installed app.
+- The packaged sidecar (`cuddy-backend.exe`, built from `backend/cuddy-backend.spec`)
+  bundles the full CV/ML stack (CPU PyTorch) so the installed app needs no
+  Python/Node/Rust. New backend code needs `npm run build:windows` (or at least
+  `build:backend`) to reach the installed app — editing `backend/app/` alone
+  does not affect an already-installed Cuddy.
 
 ## Rules
 

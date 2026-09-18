@@ -1,14 +1,47 @@
-"""PyInstaller entry point for the packaged sidecar.
+"""PyInstaller entry point for the packaged Cuddy backend (cuddy-backend.exe).
 
 Uses absolute imports (relative imports don't resolve in a frozen __main__).
-The heavy CV libraries (torch/ultralytics/opencv) are intentionally excluded
-from the lean build; CV endpoints raise a clear error if invoked without them.
+Sets up file logging first so any startup failure (missing DLL/model, port
+conflict, DB or ML init error) is recorded to %LOCALAPPDATA%\\Cuddy\\logs\\ where
+the user can find it without a terminal.
+
+Host/port default to 127.0.0.1:8765 and can be overridden with CUDDY_HOST /
+CUDDY_PORT (or the FA_HOST / FA_PORT settings the app already reads).
 """
 
-import uvicorn
+import logging
+import os
+import sys
+import traceback
 
-from app.config import settings
-from app.main import app
+from app.logging_setup import setup_logging
+
+setup_logging()
+log = logging.getLogger("cuddy.entry")
+
+
+def main() -> int:
+    import uvicorn
+
+    from app.config import settings
+    from app.main import app
+
+    host = os.getenv("CUDDY_HOST", settings.host)
+    port = int(os.getenv("CUDDY_PORT", str(settings.port)))
+    log.info("Starting Cuddy backend on http://%s:%s", host, port)
+    # log_config=None: keep the handlers setup_logging() installed (which write
+    # to backend.log). Uvicorn otherwise re-runs its own dictConfig on start,
+    # replacing them with stderr-only handlers, so its startup/port-conflict
+    # messages would never reach the log file the user is told to check.
+    uvicorn.run(app, host=host, port=port, log_level="info", log_config=None)
+    return 0
+
 
 if __name__ == "__main__":
-    uvicorn.run(app, host=settings.host, port=settings.port, log_level="info")
+    try:
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except Exception:  # noqa: BLE001 - record the traceback before exiting
+        log.critical("Cuddy backend failed to start:\n%s", traceback.format_exc())
+        sys.exit(1)

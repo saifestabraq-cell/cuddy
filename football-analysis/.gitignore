@@ -18,10 +18,10 @@ src-tauri/target/
 src-tauri/gen/
 src-tauri/binaries/
 
-# PyInstaller (packaged sidecar build artifacts)
+# PyInstaller (packaged backend build artifacts — cuddy-backend.spec itself
+# is tracked source, so exclude only the build output, not the .spec file)
 backend/build/
 backend/dist/
-backend/*.spec
 
 # ML model weights (downloaded on demand, not source)
 *.pt

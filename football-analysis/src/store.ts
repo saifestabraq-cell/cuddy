@@ -13,14 +13,31 @@ import type {
   CodingTemplate,
   DescriptorGroup,
   Filter,
+  MatchData,
   MatchEvent,
+  MatchFixtureSummary,
   PitchData,
+  PlayerStatsDoc,
   Project,
   SegmentMap,
   ShotsData,
+  StudioShape,
+  StudioTool,
   TracksData,
   Video,
 } from "./lib/types";
+
+// Debounce Studio saves so rapid edits collapse into one PUT.
+let studioSaveTimer: ReturnType<typeof setTimeout> | null = null;
+function queueStudioSave(get: () => AppState) {
+  if (studioSaveTimer) clearTimeout(studioSaveTimer);
+  studioSaveTimer = setTimeout(() => {
+    const { currentVideoId, studioShapes } = get();
+    if (currentVideoId != null) {
+      api.putStudio(currentVideoId, { shapes: studioShapes }).catch(() => {});
+    }
+  }, 600);
+}
 
 /** Pure filter — kept out of the store so selectors stay reference-stable. */
 export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] {
@@ -45,7 +62,7 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
   });
 }
 
-type Health = "checking" | "online" | "offline";
+type Health = "checking" | "online" | "offline" | "failed";
 
 const EMPTY_FILTER: Filter = {
   categoryIds: [],
@@ -56,6 +73,7 @@ const EMPTY_FILTER: Filter = {
 
 interface AppState {
   health: Health;
+  healthAttempts: number;
   projects: Project[];
   categories: Category[];
   descriptorGroups: DescriptorGroup[];
@@ -93,6 +111,7 @@ interface AppState {
   selectedEvent: () => MatchEvent | undefined;
 
   checkHealth: () => Promise<void>;
+  resetHealthCheck: () => void;
   loadProjects: () => Promise<void>;
   addProject: (name: string) => Promise<void>;
   selectProject: (id: number) => Promise<void>;
@@ -118,6 +137,10 @@ interface AppState {
   toggleEventDescriptor: (id: number, label: string) => Promise<void>;
 
   selectEvent: (id: number | null) => void;
+
+  // Add-event compose seed: clicking a timeline/list item prefills the form.
+  composeSeed: { ms: number; label?: string; categoryId?: number | null } | null;
+  setComposeSeed: (seed: AppState["composeSeed"]) => void;
 
   setFilter: (patch: Partial<Filter>) => void;
   clearFilter: () => void;
@@ -152,10 +175,76 @@ interface AppState {
   computeShots: () => Promise<void>;
   loadShots: () => Promise<void>;
   tagShots: () => Promise<number>;
+
+  // Studio: telestration graphics (drawn over the video, follow tracked players)
+  studioShapes: StudioShape[];
+  studioTool: StudioTool | null;
+  studioColor: string;
+  selectedShapeId: string | null;
+  studioPinArm: boolean;
+  studioHistory: StudioShape[][];
+  loadStudio: () => Promise<void>;
+  setStudioTool: (tool: StudioTool | null) => void;
+  setStudioColor: (color: string) => void;
+  addShape: (shape: StudioShape) => void;
+  updateShape: (id: string, patch: Partial<StudioShape>) => void;
+  deleteShape: (id: string) => void;
+  selectShape: (id: string | null) => void;
+  clearStudio: () => void;
+  armPin: (on: boolean) => void;
+  pinShapeToTrack: (id: string, trackId: number, pinPos: [number, number]) => void;
+  pushStudioHistory: () => void;
+  undoStudio: () => void;
+
+  // Settings (API keys)
+  apiKeySet: boolean; // Anthropic key configured
+  groqKeySet: boolean; // Groq key configured
+  aiProvider: "groq" | "anthropic";
+  aiKeySet: boolean; // the active provider has a usable key
+  keySource: "env" | "stored" | "none";
+  apifootballKeySet: boolean;
+  settingsOpen: boolean;
+  refreshSettings: () => Promise<void>;
+  saveApiKey: (key: string, model?: string) => Promise<void>;
+  saveGroqKey: (key: string) => Promise<void>;
+  setProvider: (provider: "groq" | "anthropic") => Promise<void>;
+  saveApiFootballKey: (key: string) => Promise<void>;
+  openSettings: () => void;
+  closeSettings: () => void;
+
+  // Real match data (API-Football)
+  matchData: MatchData | null;
+  matchDataLoading: boolean;
+  matchDataError: string | null;
+  loadMatchData: () => Promise<void>;
+  fetchMatchData: (description: string) => Promise<void>;
+
+  // Fixture browser (pick the exact match)
+  fixtureResults: MatchFixtureSummary[];
+  fixtureSearchLoading: boolean;
+  fixtureSearchError: string | null;
+  searchFixtures: (query: string) => Promise<void>;
+  loadFixture: (fixtureId: number) => Promise<void>;
+  clearFixtureResults: () => void;
+
+  // Per-player statistics (API-Football) + the selected player card
+  playerStats: PlayerStatsDoc | null;
+  playerStatsLoading: boolean;
+  playerStatsError: string | null;
+  selectedPlayerName: string | null;
+  loadPlayerStats: () => Promise<void>;
+  fetchPlayerStats: () => Promise<void>;
+  selectPlayer: (name: string | null) => void;
+
+  // Player name -> CV track id (for per-player heatmaps)
+  assignments: Record<string, number>;
+  loadAssignments: () => Promise<void>;
+  assignPlayer: (name: string, trackId: number) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
   health: "checking",
+  healthAttempts: 0,
   projects: [],
   categories: [],
   descriptorGroups: [],
@@ -170,13 +259,38 @@ export const useStore = create<AppState>((set, get) => ({
   requestSeekMs: null,
   analysisJob: null,
   tracks: null,
-  overlay: true,
+  overlay: false, // tracked-player circles off by default; toggle in Analyse panel
   segments: null,
   calibrationMode: false,
   calibrationPoints: [],
   pitch: null,
   analytics: null,
   shots: null,
+  studioShapes: [],
+  studioTool: null,
+  studioColor: "#F5C24B",
+  selectedShapeId: null,
+  studioPinArm: false,
+  studioHistory: [],
+  apiKeySet: false,
+  groqKeySet: false,
+  aiProvider: "groq",
+  aiKeySet: false,
+  keySource: "none",
+  apifootballKeySet: false,
+  settingsOpen: false,
+  composeSeed: null,
+  matchData: null,
+  matchDataLoading: false,
+  matchDataError: null,
+  fixtureResults: [],
+  fixtureSearchLoading: false,
+  fixtureSearchError: null,
+  playerStats: null,
+  playerStatsLoading: false,
+  playerStatsError: null,
+  selectedPlayerName: null,
+  assignments: {},
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -185,11 +299,187 @@ export const useStore = create<AppState>((set, get) => ({
   checkHealth: async () => {
     try {
       await api.health();
-      set({ health: "online" });
+      set({ health: "online", healthAttempts: 0 });
     } catch {
-      set({ health: "offline" });
+      const attempts = get().healthAttempts + 1;
+      // Give the sidecar ~60s before declaring failure: on first launch the
+      // onefile exe unpacks its ~430MB CV bundle to temp and cold-imports torch,
+      // which measured ~24s here and is slower on modest disks/hardware.
+      set({ health: attempts > 40 ? "failed" : "offline", healthAttempts: attempts });
     }
   },
+
+  resetHealthCheck: () => set({ health: "checking", healthAttempts: 0 }),
+
+  refreshSettings: async () => {
+    try {
+      const s = await api.getSettings();
+      set({
+        apiKeySet: s.anthropic_api_key_set,
+        groqKeySet: s.groq_api_key_set,
+        aiProvider: s.provider,
+        aiKeySet:
+          s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+        keySource: s.key_source,
+        apifootballKeySet: s.apifootball_key_set,
+      });
+    } catch {
+      /* backend not ready yet; leave defaults */
+    }
+  },
+  saveApiKey: async (key: string, model?: string) => {
+    const s = await api.saveSettings({ anthropic_api_key: key, model });
+    set({
+      apiKeySet: s.anthropic_api_key_set,
+      aiKeySet:
+        s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+      keySource: s.key_source,
+    });
+  },
+  saveGroqKey: async (key: string) => {
+    const s = await api.saveSettings({ groq_api_key: key });
+    set({
+      groqKeySet: s.groq_api_key_set,
+      aiKeySet:
+        s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+      keySource: s.key_source,
+    });
+  },
+  setProvider: async (provider: "groq" | "anthropic") => {
+    const s = await api.saveSettings({ provider });
+    set({
+      aiProvider: s.provider,
+      aiKeySet:
+        s.provider === "groq" ? s.groq_api_key_set : s.anthropic_api_key_set,
+      keySource: s.key_source,
+    });
+  },
+  saveApiFootballKey: async (key: string) => {
+    const s = await api.saveSettings({ apifootball_key: key });
+    set({ apifootballKeySet: s.apifootball_key_set });
+  },
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
+
+  loadMatchData: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ matchData: null });
+      return;
+    }
+    try {
+      const data = await api.getMatchData(vid);
+      if (get().currentVideoId === vid) set({ matchData: data });
+    } catch {
+      if (get().currentVideoId === vid) set({ matchData: null });
+    }
+  },
+  fetchMatchData: async (description: string) => {
+    const vid = get().currentVideoId;
+    if (!vid || !description.trim()) return;
+    set({ matchDataLoading: true, matchDataError: null });
+    try {
+      const data = await api.fetchMatchData(vid, description.trim());
+      if (get().currentVideoId === vid) set({ matchData: data });
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ matchDataError: e instanceof Error ? e.message : "Lookup failed" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ matchDataLoading: false });
+    }
+  },
+
+  searchFixtures: async (query: string) => {
+    const vid = get().currentVideoId;
+    if (!vid || !query.trim()) return;
+    set({ fixtureSearchLoading: true, fixtureSearchError: null, fixtureResults: [] });
+    try {
+      const rows = await api.searchMatches(vid, query.trim());
+      if (get().currentVideoId === vid) set({ fixtureResults: rows });
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ fixtureSearchError: e instanceof Error ? e.message : "Search failed" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ fixtureSearchLoading: false });
+    }
+  },
+  loadFixture: async (fixtureId: number) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    set({ matchDataLoading: true, matchDataError: null });
+    try {
+      const data = await api.fetchMatchDataById(vid, fixtureId);
+      if (get().currentVideoId === vid) {
+        set({ matchData: data, fixtureResults: [] });
+      }
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ matchDataError: e instanceof Error ? e.message : "Could not load fixture" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ matchDataLoading: false });
+    }
+  },
+  clearFixtureResults: () => set({ fixtureResults: [], fixtureSearchError: null }),
+
+  loadPlayerStats: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ playerStats: null });
+      return;
+    }
+    try {
+      const data = await api.getPlayerStats(vid);
+      if (get().currentVideoId === vid) set({ playerStats: data });
+    } catch {
+      if (get().currentVideoId === vid) set({ playerStats: null });
+    }
+  },
+  fetchPlayerStats: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    set({ playerStatsLoading: true, playerStatsError: null });
+    try {
+      const data = await api.fetchPlayerStats(vid);
+      if (get().currentVideoId === vid) set({ playerStats: data });
+    } catch (e) {
+      if (get().currentVideoId === vid) {
+        set({ playerStatsError: e instanceof Error ? e.message : "Could not load player stats" });
+      }
+    } finally {
+      if (get().currentVideoId === vid) set({ playerStatsLoading: false });
+    }
+  },
+  selectPlayer: (name) => set({ selectedPlayerName: name }),
+
+  loadAssignments: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ assignments: {} });
+      return;
+    }
+    try {
+      const doc = await api.getAssignments(vid);
+      if (get().currentVideoId === vid) set({ assignments: doc.map ?? {} });
+    } catch {
+      if (get().currentVideoId === vid) set({ assignments: {} });
+    }
+  },
+  assignPlayer: async (name, trackId) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    const map = { ...get().assignments, [name]: trackId };
+    set({ assignments: map });
+    try {
+      await api.putAssignments(vid, map);
+    } catch {
+      /* keep the optimistic local assignment */
+    }
+  },
+
+  setComposeSeed: (seed) => set({ composeSeed: seed }),
 
   loadProjects: async () => {
     const projects = await api.listProjects();
@@ -292,6 +582,20 @@ export const useStore = create<AppState>((set, get) => ({
       analytics: null,
       shots: null,
       segments: null,
+      studioShapes: [],
+      studioTool: null,
+      selectedShapeId: null,
+      studioPinArm: false,
+      studioHistory: [],
+      composeSeed: null,
+      matchData: null,
+      matchDataError: null,
+      fixtureResults: [],
+      fixtureSearchError: null,
+      playerStats: null,
+      playerStatsError: null,
+      selectedPlayerName: null,
+      assignments: {},
       videoMissing: false,
     });
     await Promise.all([
@@ -301,6 +605,10 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
+      get().loadStudio(),
+      get().loadMatchData(),
+      get().loadPlayerStats(),
+      get().loadAssignments(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {
@@ -432,6 +740,19 @@ export const useStore = create<AppState>((set, get) => ({
         if (updated.status === "done") {
           await get().loadTracks();
           await get().loadEvents();
+          // Best-effort: pull real match data (score, formations, stats) from
+          // API-Football using the project name to identify the game. Only when
+          // a key is configured and nothing has been fetched yet.
+          if (get().apifootballKeySet && !get().matchData) {
+            const project = get().currentProject();
+            if (project) {
+              get()
+                .fetchMatchData(project.name)
+                .catch(() => {
+                  /* non-fatal; the dashboard lets the user look it up manually */
+                });
+            }
+          }
           return;
         }
         if (updated.status === "error") return;
@@ -564,6 +885,73 @@ export const useStore = create<AppState>((set, get) => ({
     const { created } = await api.tagShots(vid);
     await get().loadEvents();
     return created;
+  },
+
+  loadStudio: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ studioShapes: [] });
+      return;
+    }
+    try {
+      const doc = await api.getStudio(vid);
+      if (get().currentVideoId === vid) set({ studioShapes: doc.shapes ?? [] });
+    } catch {
+      if (get().currentVideoId === vid) set({ studioShapes: [] });
+    }
+  },
+  setStudioTool: (tool) =>
+    set({ studioTool: tool, studioPinArm: false }),
+  setStudioColor: (color) => set({ studioColor: color }),
+  pushStudioHistory: () =>
+    set((s) => ({ studioHistory: [...s.studioHistory.slice(-49), s.studioShapes] })),
+  undoStudio: () => {
+    const hist = get().studioHistory;
+    if (!hist.length) return;
+    set({
+      studioShapes: hist[hist.length - 1],
+      studioHistory: hist.slice(0, -1),
+      selectedShapeId: null,
+    });
+    queueStudioSave(get);
+  },
+  addShape: (shape) => {
+    get().pushStudioHistory();
+    set({ studioShapes: [...get().studioShapes, shape], selectedShapeId: shape.id });
+    queueStudioSave(get);
+  },
+  updateShape: (id, patch) => {
+    set({
+      studioShapes: get().studioShapes.map((s) =>
+        s.id === id ? { ...s, ...patch } : s,
+      ),
+    });
+    queueStudioSave(get);
+  },
+  deleteShape: (id) => {
+    get().pushStudioHistory();
+    set({
+      studioShapes: get().studioShapes.filter((s) => s.id !== id),
+      selectedShapeId: get().selectedShapeId === id ? null : get().selectedShapeId,
+    });
+    queueStudioSave(get);
+  },
+  selectShape: (id) => set({ selectedShapeId: id }),
+  clearStudio: () => {
+    get().pushStudioHistory();
+    set({ studioShapes: [], selectedShapeId: null, studioPinArm: false });
+    queueStudioSave(get);
+  },
+  armPin: (on) => set({ studioPinArm: on }),
+  pinShapeToTrack: (id, trackId, pinPos) => {
+    get().pushStudioHistory();
+    set({
+      studioShapes: get().studioShapes.map((s) =>
+        s.id === id ? { ...s, pinnedTrackId: trackId, pinPos } : s,
+      ),
+      studioPinArm: false,
+    });
+    queueStudioSave(get);
   },
 }));
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useStore } from "../store";
-import { exportUrl, downloadText } from "../lib/api";
+import { exportUrl, downloadText, api } from "../lib/api";
 import { pickVideoFile, isTauri, baseName } from "../lib/platform";
 import type { CodingTemplate } from "../lib/types";
 
@@ -10,13 +10,21 @@ export default function VideoBar() {
     useStore();
   const [manualPath, setManualPath] = useState("");
   const [importing, setImporting] = useState(false);
+  const [menu, setMenu] = useState<"tpl" | "exp" | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const doImport = async () => {
     if (isTauri()) {
       const path = await pickVideoFile();
       if (path) await registerVideo(baseName(path), path);
-    } else {
+      return;
+    }
+    // Browser/dev: ask the local backend to open a native OS file dialog.
+    try {
+      const { path } = await api.pickVideoFile();
+      if (path) await registerVideo(baseName(path), path);
+    } catch {
+      // Fallback to the manual path input if the picker isn't available.
       setImporting((v) => !v);
     }
   };
@@ -84,12 +92,40 @@ export default function VideoBar() {
 
       <div className="flex-1" />
 
-      <button className="btn" onClick={doSaveTemplate} title="Download coding setup as JSON">
-        Save template
-      </button>
-      <button className="btn" onClick={() => fileRef.current?.click()}>
-        Apply template
-      </button>
+      {/* Templates menu */}
+      <div className="relative">
+        <button
+          className="btn"
+          onClick={() => setMenu((m) => (m === "tpl" ? null : "tpl"))}
+        >
+          Templates ▾
+        </button>
+        {menu === "tpl" && (
+          <div
+            className="absolute right-0 mt-1 z-20 card p-1 flex flex-col min-w-[10rem] shadow-soft"
+            onMouseLeave={() => setMenu(null)}
+          >
+            <button
+              className="text-left px-3 py-1.5 rounded-lg text-sm text-mist-200 hover:bg-ink-600"
+              onClick={() => {
+                setMenu(null);
+                doSaveTemplate();
+              }}
+            >
+              Save template
+            </button>
+            <button
+              className="text-left px-3 py-1.5 rounded-lg text-sm text-mist-200 hover:bg-ink-600"
+              onClick={() => {
+                setMenu(null);
+                fileRef.current?.click();
+              }}
+            >
+              Apply template
+            </button>
+          </div>
+        )}
+      </div>
       <input
         ref={fileRef}
         type="file"
@@ -98,22 +134,44 @@ export default function VideoBar() {
         onChange={onTemplateFile}
       />
 
-      <a
-        className="btn"
-        href={currentVideoId ? exportUrl(currentVideoId, "xml") : undefined}
-        aria-disabled={!currentVideoId}
-        onClick={(e) => !currentVideoId && e.preventDefault()}
-      >
-        Export XML
-      </a>
-      <a
-        className="btn"
-        href={currentVideoId ? exportUrl(currentVideoId, "csv") : undefined}
-        aria-disabled={!currentVideoId}
-        onClick={(e) => !currentVideoId && e.preventDefault()}
-      >
-        Export CSV
-      </a>
+      {/* Export menu */}
+      <div className="relative">
+        <button
+          className="btn"
+          onClick={() => setMenu((m) => (m === "exp" ? null : "exp"))}
+        >
+          Export ▾
+        </button>
+        {menu === "exp" && (
+          <div
+            className="absolute right-0 mt-1 z-20 card p-1 flex flex-col min-w-[9rem] shadow-soft"
+            onMouseLeave={() => setMenu(null)}
+          >
+            <a
+              className="px-3 py-1.5 rounded-lg text-sm text-mist-200 hover:bg-ink-600"
+              href={currentVideoId ? exportUrl(currentVideoId, "xml") : undefined}
+              aria-disabled={!currentVideoId}
+              onClick={(e) => {
+                if (!currentVideoId) e.preventDefault();
+                setMenu(null);
+              }}
+            >
+              Export XML
+            </a>
+            <a
+              className="px-3 py-1.5 rounded-lg text-sm text-mist-200 hover:bg-ink-600"
+              href={currentVideoId ? exportUrl(currentVideoId, "csv") : undefined}
+              aria-disabled={!currentVideoId}
+              onClick={(e) => {
+                if (!currentVideoId) e.preventDefault();
+                setMenu(null);
+              }}
+            >
+              Export CSV
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

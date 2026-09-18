@@ -1,32 +1,78 @@
 // Tauri application entry.
 //
-// In development the Python sidecar is started by the `beforeDevCommand`
+// In development the Python backend is started by the `beforeDevCommand`
 // (`npm run dev` runs the API + Vite together), so we do NOT spawn it here.
 //
-// In a packaged release build, the sidecar is bundled as an external binary
-// (`fa-sidecar`, produced by PyInstaller — see docs/architecture.md) and
-// launched on startup. If it isn't present yet the app still opens and simply
-// reports "Engine offline" until the backend is reachable.
+// In a packaged release build, the backend is bundled as an external binary
+// (`cuddy-backend`, produced by PyInstaller — see docs/architecture.md) and
+// launched on startup as a Tauri sidecar. If it isn't present yet the app
+// still opens and simply reports "Engine offline"/"failed to start" until the
+// backend is reachable (the frontend's health poll drives that state).
+//
+// The spawned child is tracked in app state so it can be terminated when the
+// window closes — otherwise a packaged app can leave an orphaned
+// cuddy-backend.exe running after the user quits Cuddy.
+
+use std::sync::Mutex;
+use tauri::Manager;
+
+/// Holds the sidecar's child-process handle so it can be killed on exit.
+struct BackendProcess(Mutex<Option<tauri_plugin_shell::process::CommandChild>>);
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(BackendProcess(Mutex::new(None)))
         .setup(|_app| {
             #[cfg(not(debug_assertions))]
             {
                 use tauri_plugin_shell::ShellExt;
-                match _app.shell().sidecar("fa-sidecar") {
-                    Ok(cmd) => {
-                        if let Err(err) = cmd.spawn() {
-                            eprintln!("Failed to spawn sidecar: {err}");
+                match _app.shell().sidecar("cuddy-backend") {
+                    Ok(cmd) => match cmd.spawn() {
+                        Ok((mut rx, child)) => {
+                            let state = _app.state::<BackendProcess>();
+                            *state.0.lock().unwrap() = Some(child);
+                            // Drain the child's stdout/stderr events. If this
+                            // receiver is dropped, nobody empties the OS pipes;
+                            // once the ~4KB Windows pipe buffer fills (uvicorn
+                            // logs a line per request) the backend blocks on its
+                            // next write and the app freezes as "Engine offline".
+                            tauri::async_runtime::spawn(async move {
+                                while rx.recv().await.is_some() {}
+                            });
                         }
-                    }
-                    Err(err) => eprintln!("Sidecar not configured: {err}"),
+                        Err(err) => eprintln!("Failed to spawn Cuddy backend: {err}"),
+                    },
+                    Err(err) => eprintln!("Cuddy backend sidecar not configured: {err}"),
                 }
             }
             Ok(())
         })
+        .on_window_event(|window, event| {
+            // Terminate the backend child process when the main window closes,
+            // so no cuddy-backend.exe is left running after Cuddy quits.
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                let state = window.state::<BackendProcess>();
+                let child = state.0.lock().unwrap().take();
+                if let Some(child) = child {
+                    // PyInstaller's onefile bootloader (the process Tauri spawns)
+                    // re-launches itself as a child that actually runs uvicorn.
+                    // child.kill() reaps only the bootloader, orphaning the real
+                    // backend — so kill the whole process tree by PID first.
+                    #[cfg(windows)]
+                    {
+                        use std::os::windows::process::CommandExt;
+                        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/F", "/T", "/PID", &child.pid().to_string()])
+                            .creation_flags(CREATE_NO_WINDOW)
+                            .status();
+                    }
+                    let _ = child.kill();
+                }
+            }
+        })
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("error while running Cuddy");
 }
