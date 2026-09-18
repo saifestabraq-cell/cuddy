@@ -16,6 +16,8 @@ export default function SettingsPanel() {
   const setProvider = useStore((s) => s.setProvider);
   const saveApiFootballKey = useStore((s) => s.saveApiFootballKey);
   const refreshSettings = useStore((s) => s.refreshSettings);
+  const reducedMotion = useStore((s) => s.reducedMotion);
+  const setReducedMotion = useStore((s) => s.setReducedMotion);
 
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
@@ -259,6 +261,25 @@ export default function SettingsPanel() {
                 </div>
               </>
             )}
+
+            <div className="border-t border-ink-500/50 my-4" />
+
+            {/* Interface preferences */}
+            <label className="text-xs font-medium text-mist-200">Interface</label>
+            <label className="flex items-center justify-between gap-3 mt-2 cursor-pointer">
+              <span className="text-xs text-mist-300 leading-relaxed">
+                Reduced motion
+                <span className="block text-[11px] text-mist-500">
+                  Minimise animation across the app.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                className="w-4 h-4"
+                checked={reducedMotion}
+                onChange={(e) => setReducedMotion(e.target.checked)}
+              />
+            </label>
           </motion.div>
         </motion.div>
       )}

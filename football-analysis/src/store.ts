@@ -65,6 +65,19 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
 
 type Health = "checking" | "online" | "offline" | "failed";
 
+const RM_KEY = "cuddy.reducedMotion";
+
+/** Initial reduced-motion: a stored choice wins, else the OS preference. */
+function initialReducedMotion(): boolean {
+  try {
+    const stored = localStorage.getItem(RM_KEY);
+    if (stored != null) return stored === "1";
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
 const EMPTY_FILTER: Filter = {
   categoryIds: [],
   descriptors: [],
@@ -221,6 +234,9 @@ interface AppState {
   keySource: "env" | "stored" | "none";
   apifootballKeySet: boolean;
   settingsOpen: boolean;
+  // UI preference: reduce/remove animation (accessibility + performance).
+  reducedMotion: boolean;
+  setReducedMotion: (on: boolean) => void;
   refreshSettings: () => Promise<void>;
   saveApiKey: (key: string, model?: string) => Promise<void>;
   saveGroqKey: (key: string) => Promise<void>;
@@ -296,6 +312,7 @@ export const useStore = create<AppState>((set, get) => ({
   keySource: "none",
   apifootballKeySet: false,
   settingsOpen: false,
+  reducedMotion: initialReducedMotion(),
   composeSeed: null,
   matchData: null,
   matchDataLoading: false,
@@ -377,6 +394,15 @@ export const useStore = create<AppState>((set, get) => ({
   },
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+
+  setReducedMotion: (on) => {
+    try {
+      localStorage.setItem(RM_KEY, on ? "1" : "0");
+    } catch {
+      /* private mode / storage blocked — keep the in-memory choice */
+    }
+    set({ reducedMotion: on });
+  },
 
   loadMatchData: async () => {
     const vid = get().currentVideoId;
