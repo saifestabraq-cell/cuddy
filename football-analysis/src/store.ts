@@ -13,6 +13,7 @@ import type {
   CodingTemplate,
   DescriptorGroup,
   Filter,
+  Finding,
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
@@ -139,6 +140,18 @@ interface AppState {
   // AI review actions (same canonical Event; provenance kept on the backend).
   acceptEvent: (id: number) => Promise<void>;
   rejectEvent: (id: number) => Promise<void>;
+
+  // Findings (analyst observations linked to evidence)
+  findings: Finding[];
+  loadFindings: () => Promise<void>;
+  addFinding: (input: {
+    title: string;
+    description?: string;
+    event_ids?: number[];
+    start_ms?: number | null;
+    end_ms?: number | null;
+  }) => Promise<void>;
+  removeFinding: (id: number) => Promise<void>;
 
   selectEvent: (id: number | null) => void;
 
@@ -601,9 +614,11 @@ export const useStore = create<AppState>((set, get) => ({
       selectedPlayerName: null,
       assignments: {},
       videoMissing: false,
+      findings: [],
     });
     await Promise.all([
       get().loadEvents(),
+      get().loadFindings(),
       get().loadTracks(),
       get().loadSegments(),
       get().loadPitch(),
@@ -673,6 +688,31 @@ export const useStore = create<AppState>((set, get) => ({
       selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,
       playlist: get().playlist.filter((p) => p !== id),
     });
+  },
+
+  findings: [],
+  loadFindings: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ findings: [] });
+      return;
+    }
+    try {
+      const f = await api.listFindings(vid);
+      if (get().currentVideoId === vid) set({ findings: f });
+    } catch {
+      if (get().currentVideoId === vid) set({ findings: [] });
+    }
+  },
+  addFinding: async (input) => {
+    const vid = get().currentVideoId;
+    if (!vid) return;
+    const finding = await api.createFinding(vid, input);
+    set({ findings: [finding, ...get().findings] });
+  },
+  removeFinding: async (id) => {
+    await api.deleteFinding(id);
+    set({ findings: get().findings.filter((f) => f.id !== id) });
   },
 
   acceptEvent: async (id) => {

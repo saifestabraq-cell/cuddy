@@ -97,6 +97,18 @@ export interface EventRelation {
   created_at: string;
 }
 
+/** An analyst observation linked to its supporting events + time range. */
+export interface Finding {
+  id: number;
+  video_id: number;
+  title: string;
+  description: string;
+  event_ids: number[];
+  start_ms: number | null;
+  end_ms: number | null;
+  created_at: string;
+}
+
 // Portable coding template (categories + descriptor groups).
 export interface CodingTemplate {
   name: string;

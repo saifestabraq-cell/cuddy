@@ -16,6 +16,7 @@ import PlaylistBar from "./PlaylistBar";
 import AnalysisTabs from "./AnalysisTabs";
 import AIPanel from "./AIPanel";
 import ReviewQueue from "./ReviewQueue";
+import FindingsPanel from "./FindingsPanel";
 import AddEventPanel from "./AddEventPanel";
 import StudioToolbar from "./StudioToolbar";
 import MatchHero from "./MatchHero";
@@ -244,6 +245,7 @@ export default function Workspace() {
           />
           <AIPanel />
           <ReviewQueue />
+          <FindingsPanel />
           {analyzed && <ValidationPanel />}
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />

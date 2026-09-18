@@ -135,3 +135,11 @@ class EventRelationCreate(BaseModel):
     from_event_id: int
     to_event_id: int
     relation_type: str
+
+
+class FindingCreate(BaseModel):
+    title: str
+    description: str = ""
+    event_ids: list[int] = []
+    start_ms: Optional[int] = None
+    end_ms: Optional[int] = None

@@ -10,6 +10,7 @@ import type {
   EventRelation,
   EventRevision,
   EvidencePackage,
+  Finding,
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
@@ -150,6 +151,26 @@ export const api = {
     }),
   deleteRelation: (relationId: number) =>
     request<void>(`/events/relations/${relationId}`, { method: "DELETE" }),
+
+  // Findings (analyst observations linked to evidence)
+  listFindings: (videoId: number) =>
+    request<Finding[]>(`/videos/${videoId}/findings`),
+  createFinding: (
+    videoId: number,
+    input: {
+      title: string;
+      description?: string;
+      event_ids?: number[];
+      start_ms?: number | null;
+      end_ms?: number | null;
+    },
+  ) =>
+    request<Finding>(`/videos/${videoId}/findings`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  deleteFinding: (id: number) =>
+    request<void>(`/findings/${id}`, { method: "DELETE" }),
 
   // Descriptors
   listDescriptorGroups: (projectId: number) =>

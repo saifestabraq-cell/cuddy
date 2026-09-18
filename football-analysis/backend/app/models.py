@@ -167,6 +167,24 @@ class EventRelation(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class Finding(SQLModel, table=True):
+    """An analyst-saved observation linked to its evidence.
+
+    e.g. "Repeated left-side turnovers in the first phase" tied to the events
+    and time range that support it. The lightweight basis for report generation
+    — it references events rather than duplicating them.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    video_id: int = Field(foreign_key="video.id", index=True)
+    title: str
+    description: str = ""
+    event_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+    start_ms: Optional[int] = None
+    end_ms: Optional[int] = None
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class AnalysisRun(SQLModel, table=True):
     """Durable state for a staged analysis pipeline (triage -> events -> spatial).
 
