@@ -97,6 +97,26 @@ def get_tracks(video_id: int):
     return FileResponse(path, media_type="application/json")
 
 
+@router.get("/videos/{video_id}/tracks/window")
+def get_tracks_window(video_id: int, start_ms: int, end_ms: int):
+    """Only the frames within [start_ms, end_ms] plus the track metadata.
+
+    Lets the overlay load a time window near the playhead instead of pulling the
+    whole match into browser memory (spec §18). Metadata mirrors /tracks/summary.
+    """
+    path = _tracks_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    if end_ms < start_ms:
+        raise HTTPException(422, "end_ms must be >= start_ms")
+    data = json.loads(path.read_text())
+    frames = [
+        f for f in data.get("frames", []) if start_ms <= f.get("t_ms", -1) <= end_ms
+    ]
+    meta = {k: v for k, v in data.items() if k != "frames"}
+    return meta | {"frames": frames, "window": [start_ms, end_ms], "n_total": len(data.get("frames", []))}
+
+
 @router.get("/videos/{video_id}/segments")
 def get_segments(video_id: int):
     """Triage output: the camera-run segment map (main vs other)."""

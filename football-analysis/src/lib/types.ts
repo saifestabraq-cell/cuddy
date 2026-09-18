@@ -175,6 +175,13 @@ export interface TracksData {
   frames: TrackFrame[];
 }
 
+/** A time-windowed slice of tracks (spec §18): metadata + only the frames in
+ *  [window[0], window[1]], to avoid loading the whole match into memory. */
+export interface TracksWindow extends TracksData {
+  window: [number, number];
+  n_total: number;
+}
+
 // --- Studio: telestration graphics drawn over the video ---
 
 export type StudioTool =

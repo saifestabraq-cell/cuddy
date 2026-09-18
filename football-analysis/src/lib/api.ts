@@ -25,6 +25,7 @@ import type {
   ShotsData,
   StudioDoc,
   TracksData,
+  TracksWindow,
   ValidationResult,
   Video,
 } from "./types";
@@ -214,6 +215,11 @@ export const api = {
   pickVideoFile: () =>
     request<{ path: string | null }>("/videos/pick", { method: "POST" }),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  // Windowed track access (spec §18): only frames near the playhead.
+  getTracksWindow: (videoId: number, startMs: number, endMs: number) =>
+    request<TracksWindow>(
+      `/videos/${videoId}/tracks/window?start_ms=${Math.max(0, Math.round(startMs))}&end_ms=${Math.round(endMs)}`,
+    ),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
 
