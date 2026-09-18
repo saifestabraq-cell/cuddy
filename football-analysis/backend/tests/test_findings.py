@@ -34,3 +34,25 @@ def test_create_list_delete_finding(client, video):
 def test_finding_requires_title(client, video):
     r = client.post(f"/videos/{video}/findings", json={"title": "   "})
     assert r.status_code == 422
+
+
+def test_report_assembles_findings_with_clips(client, video):
+    e = client.post(
+        "/events",
+        json={"video_id": video, "label": "Shot", "start_ms": 2000, "end_ms": 5000},
+    ).json()
+    client.post(
+        f"/videos/{video}/findings",
+        json={"title": "Chances created", "event_ids": [e["id"]], "start_ms": 2000, "end_ms": 5000},
+    )
+    r = client.get(f"/videos/{video}/report")
+    assert r.status_code == 200
+    report = r.json()
+    assert report["title"]
+    assert report["generated_at"]
+    assert len(report["findings"]) == 1
+    f = report["findings"][0]
+    assert f["title"] == "Chances created"
+    assert f["clips"][0]["event_id"] == e["id"]
+    assert f["clips"][0]["label"] == "Shot"
+    assert f["clips"][0]["start_ms"] == 2000

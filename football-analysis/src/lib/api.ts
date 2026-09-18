@@ -19,6 +19,7 @@ import type {
   PlayerStatsDoc,
   Project,
   QueryResult,
+  ReportPayload,
   SegmentMap,
   SettingsStatus,
   ShotsData,
@@ -171,6 +172,8 @@ export const api = {
     }),
   deleteFinding: (id: number) =>
     request<void>(`/findings/${id}`, { method: "DELETE" }),
+  getReport: (videoId: number) =>
+    request<ReportPayload>(`/videos/${videoId}/report`),
 
   // Descriptors
   listDescriptorGroups: (projectId: number) =>

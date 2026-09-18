@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStore } from "../store";
+import { api, downloadText } from "../lib/api";
 import { fmtClock } from "../lib/time";
 import SectionHeader from "./SectionHeader";
 
@@ -67,9 +68,25 @@ export default function FindingsPanel() {
         label="Findings"
         className="mb-2"
         right={
-          <span className="text-[11px] text-mist-400 tabular-nums">
-            {findings.length}
-          </span>
+          <div className="flex items-center gap-2">
+            {findings.length > 0 && (
+              <button
+                className="text-[11px] text-mist-400 hover:text-teal-300 transition-colors"
+                onClick={async () => {
+                  const report = await api.getReport(videoId);
+                  downloadText(
+                    JSON.stringify(report, null, 2),
+                    `${report.title || "match"}-report.json`,
+                  );
+                }}
+              >
+                Export report
+              </button>
+            )}
+            <span className="text-[11px] text-mist-400 tabular-nums">
+              {findings.length}
+            </span>
+          </div>
         }
       />
 

@@ -109,6 +109,22 @@ export interface Finding {
   created_at: string;
 }
 
+/** Structured report payload (spec §56) — findings + resolved evidence clips. */
+export interface ReportPayload {
+  title: string;
+  generated_at: string;
+  match: Record<string, unknown> | null;
+  findings: {
+    id: number;
+    title: string;
+    description: string;
+    start_ms: number | null;
+    end_ms: number | null;
+    clips: { event_id: number; label: string; start_ms: number; end_ms: number; source: string }[];
+  }[];
+  notes: string;
+}
+
 // Portable coding template (categories + descriptor groups).
 export interface CodingTemplate {
   name: string;
