@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useStore, useFilteredEvents } from "../store";
 import type { Category, MatchEvent } from "../lib/types";
 import { fmtClock } from "../lib/time";
@@ -34,7 +34,12 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const selectEvent = useStore((s) => s.selectEvent);
   const updateEvent = useStore((s) => s.updateEvent);
   const setComposeSeed = useStore((s) => s.setComposeSeed);
-  const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
+  // Memoize per-render allocations: the category map and lane splits only change
+  // when categories/events do, not on every playhead tick (spec §35).
+  const catById = useMemo(
+    () => new Map<number, Category>(categories.map((c) => [c.id, c])),
+    [categories],
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -46,8 +51,8 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const widthPct = Math.max(100, (dur / span) * 100); // track width vs viewport
   const pct = (ms: number) => `${Math.min(100, Math.max(0, (ms / dur) * 100))}%`;
 
-  const manual = events.filter((e) => e.source !== "ai");
-  const ai = events.filter((e) => e.source === "ai");
+  const manual = useMemo(() => events.filter((e) => e.source !== "ai"), [events]);
+  const ai = useMemo(() => events.filter((e) => e.source === "ai"), [events]);
 
   const msFromClientX = (clientX: number) => {
     const rect = trackRef.current!.getBoundingClientRect();
