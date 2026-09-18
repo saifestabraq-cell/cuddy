@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import type { EvidencePackage } from "../lib/types";
 import { fmtClock } from "../lib/time";
 import SectionHeader from "./SectionHeader";
+import SourceBadge from "./SourceBadge";
 
 type Mode = "ask" | "show";
 
@@ -24,14 +25,6 @@ const SUGGESTIONS: Record<Mode, string[]> = {
 const PLACEHOLDER: Record<Mode, string> = {
   ask: "e.g. Which team created more xG?",
   show: "e.g. show me every turnover in the second half",
-};
-
-// How a metric's data was produced — drives an honest source badge.
-const SOURCE_LABEL: Record<string, string> = {
-  official_match_data: "Official",
-  cuddy_video_analysis: "Cuddy CV",
-  approximate_cv: "Approx. CV",
-  heuristic: "Heuristic",
 };
 
 /**
@@ -222,21 +215,6 @@ export default function AIPanel() {
 
       {err && <p className="text-xs text-signal-live mt-2 leading-relaxed">{err}</p>}
     </div>
-  );
-}
-
-function SourceBadge({ source }: { source: string }) {
-  const label = SOURCE_LABEL[source] ?? source;
-  const approx = source === "approximate_cv" || source === "heuristic";
-  return (
-    <span
-      className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide ${
-        approx ? "bg-amber-500/15 text-amber-300" : "bg-teal-500/15 text-teal-300"
-      }`}
-      title={approx ? "Approximate — derived from video analysis" : "From match/video data"}
-    >
-      {label}
-    </span>
   );
 }
 
