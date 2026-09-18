@@ -7,6 +7,8 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  EventRelation,
+  EventRevision,
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
@@ -118,6 +120,35 @@ export const api = {
     }),
   deleteEvent: (id: number) =>
     request<void>(`/events/${id}`, { method: "DELETE" }),
+
+  // Review actions on AI suggestions (same canonical Event model)
+  acceptEvent: (id: number) =>
+    request<MatchEvent>(`/events/${id}/accept`, { method: "POST" }),
+  rejectEvent: (id: number) =>
+    request<void>(`/events/${id}/reject`, { method: "POST" }),
+
+  // Provenance trail (before/after values per edit), newest first
+  listRevisions: (id: number) =>
+    request<EventRevision[]>(`/events/${id}/revisions`),
+
+  // Event relations (sequences)
+  listRelations: (eventId: number) =>
+    request<EventRelation[]>(`/events/${eventId}/relations`),
+  createRelation: (
+    fromEventId: number,
+    toEventId: number,
+    relationType: string,
+  ) =>
+    request<EventRelation>(`/events/relations`, {
+      method: "POST",
+      body: JSON.stringify({
+        from_event_id: fromEventId,
+        to_event_id: toEventId,
+        relation_type: relationType,
+      }),
+    }),
+  deleteRelation: (relationId: number) =>
+    request<void>(`/events/relations/${relationId}`, { method: "DELETE" }),
 
   // Descriptors
   listDescriptorGroups: (projectId: number) =>

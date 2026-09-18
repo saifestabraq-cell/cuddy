@@ -60,6 +60,40 @@ export interface MatchEvent {
   source: EventSource;
   confidence: number | null;
   reviewed: boolean;
+  detector: string | null;
+  analysis_run_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** One recorded change to an event (before/after), for the provenance trail. */
+export interface EventRevision {
+  id: number;
+  event_id: number;
+  previous_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
+  actor_type: "manual" | "system";
+  reason: string;
+  created_at: string;
+}
+
+export type EventRelationType =
+  | "follows"
+  | "causes"
+  | "assist_for"
+  | "shot_from"
+  | "turnover_to"
+  | "possession_start"
+  | "possession_end"
+  | "same_sequence"
+  | "related_clip";
+
+/** A typed link between two events (powers sequence queries). */
+export interface EventRelation {
+  id: number;
+  from_event_id: number;
+  to_event_id: number;
+  relation_type: EventRelationType | string;
   created_at: string;
 }
 
