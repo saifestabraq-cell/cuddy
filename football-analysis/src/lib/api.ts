@@ -9,6 +9,7 @@ import type {
   DescriptorGroup,
   EventRelation,
   EventRevision,
+  EvidencePackage,
   MatchData,
   MatchEvent,
   MatchFixtureSummary,
@@ -232,6 +233,13 @@ export const api = {
     }),
   query: (videoId: number, question: string) =>
     request<QueryResult>(`/videos/${videoId}/query`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
+  // Structured, evidence-grounded query: deterministic clips/metrics first,
+  // optional LLM explanation. Works with no AI key.
+  investigate: (videoId: number, question: string) =>
+    request<EvidencePackage>(`/videos/${videoId}/investigate`, {
       method: "POST",
       body: JSON.stringify({ question }),
     }),

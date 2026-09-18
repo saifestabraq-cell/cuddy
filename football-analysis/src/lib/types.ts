@@ -310,6 +310,64 @@ export interface QueryResult {
   question: string;
 }
 
+// --- Structured, evidence-grounded query (deterministic engine) ---
+
+export type QueryIntent =
+  | "metric_comparison"
+  | "event_lookup"
+  | "event_count"
+  | "event_filter"
+  | "sequence_lookup"
+  | "shot_analysis"
+  | "possession_analysis"
+  | "pass_analysis"
+  | "turnover_analysis"
+  | "zone_analysis"
+  | "player_analysis"
+  | "time_range_analysis"
+  | "clip_lookup";
+
+export interface StructuredQuery {
+  intent: QueryIntent;
+  team: "home" | "away" | "both" | null;
+  period: number | null;
+  zones: string[];
+  event_types: string[];
+  source: EventSource | null;
+  reviewed: boolean | null;
+  time_range_ms: [number, number] | null;
+  metric: string | null;
+  wants_clips: boolean;
+  limit: number;
+}
+
+export interface EvidenceMetric {
+  label: string;
+  value: number | string;
+  /** e.g. cuddy_video_analysis | heuristic | approximate_cv | official_match_data */
+  source: string;
+}
+
+export interface EvidenceClip {
+  event_id: number;
+  start_ms: number;
+  end_ms: number;
+  label: string;
+  reason: string;
+}
+
+/** Deterministic evidence package; `explanation` is optional LLM prose over it. */
+export interface EvidencePackage {
+  question: string;
+  query: StructuredQuery;
+  summary: string;
+  metrics: EvidenceMetric[];
+  events: number[];
+  clips: EvidenceClip[];
+  warnings: string[];
+  explanation: string | null;
+}
+
 export interface ValidationResult {
   video_id: number;
   events: {

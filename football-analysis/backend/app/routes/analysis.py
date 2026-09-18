@@ -22,7 +22,7 @@ from ..cv.analytics import compute_analytics
 from ..cv.pitch import autotag_final_third, build_pitch_data, build_player_heatmap
 from ..cv.shots import detect_shots
 from ..db import get_session
-from ..llm import answer_question, query_clips
+from ..llm import answer_question, explain_evidence, query_clips
 from ..models import Category, Event, Video
 from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
@@ -408,6 +408,78 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
                 "label": code_of(ev), "reason": str(c.get("reason", "")),
             })
     return {"summary": result.get("summary", ""), "clips": clips, "question": payload.question}
+
+
+# --- Structured, evidence-grounded query (planner -> deterministic -> LLM) ---
+
+
+@router.post("/videos/{video_id}/investigate")
+def investigate(
+    video_id: int, payload: AskRequest, session: Session = Depends(get_session)
+):
+    """Answer a question with deterministic evidence + clips.
+
+    The clips and metrics come from real coded events / computed analytics via
+    the query engine — never from the LLM. The LLM (if a key is configured) only
+    adds a short explanation. Works fully offline without an AI key.
+    """
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+
+    from ..query import EventLite, QueryContext, plan_query, resolve_query
+
+    cats = {c.id: c.name for c in session.exec(select(Category)).all() if c.id}
+    events = session.exec(
+        select(Event).where(Event.video_id == video_id).order_by(Event.start_ms)
+    ).all()
+
+    def code_of(e: Event) -> str:
+        return (cats.get(e.category_id) if e.category_id else None) or e.label or "Event"
+
+    lite = [
+        EventLite(
+            id=e.id,
+            code=code_of(e),
+            start_ms=e.start_ms,
+            end_ms=e.end_ms,
+            source=e.source,
+            reviewed=e.reviewed,
+            descriptors=list(e.descriptors or []),
+        )
+        for e in events
+    ]
+
+    analytics = None
+    ap = _analytics_path(video_id)
+    if ap.is_file():
+        try:
+            analytics = json.loads(ap.read_text())
+        except (ValueError, OSError):
+            analytics = None
+    shots = None
+    sp = _shots_path(video_id)
+    if sp.is_file():
+        try:
+            shots = json.loads(sp.read_text())
+        except (ValueError, OSError):
+            shots = None
+
+    query = plan_query(payload.question)
+    pkg = resolve_query(payload.question, query, QueryContext(lite, analytics, shots))
+
+    result = pkg.model_dump()
+    # Optional prose over the evidence — additive, never the source of numbers.
+    explanation = None
+    if user_settings.has_llm_key():
+        try:
+            explanation = explain_evidence(
+                payload.question, json.dumps(result, default=str)
+            )
+        except Exception as exc:  # noqa: BLE001 - explanation is best-effort
+            pkg.warnings.append(f"Explanation unavailable: {type(exc).__name__}")
+            result["warnings"] = pkg.warnings
+    result["explanation"] = explanation
+    return result
 
 
 # --- Real match data from API-Football (score, formations, lineups, stats) ---

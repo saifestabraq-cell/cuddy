@@ -113,6 +113,27 @@ QUERY_SYSTEM = (
 )
 
 
+EXPLAIN_SYSTEM = (
+    "You are a football (soccer) match-analysis assistant. You are given a "
+    "question and an EVIDENCE package that was computed deterministically from "
+    "coded events and video analytics (summary, metrics with sources, matched "
+    "event count and clips). Write a short, plain explanation grounded ONLY in "
+    "this evidence. Do NOT invent numbers, events or clips beyond what is given. "
+    "If a metric is labelled heuristic or approximate, reflect that uncertainty. "
+    "Two or three sentences maximum."
+)
+
+
+def explain_evidence(question: str, evidence_json: str) -> str:
+    """Write prose over an already-computed evidence package. The analytics are
+    done; the LLM only explains. Never the source of the numbers."""
+    return _chat(
+        EXPLAIN_SYSTEM,
+        f"Question: {question}\n\nEvidence (JSON):\n{evidence_json}",
+        400,
+    )
+
+
 def query_clips(question: str, events_json: str) -> dict:
     """Translate a natural-language query into a selection of event clips + a
     one-line grounded summary. Context is the structured event record only."""
