@@ -136,6 +136,10 @@ interface AppState {
   removeEvent: (id: number) => Promise<void>;
   toggleEventDescriptor: (id: number, label: string) => Promise<void>;
 
+  // AI review actions (same canonical Event; provenance kept on the backend).
+  acceptEvent: (id: number) => Promise<void>;
+  rejectEvent: (id: number) => Promise<void>;
+
   selectEvent: (id: number | null) => void;
 
   // Add-event compose seed: clicking a timeline/list item prefills the form.
@@ -664,6 +668,22 @@ export const useStore = create<AppState>((set, get) => ({
 
   removeEvent: async (id) => {
     await api.deleteEvent(id);
+    set({
+      events: get().events.filter((e) => e.id !== id),
+      selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,
+      playlist: get().playlist.filter((p) => p !== id),
+    });
+  },
+
+  acceptEvent: async (id) => {
+    const event = await api.acceptEvent(id);
+    set({
+      events: get().events.map((e) => (e.id === id ? event : e)),
+    });
+  },
+
+  rejectEvent: async (id) => {
+    await api.rejectEvent(id);
     set({
       events: get().events.filter((e) => e.id !== id),
       selectedEventId: get().selectedEventId === id ? null : get().selectedEventId,

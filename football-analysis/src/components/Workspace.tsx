@@ -15,6 +15,7 @@ import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
 import AnalysisTabs from "./AnalysisTabs";
 import AIPanel from "./AIPanel";
+import ReviewQueue from "./ReviewQueue";
 import AddEventPanel from "./AddEventPanel";
 import StudioToolbar from "./StudioToolbar";
 import MatchHero from "./MatchHero";
@@ -242,6 +243,7 @@ export default function Workspace() {
             onStop={stopPresentation}
           />
           <AIPanel />
+          <ReviewQueue />
           {analyzed && <ValidationPanel />}
           {selectedEventId && (
             <EventEditPanel playheadMs={playheadMs} onSeek={seek} />
