@@ -49,6 +49,10 @@ jobs:
         working-directory: football-analysis/backend
         run: python -m compileall -q app
 
+      - name: Backend smoke tests
+        working-directory: football-analysis/backend
+        run: pytest -q tests
+
       - name: Database migration smoke test
         working-directory: football-analysis/backend
         shell: pwsh
