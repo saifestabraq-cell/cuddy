@@ -53,6 +53,7 @@ class EventCreate(BaseModel):
     descriptors: list[str] = []
     source: str = "manual"
     confidence: Optional[float] = None
+    player_track_ids: list[int] = []
 
 
 class DescriptorGroupCreate(BaseModel):
@@ -130,3 +131,4 @@ class EventUpdate(BaseModel):
     notes: Optional[str] = None
     descriptors: Optional[list[str]] = None
     reviewed: Optional[bool] = None
+    player_track_ids: Optional[list[int]] = None
