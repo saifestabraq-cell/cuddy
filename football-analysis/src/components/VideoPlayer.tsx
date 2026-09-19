@@ -36,6 +36,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
 
     const tracks = useStore((s) => s.tracks);
     const overlay = useStore((s) => s.overlay);
+    const selectedTrackId = useStore((s) => s.selectedTrackId);
+    const selectPlayer = useStore((s) => s.selectPlayer);
     const calibrationMode = useStore((s) => s.calibrationMode);
     const calibrationPoints = useStore((s) => s.calibrationPoints);
     const addCalibrationPoint = useStore((s) => s.addCalibrationPoint);
@@ -89,6 +91,37 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
                 ctx.fillText(String(d.id), x + 3, y - 2);
               }
             }
+
+            if (selectedTrackId != null) {
+              const selected = frame.dets.find(
+                (d) => d.id === selectedTrackId && d.cls !== 32,
+              );
+              if (selected) {
+                const cx = (selected.x + selected.w / 2) * sx;
+                const footY = (selected.y + selected.h) * sy;
+                ctx.save();
+                ctx.strokeStyle = "#6EE7D6";
+                ctx.fillStyle = "#6EE7D6";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(cx, footY, 11, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx, footY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = "600 11px Inter, system-ui, sans-serif";
+                const label = "Player #" + selectedTrackId;
+                const pad = 5;
+                const tw = ctx.measureText(label).width;
+                const lx = Math.max(4, Math.min(cw - tw - pad * 2 - 4, cx - tw / 2 - pad));
+                const ly = Math.max(16, footY - 18);
+                ctx.fillStyle = "#0E0F13";
+                ctx.fillRect(lx, ly - 13, tw + pad * 2, 16);
+                ctx.fillStyle = "#6EE7D6";
+                ctx.fillText(label, lx + pad, ly - 1);
+                ctx.restore();
+              }
+            }
           }
         }
 
@@ -120,7 +153,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
           });
         }
       },
-      [overlay, tracks, calibrationMode, calibrationPoints, nativeW, nativeH],
+      [overlay, tracks, selectedTrackId, calibrationMode, calibrationPoints, nativeW, nativeH],
     );
 
     useEffect(() => {
@@ -146,6 +179,31 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
       const nx = ((e.clientX - rect.left) / rect.width) * nativeW;
       const ny = ((e.clientY - rect.top) / rect.height) * nativeH;
       addCalibrationPoint(nx, ny);
+    };
+
+    const onPlayerClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (calibrationMode || !overlay || !tracks) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const frame = nearestFrame(tracks.frames, time);
+      if (!frame) return;
+
+      const sx = rect.width / tracks.width;
+      const sy = rect.height / tracks.height;
+      const candidates = frame.dets
+        .filter((d) => d.cls !== 32)
+        .filter((d) => {
+          const dx = d.x * sx;
+          const dy = d.y * sy;
+          const dw = d.w * sx;
+          const dh = d.h * sy;
+          return x >= dx && x <= dx + dw && y >= dy && y <= dy + dh;
+        })
+        .sort((a, b) => a.w * a.h - b.w * b.h);
+
+      const hit = candidates[0];
+      if (hit) selectPlayer(hit.id === selectedTrackId ? null : hit.id);
     };
 
     return (
@@ -176,7 +234,9 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
               />
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
+                className="absolute inset-0 w-full h-full cursor-pointer"
+                onClick={onPlayerClick}
+                title={overlay && !calibrationMode ? "Click a tracked player to follow them" : undefined}
               />
               {calibrationMode && (
                 <div
