@@ -9,9 +9,14 @@ const SUGGESTIONS = [
   "Summarise the key moments.",
 ];
 
-/** Ask questions about the match in plain English (Claude API, Phase 3c). */
+const PLAYER_SUGGESTIONS = [
+  "How much did this player move?",
+  "How many passes did this player make and receive?",
+];
+
 export default function AskPanel() {
   const videoId = useStore((s) => s.currentVideoId);
+  const selectedTrackId = useStore((s) => s.selectedTrackId);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +28,7 @@ export default function AskPanel() {
     setError(null);
     setAnswer(null);
     try {
-      const res = await api.ask(videoId, q.trim());
+      const res = await api.ask(videoId, q.trim(), selectedTrackId);
       setAnswer(res.answer);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
@@ -34,14 +39,25 @@ export default function AskPanel() {
 
   return (
     <div className="panel p-3">
-      <span className="text-xs uppercase tracking-wider text-mist-400">
-        Ask about this match
-      </span>
+      <div className="flex items-center justify-between">
+        <span className="text-xs uppercase tracking-wider text-mist-400">
+          Ask about this match
+        </span>
+        {selectedTrackId != null && (
+          <span className="text-[10px] text-teal-300">
+            Player #{selectedTrackId} in context
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 mt-2">
         <input
           className="input flex-1"
-          placeholder="e.g. Which team created more xG?"
+          placeholder={
+            selectedTrackId != null
+              ? "Ask about the selected player or the match…"
+              : "e.g. Which team created more xG?"
+          }
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ask(question)}
@@ -55,6 +71,24 @@ export default function AskPanel() {
           {busy ? "Thinking…" : "Ask"}
         </button>
       </div>
+
+      {selectedTrackId != null && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {PLAYER_SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              className="px-2 py-0.5 rounded-lg text-xs text-teal-200 border border-teal-300/30 hover:bg-teal-300/10 transition-colors"
+              disabled={busy || !videoId}
+              onClick={() => {
+                setQuestion(s);
+                ask(s);
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-1.5 mt-2">
         {SUGGESTIONS.map((s) => (
