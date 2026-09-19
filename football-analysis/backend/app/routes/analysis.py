@@ -134,6 +134,66 @@ def get_quality(video_id: int):
     return assess_quality(json.loads(path.read_text()))
 
 
+def _tracks_meta_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_tracksmeta.json"
+
+
+def _index_tracks(video_id: int, session: Session) -> int:
+    """Build the indexed frame cache from the tracks JSON and cache a small
+    frames-excluded metadata sidecar for fast windowed reads."""
+    from ..track_store import ingest
+
+    data = json.loads(_tracks_path(video_id).read_text())
+    n = ingest(session, video_id, data)
+    meta = {k: v for k, v in data.items() if k != "frames"}
+    _tracks_meta_path(video_id).write_text(json.dumps(meta))
+    return n
+
+
+@router.post("/videos/{video_id}/tracks/index")
+def index_tracks(video_id: int, session: Session = Depends(get_session)):
+    """(Re)build the indexed temporal store for this video from its tracks JSON."""
+    if not _tracks_path(video_id).is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    return {"frames_indexed": _index_tracks(video_id, session)}
+
+
+@router.get("/videos/{video_id}/tracks/window")
+def get_tracks_window(
+    video_id: int,
+    start_ms: int,
+    end_ms: int,
+    session: Session = Depends(get_session),
+):
+    """Only the frames within [start_ms, end_ms], as an indexed query.
+
+    Backed by the trackframe index (built on demand from the JSON the first
+    time), so the whole match is never parsed to serve a window. Metadata comes
+    from a small sidecar, not the full file."""
+    if end_ms < start_ms:
+        raise HTTPException(422, "end_ms must be >= start_ms")
+    if not _tracks_path(video_id).is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    from ..track_store import frame_count, window
+
+    if frame_count(session, video_id) == 0:
+        _index_tracks(video_id, session)  # lazy build
+
+    frames = window(session, video_id, start_ms, end_ms)
+    meta_path = _tracks_meta_path(video_id)
+    meta = {}
+    if meta_path.is_file():
+        try:
+            meta = json.loads(meta_path.read_text())
+        except (ValueError, OSError):
+            meta = {}
+    return meta | {
+        "frames": frames,
+        "window": [start_ms, end_ms],
+        "n_total": frame_count(session, video_id),
+    }
+
+
 @router.get("/videos/{video_id}/tracks/summary")
 def tracks_summary(video_id: int):
     """Lightweight summary without the (potentially large) per-frame data."""

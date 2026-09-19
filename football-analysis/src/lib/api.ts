@@ -18,6 +18,7 @@ import type {
   SegmentMap,
   ShotsData,
   TracksData,
+  TracksWindow,
   ValidationResult,
   Video,
 } from "./types";
@@ -171,6 +172,15 @@ export const api = {
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  // Indexed temporal store (§8): only the frames near the playhead.
+  getTracksWindow: (videoId: number, startMs: number, endMs: number) =>
+    request<TracksWindow>(
+      `/videos/${videoId}/tracks/window?start_ms=${Math.max(0, Math.round(startMs))}&end_ms=${Math.round(endMs)}`,
+    ),
+  indexTracks: (videoId: number) =>
+    request<{ frames_indexed: number }>(`/videos/${videoId}/tracks/index`, {
+      method: "POST",
+    }),
   getPlayerProfile: (videoId: number, trackId: number) =>
     request<PlayerProfile>(`/videos/${videoId}/players/${trackId}`),
   getSegments: (videoId: number) =>
