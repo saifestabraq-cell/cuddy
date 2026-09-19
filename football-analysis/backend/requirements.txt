@@ -1,6 +1,4 @@
-# Backend (FastAPI sidecar) — Phase 0/1 dependencies.
-# CV/ML deps (torch, ultralytics, opencv, supervision) are added in Phase 2
-# to keep the initial install light and fast.
+# Backend runtime dependencies.
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 sqlmodel==0.0.22
@@ -8,6 +6,11 @@ alembic==1.14.0
 pydantic==2.10.4
 pydantic-settings==2.7.1
 python-multipart==0.0.20
-# Natural-language query (Phase 3c) — needs ANTHROPIC_API_KEY at runtime
+
+# Natural-language query (Phase 3c) — needs ANTHROPIC_API_KEY at runtime.
 anthropic==0.69.0
-\n# Desktop ML runtime (used by the packaged analysis sidecar)\nsupervision==0.27.0\nultralytics==8.3.0\nscikit-learn==1.6.1\n
+
+# Computer-vision runtime used by the packaged analysis sidecar.
+supervision==0.27.0
+ultralytics==8.3.0
+scikit-learn==1.6.1
