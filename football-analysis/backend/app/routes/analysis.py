@@ -23,6 +23,7 @@ from ..cv.shots import detect_shots
 from ..db import get_session
 from ..llm import answer_question, query_clips
 from ..models import Category, Event, Video
+from .players import build_player_profile
 from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
 from ..schemas import AskRequest, CalibrateRequest
 
@@ -246,7 +247,7 @@ def tag_shots(
 # --- Phase 3c: natural-language query (Claude API) ---
 
 
-def _build_context(video_id: int, session: Session) -> str:
+def _build_context(video_id: int, session: Session, selected_track_id: int | None = None) -> str:
     """Compact JSON of the match's data for grounding the LLM answer."""
     cats = {c.id: c.name for c in session.exec(select(Category)).all()}
     events = session.exec(
@@ -280,6 +281,11 @@ def _build_context(video_id: int, session: Session) -> str:
         ctx["team_xg"] = s.get("team_xg")
         ctx["team_shots"] = s.get("team_shots")
     ctx["teams"] = {"0": "Team A", "1": "Team B"}
+    if selected_track_id is not None:
+        try:
+            ctx["selected_player"] = build_player_profile(video_id, selected_track_id)
+        except HTTPException:
+            ctx["selected_player"] = {"track_id": selected_track_id, "available": False}
     return json.dumps(ctx)
 
 
@@ -293,7 +299,7 @@ def ask(video_id: int, payload: AskRequest, session: Session = Depends(get_sessi
             "ANTHROPIC_API_KEY is not set on the backend. Set it in the "
             "environment and restart the API to enable natural-language queries.",
         )
-    context = _build_context(video_id, session)
+    context = _build_context(video_id, session, payload.selected_track_id)
     try:
         answer = answer_question(payload.question, context)
     except Exception as exc:  # noqa: BLE001 - surface the LLM error to the client
