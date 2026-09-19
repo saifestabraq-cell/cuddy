@@ -334,11 +334,20 @@ def query_video(video_id: int, payload: AskRequest, session: Session = Depends(g
             "id": e.id, "code": code_of(e),
             "start_s": round(e.start_ms / 1000, 1), "end_s": round(e.end_ms / 1000, 1),
             "source": e.source, "descriptors": e.descriptors,
+            "player_track_ids": e.player_track_ids,
         }
         for e in events
     ]
     try:
-        result = query_clips(payload.question, json.dumps(ev_list))
+        query_context = {
+        "events": ev_list,
+        "selected_player": (
+            build_player_profile(video_id, payload.selected_track_id)
+            if payload.selected_track_id is not None
+            else None
+        ),
+    }
+    result = query_clips(payload.question, json.dumps(query_context))
     except Exception as exc:  # noqa: BLE001 - surface the LLM error
         raise HTTPException(502, f"LLM request failed: {type(exc).__name__}: {exc}") from exc
 
