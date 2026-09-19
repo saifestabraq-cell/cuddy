@@ -113,6 +113,30 @@ export interface TracksData {
   frames: TrackFrame[];
 }
 
+export interface PlayerProfile {
+  track_id: number;
+  team: number;
+  samples: number;
+  avg_confidence: number;
+  visibility_fraction: number;
+  tracking_start_ms: number;
+  tracking_end_ms: number;
+  duration_ms: number;
+  distance_m: number | null;
+  avg_speed_mps: number | null;
+  passes_made: number;
+  passes_received: number;
+  latest: {
+    t_ms: number;
+    team: number;
+    conf: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+}
+
 export interface PitchData {
   length: number;
   width: number;
