@@ -58,13 +58,12 @@ jobs:
           python -c "from app.db import init_db; init_db(); print('Cuddy database migration OK')"
 
       - name: Build Python sidecar
-        run: pyinstaller --clean --noconfirm backend/pyinstaller.spec
+        shell: pwsh
+        run: ./backend/build_sidecar.ps1
 
-      - name: Prepare Tauri sidecar
+      - name: Verify Tauri sidecar
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force src-tauri/binaries | Out-Null
-          Copy-Item dist/fa-sidecar/fa-sidecar.exe src-tauri/binaries/fa-sidecar-x86_64-pc-windows-msvc.exe -Force
           if (!(Test-Path src-tauri/binaries/fa-sidecar-x86_64-pc-windows-msvc.exe)) {
             throw "Tauri sidecar was not produced."
           }
