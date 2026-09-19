@@ -127,6 +127,46 @@ def build_pitch_data(
     }
 
 
+def ball_xy_at(
+    pitch_data: dict, t_ms: int, max_gap_ms: int = 2000
+) -> Optional[tuple[float, float]]:
+    """Ball pitch position (metres) at the time closest to ``t_ms``.
+
+    Returns None when there is no calibrated ball sample within ``max_gap_ms``
+    of the requested time — the caller must treat a missing coordinate as
+    "unknown", never as (0, 0). Pure over ``pitch_data``; no CV imports.
+    """
+    ball = pitch_data.get("ball_positions") or []
+    best: Optional[tuple[int, float, float]] = None
+    best_gap = None
+    for t, x, y in ball:
+        gap = abs(t - t_ms)
+        if best_gap is None or gap < best_gap:
+            best_gap, best = gap, (t, x, y)
+    if best is None or best_gap is None or best_gap > max_gap_ms:
+        return None
+    return round(best[1], 2), round(best[2], 2)
+
+
+def locate_events(
+    events: list[tuple[int, int]], pitch_data: dict, max_gap_ms: int = 2000
+) -> dict[int, tuple[float, float]]:
+    """Approximate pitch coordinates for events from the tracked ball.
+
+    ``events`` is a list of ``(event_id, start_ms)`` pairs — decoupled from the
+    ORM so this stays unit-testable. Returns ``{event_id: (x, y)}`` only for
+    events with a nearby ball sample; events without one are omitted (their
+    location stays unknown). These coordinates are APPROXIMATE CV, to be stored
+    with ``coord_source="cv"`` and shown with the Approx. CV badge.
+    """
+    out: dict[int, tuple[float, float]] = {}
+    for eid, start_ms in events:
+        xy = ball_xy_at(pitch_data, start_ms, max_gap_ms=max_gap_ms)
+        if xy is not None:
+            out[eid] = xy
+    return out
+
+
 def autotag_final_third(
     pitch_data: dict, min_ms: int = 1500, gap_ms: int = 800
 ) -> list[dict]:

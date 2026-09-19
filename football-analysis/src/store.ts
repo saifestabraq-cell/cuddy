@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { api } from "./lib/api";
 import { pickVideoFile } from "./lib/platform";
+import { pointInZones } from "./lib/pitch-zones";
 import type {
   AnalysisJob,
   Analytics,
@@ -23,9 +24,16 @@ import type {
   Video,
 } from "./lib/types";
 
-/** Pure filter — kept out of the store so selectors stay reference-stable. */
-export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] {
+/** Pure filter — kept out of the store so selectors stay reference-stable.
+ *  `pitch` (when calibrated) enables the spatial zone filter; events without a
+ *  location are dropped while a zone filter is active. */
+export function applyFilter(
+  events: MatchEvent[],
+  filter: Filter,
+  pitch?: PitchData | null,
+): MatchEvent[] {
   const text = filter.text.trim().toLowerCase();
+  const spatial = filter.zones.length > 0 && !!pitch;
   return events.filter((e) => {
     if (filter.source !== "all" && e.source !== filter.source) return false;
     if (
@@ -42,6 +50,11 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
       const hay = `${e.label} ${e.notes} ${e.descriptors.join(" ")}`.toLowerCase();
       if (!hay.includes(text)) return false;
     }
+    if (spatial) {
+      if (e.pitch_x == null || e.pitch_y == null) return false;
+      if (!pointInZones(e.pitch_x, e.pitch_y, pitch!.length, pitch!.width, filter.zones))
+        return false;
+    }
     return true;
   });
 }
@@ -53,6 +66,7 @@ const EMPTY_FILTER: Filter = {
   descriptors: [],
   source: "all",
   text: "",
+  zones: [],
 };
 
 interface AppState {
@@ -138,6 +152,8 @@ interface AppState {
   applyTemplate: (template: CodingTemplate) => Promise<void>;
 
   analyzeVideo: (targetFps?: number) => Promise<void>;
+  cancelAnalysis: () => Promise<void>;
+  locateEvents: () => Promise<number>;
   loadTracks: () => Promise<void>;
   loadSegments: () => Promise<void>;
   setOverlay: (on: boolean) => void;
@@ -461,13 +477,40 @@ export const useStore = create<AppState>((set, get) => ({
           await get().loadEvents();
           return;
         }
-        if (updated.status === "error") return;
+        // Stop polling on a terminal state. "cancelled" keeps whatever partial
+        // tracks/events already landed; the user can retry to resume.
+        if (updated.status === "error" || updated.status === "cancelled") {
+          await get().loadTracks();
+          await get().loadEvents();
+          return;
+        }
       } catch {
         return;
       }
       setTimeout(poll, 700);
     };
     setTimeout(poll, 700);
+  },
+
+  cancelAnalysis: async () => {
+    const job = get().analysisJob;
+    if (!job) return;
+    try {
+      const updated = await api.cancelJob(job.id);
+      // Reflect the "Cancelling…" intent immediately; the poller flips it to
+      // "cancelled" once the worker stops at the next checkpoint.
+      if (get().analysisJob?.id === job.id) set({ analysisJob: updated });
+    } catch {
+      /* leave the current job state; the poller will keep it in sync */
+    }
+  },
+
+  locateEvents: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return 0;
+    const { located } = await api.locateEvents(vid);
+    await get().loadEvents();
+    return located;
   },
 
   loadTracks: async () => {
@@ -598,5 +641,6 @@ export const useStore = create<AppState>((set, get) => ({
 export function useFilteredEvents(): MatchEvent[] {
   const events = useStore((s) => s.events);
   const filter = useStore((s) => s.filter);
-  return useMemo(() => applyFilter(events, filter), [events, filter]);
+  const pitch = useStore((s) => s.pitch);
+  return useMemo(() => applyFilter(events, filter, pitch), [events, filter, pitch]);
 }

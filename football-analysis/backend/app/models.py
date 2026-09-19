@@ -118,6 +118,17 @@ class Event(SQLModel, table=True):
     # Stable tracking IDs associated with this event within the analyzed video.
     player_track_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
 
+    # Pitch position (metres) for spatial filtering / the interactive pitch.
+    # `coord_source` records how it was obtained so the UI stays honest:
+    #   "cv"     -> derived from the tracked ball at the event time (APPROXIMATE,
+    #               needs calibration); shown with the Approx. CV badge.
+    #   "manual" -> the analyst placed it on the pitch (authoritative). A manual
+    #               coord is never overwritten by the CV backfill.
+    # None on both axes means the event has no location yet.
+    pitch_x: Optional[float] = None
+    pitch_y: Optional[float] = None
+    coord_source: Optional[str] = None  # "cv" | "manual" | None
+
     created_at: datetime = Field(default_factory=_utcnow)
 
     video: Optional[Video] = Relationship(back_populates="events")

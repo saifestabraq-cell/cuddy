@@ -61,6 +61,12 @@ export interface MatchEvent {
   confidence: number | null;
   player_track_ids: number[];
   reviewed: boolean;
+  // Pitch position (metres) for the interactive-pitch spatial filter.
+  // coord_source: "cv" = approximate (from the tracked ball), "manual" =
+  // analyst-placed (authoritative), null = unlocated.
+  pitch_x: number | null;
+  pitch_y: number | null;
+  coord_source: "cv" | "manual" | null;
   created_at: string;
 }
 
@@ -82,6 +88,10 @@ export interface Filter {
   descriptors: string[];
   source: "all" | "manual" | "ai";
   text: string;
+  // Canonical pitch zones (thirds + channels) toggled from the interactive
+  // pitch. Matching is per-dimension: a selected third AND a selected channel
+  // both constrain; empty = no spatial filter.
+  zones: string[];
 }
 
 // --- Phase 2: CV analysis ---
@@ -242,7 +252,7 @@ export interface ValidationResult {
 export interface AnalysisJob {
   id: string;
   kind: string;
-  status: "pending" | "running" | "done" | "error";
+  status: "pending" | "running" | "done" | "error" | "cancelled";
   progress: number;
   message: string;
   result: Record<string, unknown> | null;

@@ -35,6 +35,38 @@ STAGE_SPAN = {"triage": (0.0, 0.05), "events": (0.05, 0.95), "spatial": (0.95, 1
 StageProgress = Callable[[float, str], None]  # (fraction-within-stage, message)
 
 
+# --------------------------------------------------------------------------- #
+# Cooperative cancellation
+# --------------------------------------------------------------------------- #
+# A run has no OS-level kill switch (it's a daemon thread doing heavy CV work),
+# so cancellation is cooperative: the runner checks this registry between stages
+# and inside the throttled progress callback, and raises _Cancelled to abort.
+# Partial results already on disk are kept, and completed_stages is not extended
+# with the interrupted stage, so a later retry resumes from the last COMPLETED
+# stage and re-runs the interrupted one cleanly.
+_CANCEL_LOCK = threading.Lock()
+_CANCEL_REQUESTED: set[int] = set()
+
+
+class _Cancelled(Exception):
+    """Raised cooperatively when a cancel has been requested for the run."""
+
+
+def request_cancel(run_id: int) -> None:
+    with _CANCEL_LOCK:
+        _CANCEL_REQUESTED.add(run_id)
+
+
+def _is_cancel_requested(run_id: int) -> bool:
+    with _CANCEL_LOCK:
+        return run_id in _CANCEL_REQUESTED
+
+
+def _clear_cancel(run_id: int) -> None:
+    with _CANCEL_LOCK:
+        _CANCEL_REQUESTED.discard(run_id)
+
+
 def tracks_path(video_id: int) -> Path:
     return settings.tracks_dir / f"{video_id}.json"
 
@@ -183,11 +215,22 @@ def _run_pipeline(run_id: int) -> None:
         for stage in STAGES:
             if stage in completed:
                 continue
+            # Cancel requested between stages: stop cleanly, keep partial output.
+            if _is_cancel_requested(run_id):
+                run.status = "cancelled"
+                run.message = "Analysis cancelled"
+                _touch(run, session)
+                _clear_cancel(run_id)
+                return
             run.stage = stage
             lo, hi = STAGE_SPAN[stage]
 
             def progress(frac: float, msg: str, _lo=lo, _hi=hi) -> None:
                 nonlocal last_write
+                # Cooperative cancel point: heavy stages call progress often, so
+                # this aborts detection mid-stage within ~one progress tick.
+                if _is_cancel_requested(run_id):
+                    raise _Cancelled()
                 run.progress = _lo + (_hi - _lo) * max(0.0, min(1.0, frac))
                 run.message = msg
                 now = time.time()
@@ -197,10 +240,18 @@ def _run_pipeline(run_id: int) -> None:
 
             try:
                 STAGE_FNS[stage](video, progress)
+            except _Cancelled:
+                # Interrupted stage is NOT marked complete: retry re-runs it.
+                run.status = "cancelled"
+                run.message = f"Cancelled during {stage}"
+                _touch(run, session)
+                _clear_cancel(run_id)
+                return
             except Exception as exc:  # noqa: BLE001 - surface stage failure to client
                 run.status = "error"
                 run.error = f"{type(exc).__name__}: {exc}"
                 _touch(run, session)
+                _clear_cancel(run_id)
                 return
 
             completed.add(stage)
@@ -213,6 +264,7 @@ def _run_pipeline(run_id: int) -> None:
         run.progress = 1.0
         run.message = "Analysis complete"
         _touch(run, session)
+        _clear_cancel(run_id)
 
 
 def _launch(run_id: int) -> None:
@@ -227,8 +279,8 @@ def start_analysis(session: Session, video_id: int) -> AnalysisRun:
         .order_by(AnalysisRun.id.desc())  # type: ignore[attr-defined]
     ).first()
 
-    if existing and existing.status in ("pending", "running", "error"):
-        run = existing  # resume from completed_stages
+    if existing and existing.status in ("pending", "running", "error", "cancelled"):
+        run = existing  # resume from completed_stages (retry after cancel/error)
         run.status = "pending"
         run.error = None
     else:
@@ -236,6 +288,8 @@ def start_analysis(session: Session, video_id: int) -> AnalysisRun:
         session.add(run)
     session.commit()
     session.refresh(run)
+    # Drop any stale cancel request so the resumed run isn't cancelled at once.
+    _clear_cancel(run.id)
     _launch(run.id)
     return run
 
