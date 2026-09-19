@@ -19,6 +19,7 @@ import ShotsPanel from "./ShotsPanel";
 import AskPanel from "./AskPanel";
 import QueryPanel from "./QueryPanel";
 import ValidationPanel from "./ValidationPanel";
+import PlayerInspector from "./PlayerInspector";
 
 export default function Workspace() {
   const currentProject = useStore((s) => s.currentProject());
@@ -219,6 +220,7 @@ export default function Workspace() {
               if (currentVideo) setVideoMeta(currentVideo.id, meta);
             }}
           />
+          <PlayerInspector />
           <AnalyzePanel />
           <PitchPanel />
           <AnalyticsPanel />
