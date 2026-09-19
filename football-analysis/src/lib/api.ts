@@ -101,6 +101,7 @@ export const api = {
     descriptors?: string[];
     source?: "manual" | "ai";
     confidence?: number | null;
+    player_track_ids?: number[];
   }) =>
     request<MatchEvent>("/events", {
       method: "POST",
