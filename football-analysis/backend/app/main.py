@@ -23,6 +23,7 @@ from .routes import (
     events,
     export,
     projects,
+    players,
     templates,
     videos,
 )
@@ -67,6 +68,7 @@ def health():
 
 
 app.include_router(projects.router)
+app.include_router(players.router)
 app.include_router(videos.router)
 app.include_router(categories.router)
 app.include_router(descriptors.router)
