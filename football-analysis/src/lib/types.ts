@@ -59,6 +59,7 @@ export interface MatchEvent {
   descriptors: string[];
   source: EventSource;
   confidence: number | null;
+  player_track_ids: number[];
   reviewed: boolean;
   created_at: string;
 }
