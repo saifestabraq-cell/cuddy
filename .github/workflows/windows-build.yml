@@ -51,10 +51,14 @@ jobs:
 
       - name: Backend smoke tests
         working-directory: football-analysis/backend
+        env:
+          PYTHONPATH: .
         run: pytest -q tests
 
       - name: Database migration smoke test
         working-directory: football-analysis/backend
+        env:
+          PYTHONPATH: .
         shell: pwsh
         run: |
           $env:FA_DATA_DIR = "$env:RUNNER_TEMP\cuddy-db-smoke"
