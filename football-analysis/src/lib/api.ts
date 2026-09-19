@@ -187,10 +187,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ question, selected_track_id: selectedTrackId ?? null }),
     }),
-  query: (videoId: number, question: string) =>
+  query: (videoId: number, question: string, selectedTrackId?: number | null) =>
     request<QueryResult>(`/videos/${videoId}/query`, {
       method: "POST",
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, selected_track_id: selectedTrackId ?? null }),
     }),
 
   // Validation harness (Phase 1): score AI events vs the manual reference
