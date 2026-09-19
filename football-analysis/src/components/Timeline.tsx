@@ -20,6 +20,7 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const events = useFilteredEvents();
   const categories = useStore((s) => s.categories);
   const selectedId = useStore((s) => s.selectedEventId);
+  const selectedTrackId = useStore((s) => s.selectedTrackId);
   const selectEvent = useStore((s) => s.selectEvent);
   const updateEvent = useStore((s) => s.updateEvent);
   const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
@@ -89,6 +90,7 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
           const color = cat?.color ?? "#8A90A0";
           const isAi = ev.source === "ai";
           const selected = ev.id === selectedId;
+          const playerLinked = selectedTrackId != null && (ev.player_track_ids ?? []).includes(selectedTrackId);
           const start = drag?.id === ev.id ? drag.start : ev.start_ms;
           const end = drag?.id === ev.id ? drag.end : ev.end_ms;
           return (
@@ -105,9 +107,10 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
                 left: pct(start),
                 width: `${Math.max(0.6, ((end - start) / dur) * 100)}%`,
                 background: isAi ? `${color}44` : `${color}CC`,
-                border: `${selected ? 2 : 1}px ${isAi ? "dashed" : "solid"} ${
-                  selected ? "#EAECF2" : color
+                border: `${selected ? 2 : playerLinked ? 2 : 1}px ${isAi ? "dashed" : "solid"} ${
+                  selected ? "#EAECF2" : playerLinked ? "#6EE7D6" : color
                 }`,
+                boxShadow: playerLinked ? "0 0 0 1px rgba(110,231,214,0.18)" : undefined,
               }}
             >
               {/* resize handles */}
