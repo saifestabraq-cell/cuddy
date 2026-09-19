@@ -22,8 +22,7 @@ def _path(video_id: int, suffix: str = "") -> Path:
     return settings.tracks_dir / f"{video_id}{suffix}.json"
 
 
-@router.get("/{video_id}/players/{track_id}")
-def get_player_profile(video_id: int, track_id: int):
+def build_player_profile(video_id: int, track_id: int) -> dict:
     tracks_path = _path(video_id)
     if not tracks_path.is_file():
         raise HTTPException(404, "No tracking analysis for this video yet")
@@ -33,17 +32,15 @@ def get_player_profile(video_id: int, track_id: int):
     for frame in tracks.get("frames", []):
         for det in frame.get("dets", []):
             if det.get("id") == track_id and det.get("cls") != 32:
-                samples.append(
-                    {
-                        "t_ms": frame["t_ms"],
-                        "team": det.get("team", -1),
-                        "conf": det.get("conf", 0.0),
-                        "x": det.get("x", 0.0),
-                        "y": det.get("y", 0.0),
-                        "w": det.get("w", 0.0),
-                        "h": det.get("h", 0.0),
-                    }
-                )
+                samples.append({
+                    "t_ms": frame["t_ms"],
+                    "team": det.get("team", -1),
+                    "conf": det.get("conf", 0.0),
+                    "x": det.get("x", 0.0),
+                    "y": det.get("y", 0.0),
+                    "w": det.get("w", 0.0),
+                    "h": det.get("h", 0.0),
+                })
 
     if not samples:
         raise HTTPException(404, f"Track {track_id} not found")
@@ -86,21 +83,23 @@ def get_player_profile(video_id: int, track_id: int):
         analytics = json.loads(analytics_path.read_text())
         pass_events = analytics.get("pass_events", [])
         result["passes_made"] = sum(
-            1
-            for event in pass_events
+            1 for event in pass_events
             if event.get("team") == team and event.get("from") == track_id
         )
         result["passes_received"] = sum(
-            1
-            for event in pass_events
+            1 for event in pass_events
             if event.get("team") == team and event.get("to") == track_id
         )
 
-    if result["distance_m"] is not None and span_ms > 0:
-        result["avg_speed_mps"] = round(
-            result["distance_m"] / (span_ms / 1000.0), 2
-        )
-    else:
-        result["avg_speed_mps"] = None
-
+    result["avg_speed_mps"] = (
+        round(result["distance_m"] / (span_ms / 1000.0), 2)
+        if result["distance_m"] is not None and span_ms > 0
+        else None
+    )
     return result
+
+
+@router.get("/{video_id}/players/{track_id}")
+def get_player_profile(video_id: int, track_id: int):
+    return build_player_profile(video_id, track_id)
+
