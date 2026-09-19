@@ -17,6 +17,7 @@ import type {
   MatchEvent,
   PitchData,
   PlayerProfile,
+  Preset,
   Project,
   QualityReport,
   SegmentMap,
@@ -148,6 +149,13 @@ interface AppState {
   setFilter: (patch: Partial<Filter>) => void;
   clearFilter: () => void;
 
+  // Workspace presets (§3): saved Filter snapshots per project.
+  presets: Preset[];
+  loadPresets: () => Promise<void>;
+  savePreset: (name: string) => Promise<void>;
+  applyPreset: (filter: Partial<Filter>) => void;
+  deletePreset: (id: number) => Promise<void>;
+
   togglePlaylist: (id: number) => void;
   clearPlaylist: () => void;
   setPlaylist: (ids: number[]) => void;
@@ -215,6 +223,7 @@ export const useStore = create<AppState>((set, get) => ({
   pitch: null,
   analytics: null,
   shots: null,
+  presets: [],
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -260,6 +269,7 @@ export const useStore = create<AppState>((set, get) => ({
       api.listDescriptorGroups(id),
     ]);
     set({ categories, videos, descriptorGroups });
+    void get().loadPresets();
     if (videos.length) await get().selectVideo(videos[0].id);
   },
 
@@ -437,6 +447,31 @@ export const useStore = create<AppState>((set, get) => ({
 
   setFilter: (patch) => set({ filter: { ...get().filter, ...patch } }),
   clearFilter: () => set({ filter: EMPTY_FILTER }),
+
+  loadPresets: async () => {
+    const pid = get().currentProjectId;
+    if (!pid) {
+      set({ presets: [] });
+      return;
+    }
+    try {
+      const presets = await api.listPresets(pid);
+      if (get().currentProjectId === pid) set({ presets });
+    } catch {
+      if (get().currentProjectId === pid) set({ presets: [] });
+    }
+  },
+  savePreset: async (name) => {
+    const pid = get().currentProjectId;
+    if (!pid || !name.trim()) return;
+    const preset = await api.createPreset(pid, name.trim(), get().filter);
+    set({ presets: [preset, ...get().presets] });
+  },
+  applyPreset: (filter) => set({ filter: { ...EMPTY_FILTER, ...filter } }),
+  deletePreset: async (id) => {
+    await api.deletePreset(id);
+    set({ presets: get().presets.filter((p) => p.id !== id) });
+  },
 
   togglePlaylist: (id) => {
     const current = get().playlist;

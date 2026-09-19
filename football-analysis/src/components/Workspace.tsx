@@ -3,6 +3,7 @@ import { useStore } from "../store";
 import { streamUrl } from "../lib/api";
 import type { MatchEvent } from "../lib/types";
 import VideoBar from "./VideoBar";
+import PresetsBar from "./PresetsBar";
 import VideoPlayer from "./VideoPlayer";
 import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
@@ -209,6 +210,7 @@ export default function Workspace() {
   return (
     <div className="h-full flex flex-col gap-3">
       <VideoBar />
+      <PresetsBar />
       <FilterBar />
 
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4">

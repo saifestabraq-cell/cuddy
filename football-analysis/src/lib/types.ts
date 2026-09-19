@@ -83,6 +83,15 @@ export interface CodingTemplate {
   descriptor_groups: { name: string; descriptors: string[] }[];
 }
 
+/** A saved workspace preset: a named Filter snapshot (spec §3). */
+export interface Preset {
+  id: number;
+  project_id: number;
+  name: string;
+  filter: Partial<Filter>;
+  created_at: string;
+}
+
 export interface Filter {
   categoryIds: number[];
   descriptors: string[];

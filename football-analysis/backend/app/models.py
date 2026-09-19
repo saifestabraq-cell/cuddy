@@ -135,6 +135,23 @@ class Event(SQLModel, table=True):
     category: Optional[Category] = Relationship(back_populates="events")
 
 
+class Preset(SQLModel, table=True):
+    """A saved workspace preset: a named Filter snapshot that snaps the whole
+    workspace (timeline, event list, pitch) into an analysis task — e.g.
+    "Final-third entries", "AI suggestions to review".
+
+    ``filter`` holds the UI Filter shape (source, categoryIds, descriptors,
+    zones, playerTrackId, text) as JSON and is applied client-side, so the
+    backend stays agnostic to the exact filter fields.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    name: str
+    filter: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class AnalysisRun(SQLModel, table=True):
     """Durable state for a staged analysis pipeline (triage -> events -> spatial).
 

@@ -7,7 +7,9 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  Filter,
   MatchEvent,
+  Preset,
   PitchData,
   PlayerProfile,
   Project,
@@ -136,6 +138,17 @@ export const api = {
     }),
   deleteDescriptor: (id: number) =>
     request<void>(`/descriptors/${id}`, { method: "DELETE" }),
+
+  // Workspace presets (§3): project-scoped saved Filter snapshots
+  listPresets: (projectId: number) =>
+    request<Preset[]>(`/projects/${projectId}/presets`),
+  createPreset: (projectId: number, name: string, filter: Partial<Filter>) =>
+    request<Preset>(`/projects/${projectId}/presets`, {
+      method: "POST",
+      body: JSON.stringify({ name, filter }),
+    }),
+  deletePreset: (id: number) =>
+    request<void>(`/presets/${id}`, { method: "DELETE" }),
 
   // Templates
   getTemplate: (projectId: number) =>

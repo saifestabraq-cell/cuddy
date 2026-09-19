@@ -128,6 +128,11 @@ class AskRequest(BaseModel):
     selected_track_id: Optional[int] = None
 
 
+class PresetCreate(BaseModel):
+    name: str
+    filter: dict = {}
+
+
 class EventUpdate(BaseModel):
     category_id: Optional[int] = None
     label: Optional[str] = None
