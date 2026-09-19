@@ -119,6 +119,7 @@ class CalibrateRequest(BaseModel):
 
 class AskRequest(BaseModel):
     question: str
+    selected_track_id: Optional[int] = None
 
 
 class EventUpdate(BaseModel):
