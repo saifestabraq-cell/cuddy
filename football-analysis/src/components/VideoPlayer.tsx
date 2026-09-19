@@ -28,6 +28,34 @@ function nearestFrame(frames: TrackFrame[], ms: number): TrackFrame | null {
   );
 }
 
+function interpolatedTrackPosition(
+  frames: TrackFrame[],
+  ms: number,
+  trackId: number,
+): { x: number; y: number; w: number; h: number } | null {
+  if (!frames.length) return null;
+
+  let hi = 0;
+  while (hi < frames.length && frames[hi].t_ms < ms) hi++;
+  const before = frames[Math.max(0, hi - 1)]?.dets.find((d) => d.id === trackId && d.cls !== 32);
+  const after = frames[Math.min(frames.length - 1, hi)]?.dets.find((d) => d.id === trackId && d.cls !== 32);
+
+  if (before && after && frames[Math.max(0, hi - 1)].t_ms !== frames[Math.min(frames.length - 1, hi)].t_ms) {
+    const t0 = frames[Math.max(0, hi - 1)].t_ms;
+    const t1 = frames[Math.min(frames.length - 1, hi)].t_ms;
+    const a = Math.max(0, Math.min(1, (ms - t0) / (t1 - t0)));
+    return {
+      x: before.x + (after.x - before.x) * a,
+      y: before.y + (after.y - before.y) * a,
+      w: before.w + (after.w - before.w) * a,
+      h: before.h + (after.h - before.h) * a,
+    };
+  }
+
+  const d = before ?? after;
+  return d ? { x: d.x, y: d.y, w: d.w, h: d.h } : null;
+}
+
 const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
   ({ src, onTime, onMeta }, ref) => {
     const [playing, setPlaying] = useState(false);
@@ -93,8 +121,10 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
             }
 
             if (selectedTrackId != null) {
-              const selected = frame.dets.find(
-                (d) => d.id === selectedTrackId && d.cls !== 32,
+              const selected = interpolatedTrackPosition(
+                tracks.frames,
+                ms,
+                selectedTrackId,
               );
               if (selected) {
                 const cx = (selected.x + selected.w / 2) * sx;
