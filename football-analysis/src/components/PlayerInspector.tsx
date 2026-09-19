@@ -4,6 +4,7 @@ import { useStore } from "../store";
 export default function PlayerInspector() {
   const selectedTrackId = useStore((s) => s.selectedTrackId);
   const tracks = useStore((s) => s.tracks);
+  const pitch = useStore((s) => s.pitch);
 
   const player = useMemo(() => {
     if (selectedTrackId == null || !tracks) return null;
@@ -27,8 +28,9 @@ export default function PlayerInspector() {
       avgConf,
       samples: samples.length,
       durationMs: samples[samples.length - 1].t_ms - samples[0].t_ms,
+      totalDistanceM: pitch?.track_distance_m[String(selectedTrackId)] ?? null,
     };
-  }, [selectedTrackId, tracks]);
+  }, [selectedTrackId, tracks, pitch]);
 
   if (selectedTrackId == null) return null;
 
@@ -96,6 +98,10 @@ export default function PlayerInspector() {
 
       <div className="mt-3 text-[11px] text-mist-500">
         Tracking span: {Math.max(0, player.durationMs / 1000).toFixed(1)}s
+        <span className="mx-1.5">·</span>
+        {player.totalDistanceM != null
+          ? "Distance: " + player.totalDistanceM.toFixed(1) + "m"
+          : "Distance: calibrate pitch"}
         <span className="mx-1.5">·</span>
         Current image position: {Math.round(player.latest.x + player.latest.w / 2)},
         {Math.round(player.latest.y + player.latest.h)}
