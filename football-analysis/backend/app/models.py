@@ -152,6 +152,22 @@ class Preset(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class TrackFrame(SQLModel, table=True):
+    """One sampled frame of tracking data, indexed for windowed access.
+
+    The per-video tracks JSON stays the source of truth for whole-match work;
+    this table mirrors it one row per frame so a time window is an indexed query
+    on ``(video_id, t_ms)`` instead of reading and parsing the entire file. It is
+    a derived cache — rebuilt from the JSON on demand — so it never becomes a
+    second source of truth. ``data`` holds the frame dict (``{t_ms, dets}``).
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    video_id: int = Field(foreign_key="video.id", index=True)
+    t_ms: int = Field(index=True)
+    data: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
 class AnalysisRun(SQLModel, table=True):
     """Durable state for a staged analysis pipeline (triage -> events -> spatial).
 

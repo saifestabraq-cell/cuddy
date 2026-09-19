@@ -137,6 +137,14 @@ export interface TracksData {
   frames: TrackFrame[];
 }
 
+/** A time-windowed slice of tracks (§8): metadata + only the frames in
+ *  [window[0], window[1]], served by an indexed query rather than a file scan. */
+export interface TracksWindow extends Partial<TracksData> {
+  frames: TrackFrame[];
+  window: [number, number];
+  n_total: number;
+}
+
 export interface PlayerProfile {
   track_id: number;
   team: number;
