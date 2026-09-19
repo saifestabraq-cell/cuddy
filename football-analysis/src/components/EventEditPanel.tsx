@@ -16,6 +16,7 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
   const removeEvent = useStore((s) => s.removeEvent);
   const toggleEventDescriptor = useStore((s) => s.toggleEventDescriptor);
   const selectEvent = useStore((s) => s.selectEvent);
+  const selectedTrackId = useStore((s) => s.selectedTrackId);
 
   if (!ev) return null;
   const cat = categories.find((c) => c.id === ev.category_id);
@@ -105,6 +106,45 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
         value={ev.notes}
         onChange={(e) => updateEvent(ev.id, { notes: e.target.value })}
       />
+
+      {/* player linkage */}
+      <div className="card p-2.5 mb-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[11px] uppercase text-mist-400">Players</span>
+          {selectedTrackId != null && (
+            <button
+              className="text-[11px] text-teal-300 hover:text-teal-400"
+              onClick={() => {
+                const ids = ev.player_track_ids ?? [];
+                if (!ids.includes(selectedTrackId)) {
+                  updateEvent(ev.id, { player_track_ids: [...ids, selectedTrackId] });
+                }
+              }}
+            >
+              + add selected #{selectedTrackId}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {(ev.player_track_ids ?? []).map((trackId) => (
+            <button
+              key={trackId}
+              className="px-2 py-0.5 rounded-lg text-xs text-teal-200 border border-teal-300/30 hover:bg-teal-300/10"
+              onClick={() =>
+                updateEvent(ev.id, {
+                  player_track_ids: (ev.player_track_ids ?? []).filter((id) => id !== trackId),
+                })
+              }
+              title="Remove player from event"
+            >
+              Player #{trackId} ×
+            </button>
+          ))}
+          {(!ev.player_track_ids || ev.player_track_ids.length === 0) && (
+            <span className="text-xs text-mist-500">No players linked</span>
+          )}
+        </div>
+      </div>
 
       {/* descriptors */}
       {descriptorGroups.length > 0 && (
