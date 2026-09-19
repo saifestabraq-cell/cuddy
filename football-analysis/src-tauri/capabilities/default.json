@@ -6,6 +6,15 @@
   "permissions": [
     "core:default",
     "dialog:default",
-    "shell:default"
+    "shell:default",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/fa-sidecar",
+          "sidecar": true
+        }
+      ]
+    }
   ]
 }
