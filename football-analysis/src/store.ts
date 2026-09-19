@@ -154,6 +154,12 @@ interface AppState {
   requestSeekMs: number | null;
   requestSeek: (ms: number) => void;
 
+  // Universal evidence chain: focus a moment from any analytical object
+  // (a shot, a turnover, a pass) — seek the video and select the nearest
+  // coded event so the inspector + timeline follow. When no event sits near
+  // the moment, it still seeks (timestamp -> video), the minimum evidence link.
+  focusMoment: (ms: number, opts?: { eventId?: number; windowMs?: number }) => void;
+
   saveTemplate: () => Promise<CodingTemplate | undefined>;
   applyTemplate: (template: CodingTemplate) => Promise<void>;
 
@@ -438,6 +444,25 @@ export const useStore = create<AppState>((set, get) => ({
   setPlaylist: (ids) => set({ playlist: ids }),
 
   requestSeek: (ms) => set({ requestSeekMs: ms }),
+
+  focusMoment: (ms, opts) => {
+    const { eventId, windowMs = 2500 } = opts ?? {};
+    let id: number | null = eventId ?? null;
+    if (id == null) {
+      // Nearest coded event by start-time proximity, within the window.
+      let bestD = Infinity;
+      for (const e of get().events) {
+        const d = Math.abs(e.start_ms - ms);
+        if (d < bestD) {
+          bestD = d;
+          id = e.id;
+        }
+      }
+      if (bestD > windowMs) id = null;
+    }
+    set({ requestSeekMs: Math.max(0, Math.round(ms)) });
+    if (id != null) set({ selectedEventId: id });
+  },
 
   saveTemplate: async () => {
     const pid = get().currentProjectId;
