@@ -92,6 +92,10 @@ export interface Filter {
   // pitch. Matching is per-dimension: a selected third AND a selected channel
   // both constrain; empty = no spatial filter.
   zones: string[];
+  // Filter to events linked to this tracked player (player_track_ids); null =
+  // no player filter. Set by clicking a player on the interactive pitch or in
+  // the Player inspector.
+  playerTrackId: number | null;
 }
 
 // --- Phase 2: CV analysis ---

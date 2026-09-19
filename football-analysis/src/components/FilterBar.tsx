@@ -14,6 +14,7 @@ export default function FilterBar() {
     filter.descriptors.length > 0 ||
     filter.source !== "all" ||
     filter.zones.length > 0 ||
+    filter.playerTrackId != null ||
     filter.text.trim() !== "";
 
   const removeZone = (zone: string) =>
@@ -92,6 +93,18 @@ export default function FilterBar() {
           </button>
         );
       })}
+
+      {/* active player filter (set on the pitch / player inspector) */}
+      {filter.playerTrackId != null && (
+        <button
+          onClick={() => setFilter({ playerTrackId: null })}
+          title="Remove player filter"
+          className="px-2.5 py-1 rounded-lg text-xs border border-violet-400/50 bg-violet-400/15 text-violet-200 hover:bg-violet-400/25 transition-colors flex items-center gap-1"
+        >
+          Player #{filter.playerTrackId}
+          <span className="text-violet-300/70">×</span>
+        </button>
+      )}
 
       {/* active pitch zones (set on the interactive pitch); click to remove */}
       {filter.zones.map((z) => (

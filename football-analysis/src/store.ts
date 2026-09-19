@@ -37,6 +37,11 @@ export function applyFilter(
   return events.filter((e) => {
     if (filter.source !== "all" && e.source !== filter.source) return false;
     if (
+      filter.playerTrackId != null &&
+      !(e.player_track_ids ?? []).includes(filter.playerTrackId)
+    )
+      return false;
+    if (
       filter.categoryIds.length &&
       (!e.category_id || !filter.categoryIds.includes(e.category_id))
     )
@@ -67,6 +72,7 @@ const EMPTY_FILTER: Filter = {
   source: "all",
   text: "",
   zones: [],
+  playerTrackId: null,
 };
 
 interface AppState {
