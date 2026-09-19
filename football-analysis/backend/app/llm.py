@@ -42,7 +42,7 @@ def answer_question(question: str, context_json: str) -> str:
 QUERY_SYSTEM = (
     "You are a football (soccer) match-analysis assistant. You are given a JSON "
     "list of coded events (each with an id, code, start_s, end_s, source and "
-    "descriptors) and a question. Select ONLY the events that answer the question "
+    "descriptors, player_track_ids, and optional selected-player context) and a question. Use player_track_ids and selected-player context when the question is player-specific. Select ONLY the events that answer the question "
     "and write a single-line summary (not prose). "
     'Respond with ONLY a JSON object: '
     '{"summary": "<one line>", "clips": [{"event_id": <id>, "reason": "<short why>"}]}. '
