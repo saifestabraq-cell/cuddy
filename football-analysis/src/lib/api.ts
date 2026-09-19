@@ -181,10 +181,10 @@ export const api = {
     request<{ created: number }>(`/videos/${videoId}/tag-shots`, { method: "POST" }),
 
   // Natural-language query (Phase 3c)
-  ask: (videoId: number, question: string) =>
+  ask: (videoId: number, question: string, selectedTrackId?: number | null) =>
     request<{ answer: string; question: string }>(`/videos/${videoId}/ask`, {
       method: "POST",
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, selected_track_id: selectedTrackId ?? null }),
     }),
   query: (videoId: number, question: string) =>
     request<QueryResult>(`/videos/${videoId}/query`, {
