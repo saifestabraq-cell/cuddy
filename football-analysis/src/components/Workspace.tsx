@@ -20,6 +20,7 @@ import AskPanel from "./AskPanel";
 import QueryPanel from "./QueryPanel";
 import ValidationPanel from "./ValidationPanel";
 import PlayerInspector from "./PlayerInspector";
+import PlayerTrajectory from "./PlayerTrajectory";
 
 export default function Workspace() {
   const currentProject = useStore((s) => s.currentProject());
@@ -221,6 +222,7 @@ export default function Workspace() {
             }}
           />
           <PlayerInspector />
+          <PlayerTrajectory playheadMs={playheadMs} />
           <AnalyzePanel />
           <PitchPanel />
           <AnalyticsPanel />
