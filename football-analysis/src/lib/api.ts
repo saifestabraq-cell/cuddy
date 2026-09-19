@@ -11,6 +11,7 @@ import type {
   PitchData,
   PlayerProfile,
   Project,
+  QualityReport,
   QueryResult,
   SegmentMap,
   ShotsData,
@@ -161,6 +162,9 @@ export const api = {
     request<PlayerProfile>(`/videos/${videoId}/players/${trackId}`),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
+  // Runtime tracking-quality diagnostics (§6)
+  getQuality: (videoId: number) =>
+    request<QualityReport>(`/videos/${videoId}/quality`),
 
   // Pitch calibration / heatmaps / auto-tag (Phase 2b)
   calibrate: (videoId: number, imgPoints: number[][], length = 105, width = 68) =>

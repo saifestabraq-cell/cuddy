@@ -201,6 +201,25 @@ export interface ShotsData {
   width: number;
 }
 
+/** Runtime tracking-quality diagnostic (§6) — descriptive of the tracking
+ *  signal, not a ground-truth claim. */
+export interface QualityMetric {
+  key: string;
+  label: string;
+  value: number; // 0..1
+  kind: string; // "ratio"
+}
+
+export interface QualityReport {
+  n_frames: number;
+  n_tracks?: number;
+  assessable: boolean;
+  metrics: QualityMetric[];
+  fragment_tracks?: number;
+  overall: { score: number; band: "good" | "fair" | "poor" };
+  note: string;
+}
+
 export interface Segment {
   start_ms: number;
   end_ms: number;

@@ -18,6 +18,7 @@ import type {
   PitchData,
   PlayerProfile,
   Project,
+  QualityReport,
   SegmentMap,
   ShotsData,
   TracksData,
@@ -98,6 +99,7 @@ interface AppState {
   tracks: TracksData | null;
   overlay: boolean;
   segments: SegmentMap | null; // triage: main-camera vs filler
+  quality: QualityReport | null; // runtime tracking-quality diagnostic (§6)
 
   // Phase 2b: pitch calibration
   calibrationMode: boolean;
@@ -168,6 +170,7 @@ interface AppState {
   locateEvents: () => Promise<number>;
   loadTracks: () => Promise<void>;
   loadSegments: () => Promise<void>;
+  loadQuality: () => Promise<void>;
   setOverlay: (on: boolean) => void;
 
   setCalibrationMode: (on: boolean) => void;
@@ -206,6 +209,7 @@ export const useStore = create<AppState>((set, get) => ({
   tracks: null,
   overlay: true,
   segments: null,
+  quality: null,
   calibrationMode: false,
   calibrationPoints: [],
   pitch: null,
@@ -330,6 +334,7 @@ export const useStore = create<AppState>((set, get) => ({
       analytics: null,
       shots: null,
       segments: null,
+      quality: null,
       videoMissing: false,
     });
     await Promise.all([
@@ -339,6 +344,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
+      get().loadQuality(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {
@@ -506,6 +512,7 @@ export const useStore = create<AppState>((set, get) => ({
         if (updated.status === "done") {
           await get().loadTracks();
           await get().loadEvents();
+          await get().loadQuality(); // refresh the quality diagnostic
           return;
         }
         // Stop polling on a terminal state. "cancelled" keeps whatever partial
@@ -568,6 +575,20 @@ export const useStore = create<AppState>((set, get) => ({
       set({ segments: await api.getSegments(vid) });
     } catch {
       set({ segments: null });
+    }
+  },
+
+  loadQuality: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ quality: null });
+      return;
+    }
+    try {
+      const q = await api.getQuality(vid);
+      if (get().currentVideoId === vid) set({ quality: q });
+    } catch {
+      if (get().currentVideoId === vid) set({ quality: null });
     }
   },
 

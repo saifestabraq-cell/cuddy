@@ -119,6 +119,21 @@ def get_segments(video_id: int):
     return json.loads(path.read_text())
 
 
+@router.get("/videos/{video_id}/quality")
+def get_quality(video_id: int):
+    """Runtime tracking-quality diagnostics for this video's analysis.
+
+    Distinct from validation: describes how much to trust the spatial layer for
+    this footage (track continuity, ball coverage, team classification, gap and
+    occlusion proxies), computed from the tracks artifact."""
+    path = _tracks_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    from ..cv.quality import assess_quality
+
+    return assess_quality(json.loads(path.read_text()))
+
+
 @router.get("/videos/{video_id}/tracks/summary")
 def tracks_summary(video_id: int):
     """Lightweight summary without the (potentially large) per-frame data."""
