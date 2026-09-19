@@ -15,6 +15,7 @@ import type {
   Filter,
   MatchEvent,
   PitchData,
+  PlayerProfile,
   Project,
   SegmentMap,
   ShotsData,
@@ -66,6 +67,7 @@ interface AppState {
   currentVideoId: number | null;
   selectedEventId: number | null;
   selectedTrackId: number | null;
+  playerProfile: PlayerProfile | null;
   videoMissing: boolean; // source file not found at its recorded path
 
   filter: Filter;
@@ -167,6 +169,7 @@ export const useStore = create<AppState>((set, get) => ({
   currentVideoId: null,
   selectedEventId: null,
   selectedTrackId: null,
+  playerProfile: null,
   videoMissing: false,
   filter: EMPTY_FILTER,
   playlist: [],
@@ -215,6 +218,7 @@ export const useStore = create<AppState>((set, get) => ({
       events: [],
       selectedEventId: null,
       selectedTrackId: null,
+      playerProfile: null,
       playlist: [],
       filter: EMPTY_FILTER,
     });
@@ -288,6 +292,7 @@ export const useStore = create<AppState>((set, get) => ({
       currentVideoId: id,
       selectedEventId: null,
       selectedTrackId: null,
+      playerProfile: null,
       playlist: [],
       tracks: null,
       analysisJob: null,
@@ -378,7 +383,23 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   selectEvent: (id) => set({ selectedEventId: id }),
-  selectPlayer: (trackId) => set({ selectedTrackId: trackId }),
+  selectPlayer: (trackId) => {
+    set({ selectedTrackId: trackId, playerProfile: null });
+    const vid = get().currentVideoId;
+    if (trackId == null || !vid) return;
+    void api
+      .getPlayerProfile(vid, trackId)
+      .then((profile) => {
+        if (get().currentVideoId === vid && get().selectedTrackId === trackId) {
+          set({ playerProfile: profile });
+        }
+      })
+      .catch(() => {
+        if (get().currentVideoId === vid && get().selectedTrackId === trackId) {
+          set({ playerProfile: null });
+        }
+      });
+  },
 
   setFilter: (patch) => set({ filter: { ...get().filter, ...patch } }),
   clearFilter: () => set({ filter: EMPTY_FILTER }),
