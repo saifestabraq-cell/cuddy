@@ -102,6 +102,9 @@ export const api = {
     source?: "manual" | "ai";
     confidence?: number | null;
     player_track_ids?: number[];
+    pitch_x?: number | null;
+    pitch_y?: number | null;
+    coord_source?: "cv" | "manual" | null;
   }) =>
     request<MatchEvent>("/events", {
       method: "POST",
@@ -149,6 +152,8 @@ export const api = {
       { method: "POST" },
     ),
   getJob: (jobId: string) => request<AnalysisJob>(`/jobs/${jobId}`),
+  cancelJob: (jobId: string) =>
+    request<AnalysisJob>(`/jobs/${jobId}/cancel`, { method: "POST" }),
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
@@ -166,6 +171,11 @@ export const api = {
   getPitch: (videoId: number) => request<PitchData>(`/videos/${videoId}/pitch`),
   autotag: (videoId: number) =>
     request<{ created: number }>(`/videos/${videoId}/autotag`, { method: "POST" }),
+  // Back-fill approximate pitch coordinates on events (manual placements kept).
+  locateEvents: (videoId: number) =>
+    request<{ located: number }>(`/videos/${videoId}/locate-events`, {
+      method: "POST",
+    }),
 
   // Possession & passing analytics (Phase 3a)
   computeAnalytics: (videoId: number) =>

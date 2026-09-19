@@ -1,4 +1,5 @@
 import { useStore } from "../store";
+import { ZONE_LABELS } from "../lib/pitch-zones";
 
 /** Filter chips that drive the timeline, event list and dashboard together. */
 export default function FilterBar() {
@@ -12,7 +13,11 @@ export default function FilterBar() {
     filter.categoryIds.length > 0 ||
     filter.descriptors.length > 0 ||
     filter.source !== "all" ||
+    filter.zones.length > 0 ||
     filter.text.trim() !== "";
+
+  const removeZone = (zone: string) =>
+    setFilter({ zones: filter.zones.filter((z) => z !== zone) });
 
   const toggleCat = (id: number) =>
     setFilter({
@@ -87,6 +92,19 @@ export default function FilterBar() {
           </button>
         );
       })}
+
+      {/* active pitch zones (set on the interactive pitch); click to remove */}
+      {filter.zones.map((z) => (
+        <button
+          key={z}
+          onClick={() => removeZone(z)}
+          title="Remove zone filter"
+          className="px-2.5 py-1 rounded-lg text-xs border border-teal-300/50 bg-teal-300/15 text-teal-200 hover:bg-teal-300/25 transition-colors flex items-center gap-1"
+        >
+          {ZONE_LABELS[z] ?? z}
+          <span className="text-teal-300/70">×</span>
+        </button>
+      ))}
 
       <input
         className="input h-7 py-0 w-40 ml-auto"

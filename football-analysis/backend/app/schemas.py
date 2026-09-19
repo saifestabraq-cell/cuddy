@@ -54,6 +54,11 @@ class EventCreate(BaseModel):
     source: str = "manual"
     confidence: Optional[float] = None
     player_track_ids: list[int] = []
+    # Optional pitch position (metres). Setting these on create marks the event
+    # as manually placed unless coord_source is given explicitly.
+    pitch_x: Optional[float] = None
+    pitch_y: Optional[float] = None
+    coord_source: Optional[str] = None
 
 
 class DescriptorGroupCreate(BaseModel):
@@ -132,3 +137,8 @@ class EventUpdate(BaseModel):
     descriptors: Optional[list[str]] = None
     reviewed: Optional[bool] = None
     player_track_ids: Optional[list[int]] = None
+    # Manual pitch placement (metres). Sending these sets an authoritative
+    # location; the route defaults coord_source to "manual" when coords change.
+    pitch_x: Optional[float] = None
+    pitch_y: Optional[float] = None
+    coord_source: Optional[str] = None

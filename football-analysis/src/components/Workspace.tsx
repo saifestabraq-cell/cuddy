@@ -14,6 +14,7 @@ import EventList from "./EventList";
 import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
 import PitchPanel from "./PitchPanel";
+import PitchFilter from "./PitchFilter";
 import AnalyticsPanel from "./AnalyticsPanel";
 import ShotsPanel from "./ShotsPanel";
 import AskPanel from "./AskPanel";
@@ -225,6 +226,7 @@ export default function Workspace() {
           <PlayerTrajectory playheadMs={playheadMs} />
           <AnalyzePanel />
           <PitchPanel />
+          <PitchFilter />
           <AnalyticsPanel />
           <ShotsPanel />
           <Timeline
