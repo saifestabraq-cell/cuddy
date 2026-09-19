@@ -256,11 +256,13 @@ def _build_context(video_id: int, session: Session, selected_track_id: int | Non
     ctx: dict = {
         "events": [
             {
+                "id": e.id,
                 "code": cats.get(e.category_id) or e.label or "Event",
                 "start_s": round(e.start_ms / 1000, 1),
                 "end_s": round(e.end_ms / 1000, 1),
                 "descriptors": e.descriptors,
                 "source": e.source,
+                "player_track_ids": e.player_track_ids,
             }
             for e in events
         ],
