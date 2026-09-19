@@ -18,6 +18,7 @@ const SUGGESTIONS = [
  */
 export default function QueryPanel() {
   const videoId = useStore((s) => s.currentVideoId);
+  const selectedTrackId = useStore((s) => s.selectedTrackId);
   const requestSeek = useStore((s) => s.requestSeek);
   const selectEvent = useStore((s) => s.selectEvent);
   const setPlaylist = useStore((s) => s.setPlaylist);
@@ -33,7 +34,7 @@ export default function QueryPanel() {
     setErr(null);
     setResult(null);
     try {
-      setResult(await api.query(videoId, q.trim()));
+      setResult(await api.query(videoId, q.trim(), selectedTrackId));
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Query failed");
     } finally {
@@ -52,9 +53,7 @@ export default function QueryPanel() {
 
   return (
     <div className="panel p-3">
-      <span className="text-xs uppercase tracking-wider text-mist-400">
-        Find clips
-      </span>
+      <div className="flex items-center justify-between"><span className="text-xs uppercase tracking-wider text-mist-400">Find clips</span>{selectedTrackId != null && <span className="text-[10px] text-teal-300">Player #{selectedTrackId} in context</span>}</div>
 
       <div className="flex items-center gap-2 mt-2">
         <input
