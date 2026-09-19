@@ -9,6 +9,7 @@ import type {
   DescriptorGroup,
   MatchEvent,
   PitchData,
+  PlayerProfile,
   Project,
   QueryResult,
   SegmentMap,
@@ -150,6 +151,8 @@ export const api = {
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  getPlayerProfile: (videoId: number, trackId: number) =>
+    request<PlayerProfile>(`/videos/${videoId}/players/${trackId}`),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
 
