@@ -95,7 +95,17 @@ def analyze_video(
     device = 0 if torch.cuda.is_available() else "cpu"
 
     report(0.03, f"Loading model on {'GPU' if device == 0 else 'CPU'}")
-    model = YOLO(model_name)
+    # Packaged builds carry the default detector beside the frozen executable.
+    # FA_MODEL_PATH can override it for development or a custom model.
+    import os
+    import sys
+    if os.environ.get("FA_MODEL_PATH"):
+        model_path = os.environ["FA_MODEL_PATH"]
+    elif getattr(sys, "frozen", False):
+        model_path = str(Path(sys._MEIPASS) / model_name)
+    else:
+        model_path = model_name
+    model = YOLO(model_path)
 
     frames: list[dict] = []
     track_colors: dict[int, list] = {}
