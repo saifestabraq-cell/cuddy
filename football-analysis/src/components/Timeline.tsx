@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useStore, useFilteredEvents } from "../store";
 import type { Category } from "../lib/types";
@@ -23,26 +23,36 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
   const selectedTrackId = useStore((s) => s.selectedTrackId);
   const selectEvent = useStore((s) => s.selectEvent);
   const updateEvent = useStore((s) => s.updateEvent);
-  const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
+  // Rebuild the category lookup only when categories change, not every render.
+  const catById = useMemo(
+    () => new Map<number, Category>(categories.map((c) => [c.id, c])),
+    [categories],
+  );
 
   const trackRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag>(null);
 
   const dur = durationMs || 1;
-  const pct = (ms: number) => `${Math.min(100, Math.max(0, (ms / dur) * 100))}%`;
+  const pct = useCallback(
+    (ms: number) => `${Math.min(100, Math.max(0, (ms / dur) * 100))}%`,
+    [dur],
+  );
 
-  const msFromClientX = (clientX: number) => {
-    const rect = trackRef.current!.getBoundingClientRect();
-    const ratio = (clientX - rect.left) / rect.width;
-    return Math.max(0, Math.min(dur, ratio * dur));
-  };
+  const msFromClientX = useCallback(
+    (clientX: number) => {
+      const rect = trackRef.current!.getBoundingClientRect();
+      const ratio = (clientX - rect.left) / rect.width;
+      return Math.max(0, Math.min(dur, ratio * dur));
+    },
+    [dur],
+  );
 
   const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (drag) return;
     onSeek(msFromClientX(e.clientX));
   };
 
-  const beginDrag = (
+  const beginDrag = useCallback((
     e: React.MouseEvent,
     id: number,
     edge: "start" | "end",
@@ -67,7 +77,56 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  };
+  }, [msFromClientX, updateEvent]);
+
+  // Event blocks depend on everything EXCEPT the playhead, so memoising them
+  // keeps playback (which ticks playheadMs every frame) from re-rendering the
+  // whole event list each frame — only the playhead line moves.
+  const blocks = useMemo(
+    () =>
+      events.map((ev) => {
+        const cat = ev.category_id ? catById.get(ev.category_id) : undefined;
+        const color = cat?.color ?? "#8A90A0";
+        const isAi = ev.source === "ai";
+        const selected = ev.id === selectedId;
+        const playerLinked =
+          selectedTrackId != null &&
+          (ev.player_track_ids ?? []).includes(selectedTrackId);
+        const start = drag?.id === ev.id ? drag.start : ev.start_ms;
+        const end = drag?.id === ev.id ? drag.end : ev.end_ms;
+        return (
+          <div
+            key={ev.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              selectEvent(ev.id);
+              onSeek(start);
+            }}
+            title={`${cat?.name ?? ev.label} — ${fmtClock(start)}`}
+            className="absolute top-2 bottom-2 rounded-md group"
+            style={{
+              left: pct(start),
+              width: `${Math.max(0.6, ((end - start) / dur) * 100)}%`,
+              background: isAi ? `${color}44` : `${color}CC`,
+              border: `${selected ? 2 : playerLinked ? 2 : 1}px ${isAi ? "dashed" : "solid"} ${
+                selected ? "#EAECF2" : playerLinked ? "#6EE7D6" : color
+              }`,
+              boxShadow: playerLinked ? "0 0 0 1px rgba(110,231,214,0.18)" : undefined,
+            }}
+          >
+            <span
+              onMouseDown={(e) => beginDrag(e, ev.id, "start", ev.start_ms, ev.end_ms)}
+              className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-l"
+            />
+            <span
+              onMouseDown={(e) => beginDrag(e, ev.id, "end", ev.start_ms, ev.end_ms)}
+              className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-r"
+            />
+          </div>
+        );
+      }),
+    [events, catById, selectedId, selectedTrackId, drag, dur, pct, onSeek, selectEvent, beginDrag],
+  );
 
   return (
     <div className="panel p-3">
@@ -85,46 +144,7 @@ export default function Timeline({ durationMs, playheadMs, onSeek }: Props) {
         className="relative h-16 rounded-xl bg-ink-900/70 border border-ink-500/50 cursor-pointer overflow-hidden select-none"
         onClick={handleTrackClick}
       >
-        {events.map((ev) => {
-          const cat = ev.category_id ? catById.get(ev.category_id) : undefined;
-          const color = cat?.color ?? "#8A90A0";
-          const isAi = ev.source === "ai";
-          const selected = ev.id === selectedId;
-          const playerLinked = selectedTrackId != null && (ev.player_track_ids ?? []).includes(selectedTrackId);
-          const start = drag?.id === ev.id ? drag.start : ev.start_ms;
-          const end = drag?.id === ev.id ? drag.end : ev.end_ms;
-          return (
-            <div
-              key={ev.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                selectEvent(ev.id);
-                onSeek(start);
-              }}
-              title={`${cat?.name ?? ev.label} — ${fmtClock(start)}`}
-              className="absolute top-2 bottom-2 rounded-md group"
-              style={{
-                left: pct(start),
-                width: `${Math.max(0.6, ((end - start) / dur) * 100)}%`,
-                background: isAi ? `${color}44` : `${color}CC`,
-                border: `${selected ? 2 : playerLinked ? 2 : 1}px ${isAi ? "dashed" : "solid"} ${
-                  selected ? "#EAECF2" : playerLinked ? "#6EE7D6" : color
-                }`,
-                boxShadow: playerLinked ? "0 0 0 1px rgba(110,231,214,0.18)" : undefined,
-              }}
-            >
-              {/* resize handles */}
-              <span
-                onMouseDown={(e) => beginDrag(e, ev.id, "start", ev.start_ms, ev.end_ms)}
-                className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-l"
-              />
-              <span
-                onMouseDown={(e) => beginDrag(e, ev.id, "end", ev.start_ms, ev.end_ms)}
-                className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/70 rounded-r"
-              />
-            </div>
-          );
-        })}
+        {blocks}
 
         <motion.div
           className="absolute top-0 bottom-0 w-0.5 bg-teal-300 shadow-glow pointer-events-none"

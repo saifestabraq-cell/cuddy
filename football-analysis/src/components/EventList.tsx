@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore, useFilteredEvents } from "../store";
 import type { Category } from "../lib/types";
@@ -15,7 +16,10 @@ export default function EventList({ onSeek }: Props) {
   const selectEvent = useStore((s) => s.selectEvent);
   const playlist = useStore((s) => s.playlist);
   const togglePlaylist = useStore((s) => s.togglePlaylist);
-  const catById = new Map<number, Category>(categories.map((c) => [c.id, c]));
+  const catById = useMemo(
+    () => new Map<number, Category>(categories.map((c) => [c.id, c])),
+    [categories],
+  );
 
   return (
     <div className="panel p-3 flex-1 min-h-0 flex flex-col">

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useStore } from "./store";
 import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
@@ -29,6 +29,10 @@ export default function App() {
   }, [checkHealth, loadProjects]);
 
   return (
+    // Honour the OS "reduce motion" setting: framer disables transforms/opacity
+    // animations for users who prefer reduced motion (accessibility + fewer
+    // per-frame animation frames on large event lists).
+    <MotionConfig reducedMotion="user">
     <div className="h-full flex flex-col bg-ink-900 text-mist-100">
       <TitleBar />
       <div className="flex-1 flex min-h-0">
@@ -70,5 +74,6 @@ export default function App() {
         </main>
       </div>
     </div>
+    </MotionConfig>
   );
 }
