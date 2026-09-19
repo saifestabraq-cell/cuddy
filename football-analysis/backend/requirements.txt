@@ -10,3 +10,4 @@ pydantic-settings==2.7.1
 python-multipart==0.0.20
 # Natural-language query (Phase 3c) — needs ANTHROPIC_API_KEY at runtime
 anthropic==0.69.0
+\n# Desktop ML runtime (used by the packaged analysis sidecar)\nsupervision==0.27.0\nultralytics==8.3.0\nscikit-learn==1.6.1\n
