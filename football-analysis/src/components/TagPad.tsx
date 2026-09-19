@@ -21,6 +21,7 @@ const SWATCHES = ["#6EE7D6", "#9B84E8", "#F0A6C0", "#F2C879", "#7FB4F0", "#8AE29
 export default function TagPad({ playheadMs, disabled }: Props) {
   const { categories, addCategory, removeCategory, addEvent, updateEvent, currentVideoId } =
     useStore();
+  const selectedTrackId = useStore((s) => s.selectedTrackId);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(SWATCHES[0]);
@@ -33,7 +34,15 @@ export default function TagPad({ playheadMs, disabled }: Props) {
     const now = performance.now();
     if (prev && now - prev.at < EXTEND_WINDOW_MS) {
       // second press: extend the unfolding phase to the current playhead
-      await updateEvent(prev.id, { end_ms: Math.round(playheadMs + lag) });
+      const existing = useStore.getState().events.find((e) => e.id === prev.id);
+      const playerIds = existing?.player_track_ids ?? [];
+      await updateEvent(prev.id, {
+        end_ms: Math.round(playheadMs + lag),
+        player_track_ids:
+          selectedTrackId != null && !playerIds.includes(selectedTrackId)
+            ? [...playerIds, selectedTrackId]
+            : playerIds,
+      });
       lastTag.current[categoryId] = { id: prev.id, at: now };
       return;
     }
@@ -43,6 +52,7 @@ export default function TagPad({ playheadMs, disabled }: Props) {
       start_ms: Math.max(0, Math.round(playheadMs - lead)),
       end_ms: Math.round(playheadMs + lag),
       source: "manual",
+      player_track_ids: selectedTrackId != null ? [selectedTrackId] : [],
     });
     const newId = useStore.getState().selectedEventId;
     if (newId) lastTag.current[categoryId] = { id: newId, at: now };
