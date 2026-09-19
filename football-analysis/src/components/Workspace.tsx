@@ -8,17 +8,12 @@ import VideoPlayer from "./VideoPlayer";
 import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
 import TagPad from "./TagPad";
-import AnalyzePanel from "./AnalyzePanel";
+import AnalysisTabs from "./AnalysisTabs";
 import DescriptorManager from "./DescriptorManager";
 import Dashboard from "./Dashboard";
 import EventList from "./EventList";
 import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
-import PitchPanel from "./PitchPanel";
-import PitchFilter from "./PitchFilter";
-import QualityPanel from "./QualityPanel";
-import AnalyticsPanel from "./AnalyticsPanel";
-import ShotsPanel from "./ShotsPanel";
 import AskPanel from "./AskPanel";
 import QueryPanel from "./QueryPanel";
 import ValidationPanel from "./ValidationPanel";
@@ -227,12 +222,7 @@ export default function Workspace() {
           />
           <PlayerInspector />
           <PlayerTrajectory playheadMs={playheadMs} />
-          <AnalyzePanel />
-          <QualityPanel />
-          <PitchPanel />
-          <PitchFilter />
-          <AnalyticsPanel />
-          <ShotsPanel />
+          <AnalysisTabs />
           <Timeline
             durationMs={durationMs || currentVideo?.duration_ms || 0}
             playheadMs={playheadMs}
