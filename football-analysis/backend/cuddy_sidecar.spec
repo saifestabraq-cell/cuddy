@@ -1,7 +1,7 @@
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_all
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(SPEC).resolve().parent
 
 datas = [
     (str(ROOT / "alembic"), "alembic"),
