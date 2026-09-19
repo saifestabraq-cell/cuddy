@@ -115,6 +115,8 @@ class Event(SQLModel, table=True):
     # Lets re-analysis refresh only unreviewed auto events without touching the
     # analyst's manual or accepted ones.
     detector: Optional[str] = None
+    # Stable tracking IDs associated with this event within the analyzed video.
+    player_track_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
 
     created_at: datetime = Field(default_factory=_utcnow)
 
