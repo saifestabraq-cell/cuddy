@@ -65,6 +65,7 @@ interface AppState {
   currentProjectId: number | null;
   currentVideoId: number | null;
   selectedEventId: number | null;
+  selectedTrackId: number | null;
   videoMissing: boolean; // source file not found at its recorded path
 
   filter: Filter;
@@ -118,6 +119,7 @@ interface AppState {
   toggleEventDescriptor: (id: number, label: string) => Promise<void>;
 
   selectEvent: (id: number | null) => void;
+  selectPlayer: (trackId: number | null) => void;
 
   setFilter: (patch: Partial<Filter>) => void;
   clearFilter: () => void;
@@ -164,6 +166,7 @@ export const useStore = create<AppState>((set, get) => ({
   currentProjectId: null,
   currentVideoId: null,
   selectedEventId: null,
+  selectedTrackId: null,
   videoMissing: false,
   filter: EMPTY_FILTER,
   playlist: [],
@@ -211,6 +214,7 @@ export const useStore = create<AppState>((set, get) => ({
       currentVideoId: null,
       events: [],
       selectedEventId: null,
+      selectedTrackId: null,
       playlist: [],
       filter: EMPTY_FILTER,
     });
@@ -283,6 +287,7 @@ export const useStore = create<AppState>((set, get) => ({
     set({
       currentVideoId: id,
       selectedEventId: null,
+      selectedTrackId: null,
       playlist: [],
       tracks: null,
       analysisJob: null,
@@ -373,6 +378,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   selectEvent: (id) => set({ selectedEventId: id }),
+  selectPlayer: (trackId) => set({ selectedTrackId: trackId }),
 
   setFilter: (patch) => set({ filter: { ...get().filter, ...patch } }),
   clearFilter: () => set({ filter: EMPTY_FILTER }),
