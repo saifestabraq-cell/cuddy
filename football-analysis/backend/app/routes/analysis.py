@@ -18,13 +18,18 @@ from sqlmodel import Session, select
 
 from ..config import settings
 from ..cv.analytics import compute_analytics
-from ..cv.pitch import autotag_final_third, build_pitch_data
+from ..cv.pitch import autotag_final_third, ball_xy_at, build_pitch_data, locate_events
 from ..cv.shots import detect_shots
 from ..db import get_session
 from ..llm import answer_question, query_clips
 from ..models import Category, Event, Video
 from .players import build_player_profile
-from ..pipeline import get_run, run_as_dict, start_analysis as start_analysis_pipeline
+from ..pipeline import (
+    get_run,
+    request_cancel,
+    run_as_dict,
+    start_analysis as start_analysis_pipeline,
+)
 from ..schemas import AskRequest, CalibrateRequest
 
 router = APIRouter(tags=["analysis"])
@@ -68,6 +73,30 @@ def job_status(job_id: str, session: Session = Depends(get_session)):
     return run_as_dict(run)
 
 
+@router.post("/jobs/{job_id}/cancel")
+def cancel_job(job_id: str, session: Session = Depends(get_session)):
+    """Request cooperative cancellation of a running/pending analysis run.
+
+    Cancellation is cooperative: the worker stops at the next stage boundary or
+    progress tick, keeps whatever partial output is already on disk, and sets the
+    run to 'cancelled'. Retrying (POST /analyze) resumes from the last completed
+    stage. A run that has already finished is returned unchanged."""
+    try:
+        run_id = int(job_id)
+    except ValueError:
+        raise HTTPException(404, "Job not found")
+    run = get_run(session, run_id)
+    if not run:
+        raise HTTPException(404, "Job not found")
+    if run.status in ("pending", "running"):
+        request_cancel(run_id)
+        run.message = "Cancelling…"
+        session.add(run)
+        session.commit()
+        session.refresh(run)
+    return run_as_dict(run)
+
+
 @router.get("/videos/{video_id}/tracks/exists")
 def tracks_exist(video_id: int):
     return {"exists": _tracks_path(video_id).is_file()}
@@ -90,6 +119,81 @@ def get_segments(video_id: int):
     return json.loads(path.read_text())
 
 
+@router.get("/videos/{video_id}/quality")
+def get_quality(video_id: int):
+    """Runtime tracking-quality diagnostics for this video's analysis.
+
+    Distinct from validation: describes how much to trust the spatial layer for
+    this footage (track continuity, ball coverage, team classification, gap and
+    occlusion proxies), computed from the tracks artifact."""
+    path = _tracks_path(video_id)
+    if not path.is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    from ..cv.quality import assess_quality
+
+    return assess_quality(json.loads(path.read_text()))
+
+
+def _tracks_meta_path(video_id: int) -> Path:
+    return settings.tracks_dir / f"{video_id}_tracksmeta.json"
+
+
+def _index_tracks(video_id: int, session: Session) -> int:
+    """Build the indexed frame cache from the tracks JSON and cache a small
+    frames-excluded metadata sidecar for fast windowed reads."""
+    from ..track_store import ingest
+
+    data = json.loads(_tracks_path(video_id).read_text())
+    n = ingest(session, video_id, data)
+    meta = {k: v for k, v in data.items() if k != "frames"}
+    _tracks_meta_path(video_id).write_text(json.dumps(meta))
+    return n
+
+
+@router.post("/videos/{video_id}/tracks/index")
+def index_tracks(video_id: int, session: Session = Depends(get_session)):
+    """(Re)build the indexed temporal store for this video from its tracks JSON."""
+    if not _tracks_path(video_id).is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    return {"frames_indexed": _index_tracks(video_id, session)}
+
+
+@router.get("/videos/{video_id}/tracks/window")
+def get_tracks_window(
+    video_id: int,
+    start_ms: int,
+    end_ms: int,
+    session: Session = Depends(get_session),
+):
+    """Only the frames within [start_ms, end_ms], as an indexed query.
+
+    Backed by the trackframe index (built on demand from the JSON the first
+    time), so the whole match is never parsed to serve a window. Metadata comes
+    from a small sidecar, not the full file."""
+    if end_ms < start_ms:
+        raise HTTPException(422, "end_ms must be >= start_ms")
+    if not _tracks_path(video_id).is_file():
+        raise HTTPException(404, "No analysis for this video yet")
+    from ..track_store import frame_count, window
+
+    if frame_count(session, video_id) == 0:
+        _index_tracks(video_id, session)  # lazy build
+
+    frames = window(session, video_id, start_ms, end_ms)
+    meta_path = _tracks_meta_path(video_id)
+    meta = {}
+    if meta_path.is_file():
+        try:
+            meta = json.loads(meta_path.read_text())
+        except (ValueError, OSError):
+            meta = {}
+    return meta | {
+        "frames": frames,
+        "window": [start_ms, end_ms],
+        "n_total": frame_count(session, video_id),
+    }
+
+
 @router.get("/videos/{video_id}/tracks/summary")
 def tracks_summary(video_id: int):
     """Lightweight summary without the (potentially large) per-frame data."""
@@ -105,9 +209,42 @@ def tracks_summary(video_id: int):
 # --- Phase 2b: pitch calibration / heatmaps / auto-tagging ---
 
 
+def _apply_event_coords(video_id: int, pitch: dict, session: Session) -> int:
+    """Stamp approximate pitch coordinates on events from the tracked ball.
+
+    Only events that lack a MANUAL coordinate are touched — an analyst's own
+    placement (coord_source="manual") is authoritative and never overwritten.
+    Returns the number of events located. Best-effort; pure data, no CV imports.
+    """
+    events = session.exec(
+        select(Event).where(Event.video_id == video_id)
+    ).all()
+    targets = [(e.id, e.start_ms) for e in events if e.coord_source != "manual"]
+    located = locate_events(targets, pitch)
+
+    by_id = {e.id: e for e in events}
+    changed = 0
+    for eid, (x, y) in located.items():
+        e = by_id.get(eid)
+        if e is None:
+            continue
+        if e.pitch_x == x and e.pitch_y == y and e.coord_source == "cv":
+            continue  # already up to date
+        e.pitch_x, e.pitch_y, e.coord_source = x, y, "cv"
+        session.add(e)
+        changed += 1
+    if changed:
+        session.commit()
+    return changed
+
+
 @router.post("/videos/{video_id}/calibrate")
-def calibrate(video_id: int, payload: CalibrateRequest):
-    """Compute homography from 4 image points and build heatmaps + distances."""
+def calibrate(video_id: int, payload: CalibrateRequest, session: Session = Depends(get_session)):
+    """Compute homography from 4 image points and build heatmaps + distances.
+
+    Calibration also back-fills approximate pitch coordinates on existing events
+    so the interactive-pitch spatial filter works immediately.
+    """
     tracks_path = _tracks_path(video_id)
     if not tracks_path.is_file():
         raise HTTPException(400, "Analyse the video before calibrating")
@@ -119,6 +256,10 @@ def calibrate(video_id: int, payload: CalibrateRequest):
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     _pitch_path(video_id).write_text(json.dumps(pitch))
+    try:
+        _apply_event_coords(video_id, pitch, session)
+    except Exception:  # noqa: BLE001 - coordinate backfill is best-effort
+        pass
     return pitch
 
 
@@ -128,6 +269,22 @@ def get_pitch(video_id: int):
     if not path.is_file():
         raise HTTPException(404, "No calibration for this video yet")
     return json.loads(path.read_text())
+
+
+@router.post("/videos/{video_id}/locate-events")
+def locate_video_events(video_id: int, session: Session = Depends(get_session)):
+    """Back-fill approximate pitch coordinates on this video's events.
+
+    Uses the calibrated ball track; manual placements are preserved. Lets the
+    analyst refresh coordinates without re-running calibration."""
+    if not session.get(Video, video_id):
+        raise HTTPException(404, "Video not found")
+    path = _pitch_path(video_id)
+    if not path.is_file():
+        raise HTTPException(400, "Calibrate the pitch before locating events")
+    pitch = json.loads(path.read_text())
+    located = _apply_event_coords(video_id, pitch, session)
+    return {"located": located}
 
 
 @router.post("/videos/{video_id}/autotag")
@@ -141,10 +298,15 @@ def autotag(video_id: int, session: Session = Depends(get_session)):
 
     created = 0
     for s in suggestions:
+        # Stamp the ball's pitch position at the event start (approximate CV).
+        xy = ball_xy_at(pitch, s["start_ms"])
         session.add(Event(
             video_id=video_id, category_id=None, label=s["label"],
             start_ms=s["start_ms"], end_ms=s["end_ms"],
             source="ai", confidence=0.5,
+            pitch_x=(xy[0] if xy else None),
+            pitch_y=(xy[1] if xy else None),
+            coord_source=("cv" if xy else None),
         ))
         created += 1
     session.commit()

@@ -7,8 +7,14 @@ export default function PlayerInspector() {
   const events = useStore((s) => s.events);
   const selectEvent = useStore((s) => s.selectEvent);
   const requestSeek = useStore((s) => s.requestSeek);
+  const filter = useStore((s) => s.filter);
+  const setFilter = useStore((s) => s.setFilter);
 
   if (selectedTrackId == null) return null;
+
+  const filteringThisPlayer = filter.playerTrackId === selectedTrackId;
+  const togglePlayerFilter = () =>
+    setFilter({ playerTrackId: filteringThisPlayer ? null : selectedTrackId });
 
   if (!player) {
     return (
@@ -39,7 +45,16 @@ export default function PlayerInspector() {
           <div className="text-xs uppercase tracking-wider text-mist-500">Selected player</div>
           <div className="text-base font-semibold text-mist-100 mt-0.5">#{selectedTrackId}</div>
         </div>
-        <button className="btn" onClick={() => useStore.getState().selectPlayer(null)}>Clear</button>
+        <div className="flex items-center gap-2">
+          <button
+            className={`btn ${filteringThisPlayer ? "btn-accent" : ""}`}
+            onClick={togglePlayerFilter}
+            title="Filter the timeline and event list to events linked to this player"
+          >
+            {filteringThisPlayer ? "Filtering" : "Filter events"}
+          </button>
+          <button className="btn" onClick={() => useStore.getState().selectPlayer(null)}>Clear</button>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-2 mt-3">

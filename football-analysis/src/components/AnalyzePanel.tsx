@@ -18,10 +18,24 @@ export default function AnalyzePanel() {
   const segments = useStore((s) => s.segments);
   const overlay = useStore((s) => s.overlay);
   const analyzeVideo = useStore((s) => s.analyzeVideo);
+  const cancelAnalysis = useStore((s) => s.cancelAnalysis);
   const setOverlay = useStore((s) => s.setOverlay);
 
   const running = job?.status === "running" || job?.status === "pending";
+  const cancelling = job?.message === "Cancelling…" && running;
+  const cancelled = job?.status === "cancelled";
   const pct = Math.round((job?.progress ?? 0) * 100);
+  // A resumed run continues from the last completed stage, so the label reflects
+  // whether we're starting fresh, resuming a cancel, or retrying a failure.
+  const primaryLabel = running
+    ? "Analysing…"
+    : cancelled
+    ? "Resume analysis"
+    : job?.status === "error"
+    ? "Retry analysis"
+    : tracks
+    ? "Re-analyse"
+    : "Analyse video";
 
   return (
     <div className="panel p-3">
@@ -47,8 +61,18 @@ export default function AnalyzePanel() {
           disabled={!currentVideo || running}
           onClick={() => analyzeVideo(5)}
         >
-          {running ? "Analysing…" : tracks ? "Re-analyse" : "Analyse video"}
+          {primaryLabel}
         </button>
+        {running && (
+          <button
+            className="btn"
+            disabled={cancelling}
+            onClick={() => cancelAnalysis()}
+            title="Stop analysis; work already done is kept and can be resumed"
+          >
+            {cancelling ? "Cancelling…" : "Cancel"}
+          </button>
+        )}
         {tracks && (
           <span className="text-xs text-mist-300">
             {tracks.n_tracks} tracks · {tracks.teams} teams · {tracks.frames.length}{" "}
@@ -114,6 +138,13 @@ export default function AnalyzePanel() {
 
       {job?.status === "error" && (
         <p className="text-xs text-signal-live mt-2">{job.error}</p>
+      )}
+
+      {cancelled && (
+        <p className="text-xs text-mist-400 mt-2">
+          Analysis cancelled at {pct}%. Completed stages were kept — Resume picks
+          up from where it stopped.
+        </p>
       )}
 
       {tracks && (

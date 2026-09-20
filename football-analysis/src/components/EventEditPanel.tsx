@@ -17,9 +17,28 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
   const toggleEventDescriptor = useStore((s) => s.toggleEventDescriptor);
   const selectEvent = useStore((s) => s.selectEvent);
   const selectedTrackId = useStore((s) => s.selectedTrackId);
+  const allEvents = useStore((s) => s.events);
+  const playlist = useStore((s) => s.playlist);
+  const togglePlaylist = useStore((s) => s.togglePlaylist);
+  const focusMoment = useStore((s) => s.focusMoment);
 
   if (!ev) return null;
   const cat = categories.find((c) => c.id === ev.category_id);
+
+  // Related events: same category or a shared player, nearest in time first.
+  const evPlayers = new Set(ev.player_track_ids ?? []);
+  const related = allEvents
+    .filter((e) => e.id !== ev.id)
+    .filter(
+      (e) =>
+        (ev.category_id != null && e.category_id === ev.category_id) ||
+        (e.player_track_ids ?? []).some((p) => evPlayers.has(p)),
+    )
+    .sort(
+      (a, b) => Math.abs(a.start_ms - ev.start_ms) - Math.abs(b.start_ms - ev.start_ms),
+    )
+    .slice(0, 6);
+  const inPlaylist = playlist.includes(ev.id);
 
   const setSec = (field: "start_ms" | "end_ms", secText: string) => {
     const ms = Math.max(0, Math.round(parseFloat(secText) * 1000));
@@ -195,7 +214,37 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      {/* related events — keep the analyst moving through the sequence */}
+      {related.length > 0 && (
+        <div className="card p-2.5 mb-3">
+          <div className="text-[11px] uppercase text-mist-400 mb-1.5">
+            Related events
+          </div>
+          <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+            {related.map((e) => (
+              <button
+                key={e.id}
+                className="flex items-center gap-2 text-left px-1.5 py-1 rounded-md hover:bg-ink-700 transition-colors"
+                onClick={() => focusMoment(e.start_ms, { eventId: e.id })}
+              >
+                <span className="text-[10px] tabular-nums text-teal-300 w-10">
+                  {fmtClock(e.start_ms)}
+                </span>
+                <span className="text-xs text-mist-200 truncate">
+                  {categories.find((c) => c.id === e.category_id)?.name ||
+                    e.label ||
+                    "Event"}
+                </span>
+                {e.source === "ai" && (
+                  <span className="text-[9px] uppercase text-violet-300 ml-auto">AI</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-2">
         <label className="flex items-center gap-2 text-xs text-mist-300">
           <input
             type="checkbox"
@@ -204,12 +253,21 @@ export default function EventEditPanel({ playheadMs, onSeek }: Props) {
           />
           Reviewed
         </label>
-        <button
-          className="btn text-signal-live hover:text-signal-live"
-          onClick={() => removeEvent(ev.id)}
-        >
-          Delete event
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className={`btn ${inPlaylist ? "btn-accent" : ""}`}
+            onClick={() => togglePlaylist(ev.id)}
+            title="Add this event to the highlight playlist"
+          >
+            {inPlaylist ? "In playlist" : "Add to playlist"}
+          </button>
+          <button
+            className="btn text-signal-live hover:text-signal-live"
+            onClick={() => removeEvent(ev.id)}
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </motion.div>
   );

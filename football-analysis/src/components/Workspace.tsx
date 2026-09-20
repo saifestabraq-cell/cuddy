@@ -3,19 +3,17 @@ import { useStore } from "../store";
 import { streamUrl } from "../lib/api";
 import type { MatchEvent } from "../lib/types";
 import VideoBar from "./VideoBar";
+import PresetsBar from "./PresetsBar";
 import VideoPlayer from "./VideoPlayer";
 import FilterBar from "./FilterBar";
 import Timeline from "./Timeline";
 import TagPad from "./TagPad";
-import AnalyzePanel from "./AnalyzePanel";
+import AnalysisTabs from "./AnalysisTabs";
 import DescriptorManager from "./DescriptorManager";
 import Dashboard from "./Dashboard";
 import EventList from "./EventList";
 import EventEditPanel from "./EventEditPanel";
 import PlaylistBar from "./PlaylistBar";
-import PitchPanel from "./PitchPanel";
-import AnalyticsPanel from "./AnalyticsPanel";
-import ShotsPanel from "./ShotsPanel";
 import AskPanel from "./AskPanel";
 import QueryPanel from "./QueryPanel";
 import ValidationPanel from "./ValidationPanel";
@@ -207,6 +205,7 @@ export default function Workspace() {
   return (
     <div className="h-full flex flex-col gap-3">
       <VideoBar />
+      <PresetsBar />
       <FilterBar />
 
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4">
@@ -223,10 +222,7 @@ export default function Workspace() {
           />
           <PlayerInspector />
           <PlayerTrajectory playheadMs={playheadMs} />
-          <AnalyzePanel />
-          <PitchPanel />
-          <AnalyticsPanel />
-          <ShotsPanel />
+          <AnalysisTabs />
           <Timeline
             durationMs={durationMs || currentVideo?.duration_ms || 0}
             playheadMs={playheadMs}

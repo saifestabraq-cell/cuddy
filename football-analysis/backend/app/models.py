@@ -118,10 +118,54 @@ class Event(SQLModel, table=True):
     # Stable tracking IDs associated with this event within the analyzed video.
     player_track_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
 
+    # Pitch position (metres) for spatial filtering / the interactive pitch.
+    # `coord_source` records how it was obtained so the UI stays honest:
+    #   "cv"     -> derived from the tracked ball at the event time (APPROXIMATE,
+    #               needs calibration); shown with the Approx. CV badge.
+    #   "manual" -> the analyst placed it on the pitch (authoritative). A manual
+    #               coord is never overwritten by the CV backfill.
+    # None on both axes means the event has no location yet.
+    pitch_x: Optional[float] = None
+    pitch_y: Optional[float] = None
+    coord_source: Optional[str] = None  # "cv" | "manual" | None
+
     created_at: datetime = Field(default_factory=_utcnow)
 
     video: Optional[Video] = Relationship(back_populates="events")
     category: Optional[Category] = Relationship(back_populates="events")
+
+
+class Preset(SQLModel, table=True):
+    """A saved workspace preset: a named Filter snapshot that snaps the whole
+    workspace (timeline, event list, pitch) into an analysis task — e.g.
+    "Final-third entries", "AI suggestions to review".
+
+    ``filter`` holds the UI Filter shape (source, categoryIds, descriptors,
+    zones, playerTrackId, text) as JSON and is applied client-side, so the
+    backend stays agnostic to the exact filter fields.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    name: str
+    filter: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
+class TrackFrame(SQLModel, table=True):
+    """One sampled frame of tracking data, indexed for windowed access.
+
+    The per-video tracks JSON stays the source of truth for whole-match work;
+    this table mirrors it one row per frame so a time window is an indexed query
+    on ``(video_id, t_ms)`` instead of reading and parsing the entire file. It is
+    a derived cache — rebuilt from the JSON on demand — so it never becomes a
+    second source of truth. ``data`` holds the frame dict (``{t_ms, dets}``).
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    video_id: int = Field(foreign_key="video.id", index=True)
+    t_ms: int = Field(index=True)
+    data: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
 class AnalysisRun(SQLModel, table=True):

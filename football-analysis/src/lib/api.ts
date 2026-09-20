@@ -7,14 +7,18 @@ import type {
   CodingTemplate,
   Descriptor,
   DescriptorGroup,
+  Filter,
   MatchEvent,
+  Preset,
   PitchData,
   PlayerProfile,
   Project,
+  QualityReport,
   QueryResult,
   SegmentMap,
   ShotsData,
   TracksData,
+  TracksWindow,
   ValidationResult,
   Video,
 } from "./types";
@@ -102,6 +106,9 @@ export const api = {
     source?: "manual" | "ai";
     confidence?: number | null;
     player_track_ids?: number[];
+    pitch_x?: number | null;
+    pitch_y?: number | null;
+    coord_source?: "cv" | "manual" | null;
   }) =>
     request<MatchEvent>("/events", {
       method: "POST",
@@ -133,6 +140,17 @@ export const api = {
   deleteDescriptor: (id: number) =>
     request<void>(`/descriptors/${id}`, { method: "DELETE" }),
 
+  // Workspace presets (§3): project-scoped saved Filter snapshots
+  listPresets: (projectId: number) =>
+    request<Preset[]>(`/projects/${projectId}/presets`),
+  createPreset: (projectId: number, name: string, filter: Partial<Filter>) =>
+    request<Preset>(`/projects/${projectId}/presets`, {
+      method: "POST",
+      body: JSON.stringify({ name, filter }),
+    }),
+  deletePreset: (id: number) =>
+    request<void>(`/presets/${id}`, { method: "DELETE" }),
+
   // Templates
   getTemplate: (projectId: number) =>
     request<CodingTemplate>(`/projects/${projectId}/coding-template`),
@@ -149,13 +167,27 @@ export const api = {
       { method: "POST" },
     ),
   getJob: (jobId: string) => request<AnalysisJob>(`/jobs/${jobId}`),
+  cancelJob: (jobId: string) =>
+    request<AnalysisJob>(`/jobs/${jobId}/cancel`, { method: "POST" }),
   tracksExist: (videoId: number) =>
     request<{ exists: boolean }>(`/videos/${videoId}/tracks/exists`),
   getTracks: (videoId: number) => request<TracksData>(`/videos/${videoId}/tracks`),
+  // Indexed temporal store (§8): only the frames near the playhead.
+  getTracksWindow: (videoId: number, startMs: number, endMs: number) =>
+    request<TracksWindow>(
+      `/videos/${videoId}/tracks/window?start_ms=${Math.max(0, Math.round(startMs))}&end_ms=${Math.round(endMs)}`,
+    ),
+  indexTracks: (videoId: number) =>
+    request<{ frames_indexed: number }>(`/videos/${videoId}/tracks/index`, {
+      method: "POST",
+    }),
   getPlayerProfile: (videoId: number, trackId: number) =>
     request<PlayerProfile>(`/videos/${videoId}/players/${trackId}`),
   getSegments: (videoId: number) =>
     request<SegmentMap>(`/videos/${videoId}/segments`),
+  // Runtime tracking-quality diagnostics (§6)
+  getQuality: (videoId: number) =>
+    request<QualityReport>(`/videos/${videoId}/quality`),
 
   // Pitch calibration / heatmaps / auto-tag (Phase 2b)
   calibrate: (videoId: number, imgPoints: number[][], length = 105, width = 68) =>
@@ -166,6 +198,11 @@ export const api = {
   getPitch: (videoId: number) => request<PitchData>(`/videos/${videoId}/pitch`),
   autotag: (videoId: number) =>
     request<{ created: number }>(`/videos/${videoId}/autotag`, { method: "POST" }),
+  // Back-fill approximate pitch coordinates on events (manual placements kept).
+  locateEvents: (videoId: number) =>
+    request<{ located: number }>(`/videos/${videoId}/locate-events`, {
+      method: "POST",
+    }),
 
   // Possession & passing analytics (Phase 3a)
   computeAnalytics: (videoId: number) =>

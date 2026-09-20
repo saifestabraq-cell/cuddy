@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { api } from "./lib/api";
 import { pickVideoFile } from "./lib/platform";
+import { pointInZones } from "./lib/pitch-zones";
 import type {
   AnalysisJob,
   Analytics,
@@ -16,18 +17,32 @@ import type {
   MatchEvent,
   PitchData,
   PlayerProfile,
+  Preset,
   Project,
+  QualityReport,
   SegmentMap,
   ShotsData,
   TracksData,
   Video,
 } from "./lib/types";
 
-/** Pure filter — kept out of the store so selectors stay reference-stable. */
-export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] {
+/** Pure filter — kept out of the store so selectors stay reference-stable.
+ *  `pitch` (when calibrated) enables the spatial zone filter; events without a
+ *  location are dropped while a zone filter is active. */
+export function applyFilter(
+  events: MatchEvent[],
+  filter: Filter,
+  pitch?: PitchData | null,
+): MatchEvent[] {
   const text = filter.text.trim().toLowerCase();
+  const spatial = filter.zones.length > 0 && !!pitch;
   return events.filter((e) => {
     if (filter.source !== "all" && e.source !== filter.source) return false;
+    if (
+      filter.playerTrackId != null &&
+      !(e.player_track_ids ?? []).includes(filter.playerTrackId)
+    )
+      return false;
     if (
       filter.categoryIds.length &&
       (!e.category_id || !filter.categoryIds.includes(e.category_id))
@@ -42,6 +57,11 @@ export function applyFilter(events: MatchEvent[], filter: Filter): MatchEvent[] 
       const hay = `${e.label} ${e.notes} ${e.descriptors.join(" ")}`.toLowerCase();
       if (!hay.includes(text)) return false;
     }
+    if (spatial) {
+      if (e.pitch_x == null || e.pitch_y == null) return false;
+      if (!pointInZones(e.pitch_x, e.pitch_y, pitch!.length, pitch!.width, filter.zones))
+        return false;
+    }
     return true;
   });
 }
@@ -53,6 +73,8 @@ const EMPTY_FILTER: Filter = {
   descriptors: [],
   source: "all",
   text: "",
+  zones: [],
+  playerTrackId: null,
 };
 
 interface AppState {
@@ -78,6 +100,7 @@ interface AppState {
   tracks: TracksData | null;
   overlay: boolean;
   segments: SegmentMap | null; // triage: main-camera vs filler
+  quality: QualityReport | null; // runtime tracking-quality diagnostic (§6)
 
   // Phase 2b: pitch calibration
   calibrationMode: boolean;
@@ -126,6 +149,13 @@ interface AppState {
   setFilter: (patch: Partial<Filter>) => void;
   clearFilter: () => void;
 
+  // Workspace presets (§3): saved Filter snapshots per project.
+  presets: Preset[];
+  loadPresets: () => Promise<void>;
+  savePreset: (name: string) => Promise<void>;
+  applyPreset: (filter: Partial<Filter>) => void;
+  deletePreset: (id: number) => Promise<void>;
+
   togglePlaylist: (id: number) => void;
   clearPlaylist: () => void;
   setPlaylist: (ids: number[]) => void;
@@ -134,12 +164,21 @@ interface AppState {
   requestSeekMs: number | null;
   requestSeek: (ms: number) => void;
 
+  // Universal evidence chain: focus a moment from any analytical object
+  // (a shot, a turnover, a pass) — seek the video and select the nearest
+  // coded event so the inspector + timeline follow. When no event sits near
+  // the moment, it still seeks (timestamp -> video), the minimum evidence link.
+  focusMoment: (ms: number, opts?: { eventId?: number; windowMs?: number }) => void;
+
   saveTemplate: () => Promise<CodingTemplate | undefined>;
   applyTemplate: (template: CodingTemplate) => Promise<void>;
 
   analyzeVideo: (targetFps?: number) => Promise<void>;
+  cancelAnalysis: () => Promise<void>;
+  locateEvents: () => Promise<number>;
   loadTracks: () => Promise<void>;
   loadSegments: () => Promise<void>;
+  loadQuality: () => Promise<void>;
   setOverlay: (on: boolean) => void;
 
   setCalibrationMode: (on: boolean) => void;
@@ -178,11 +217,13 @@ export const useStore = create<AppState>((set, get) => ({
   tracks: null,
   overlay: true,
   segments: null,
+  quality: null,
   calibrationMode: false,
   calibrationPoints: [],
   pitch: null,
   analytics: null,
   shots: null,
+  presets: [],
 
   currentProject: () => get().projects.find((p) => p.id === get().currentProjectId),
   currentVideo: () => get().videos.find((v) => v.id === get().currentVideoId),
@@ -228,6 +269,7 @@ export const useStore = create<AppState>((set, get) => ({
       api.listDescriptorGroups(id),
     ]);
     set({ categories, videos, descriptorGroups });
+    void get().loadPresets();
     if (videos.length) await get().selectVideo(videos[0].id);
   },
 
@@ -302,6 +344,7 @@ export const useStore = create<AppState>((set, get) => ({
       analytics: null,
       shots: null,
       segments: null,
+      quality: null,
       videoMissing: false,
     });
     await Promise.all([
@@ -311,6 +354,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadPitch(),
       get().loadAnalytics(),
       get().loadShots(),
+      get().loadQuality(),
     ]);
     // Managed-media check: flag if the source file has moved/renamed.
     try {
@@ -404,6 +448,31 @@ export const useStore = create<AppState>((set, get) => ({
   setFilter: (patch) => set({ filter: { ...get().filter, ...patch } }),
   clearFilter: () => set({ filter: EMPTY_FILTER }),
 
+  loadPresets: async () => {
+    const pid = get().currentProjectId;
+    if (!pid) {
+      set({ presets: [] });
+      return;
+    }
+    try {
+      const presets = await api.listPresets(pid);
+      if (get().currentProjectId === pid) set({ presets });
+    } catch {
+      if (get().currentProjectId === pid) set({ presets: [] });
+    }
+  },
+  savePreset: async (name) => {
+    const pid = get().currentProjectId;
+    if (!pid || !name.trim()) return;
+    const preset = await api.createPreset(pid, name.trim(), get().filter);
+    set({ presets: [preset, ...get().presets] });
+  },
+  applyPreset: (filter) => set({ filter: { ...EMPTY_FILTER, ...filter } }),
+  deletePreset: async (id) => {
+    await api.deletePreset(id);
+    set({ presets: get().presets.filter((p) => p.id !== id) });
+  },
+
   togglePlaylist: (id) => {
     const current = get().playlist;
     set({
@@ -416,6 +485,25 @@ export const useStore = create<AppState>((set, get) => ({
   setPlaylist: (ids) => set({ playlist: ids }),
 
   requestSeek: (ms) => set({ requestSeekMs: ms }),
+
+  focusMoment: (ms, opts) => {
+    const { eventId, windowMs = 2500 } = opts ?? {};
+    let id: number | null = eventId ?? null;
+    if (id == null) {
+      // Nearest coded event by start-time proximity, within the window.
+      let bestD = Infinity;
+      for (const e of get().events) {
+        const d = Math.abs(e.start_ms - ms);
+        if (d < bestD) {
+          bestD = d;
+          id = e.id;
+        }
+      }
+      if (bestD > windowMs) id = null;
+    }
+    set({ requestSeekMs: Math.max(0, Math.round(ms)) });
+    if (id != null) set({ selectedEventId: id });
+  },
 
   saveTemplate: async () => {
     const pid = get().currentProjectId;
@@ -459,15 +547,43 @@ export const useStore = create<AppState>((set, get) => ({
         if (updated.status === "done") {
           await get().loadTracks();
           await get().loadEvents();
+          await get().loadQuality(); // refresh the quality diagnostic
           return;
         }
-        if (updated.status === "error") return;
+        // Stop polling on a terminal state. "cancelled" keeps whatever partial
+        // tracks/events already landed; the user can retry to resume.
+        if (updated.status === "error" || updated.status === "cancelled") {
+          await get().loadTracks();
+          await get().loadEvents();
+          return;
+        }
       } catch {
         return;
       }
       setTimeout(poll, 700);
     };
     setTimeout(poll, 700);
+  },
+
+  cancelAnalysis: async () => {
+    const job = get().analysisJob;
+    if (!job) return;
+    try {
+      const updated = await api.cancelJob(job.id);
+      // Reflect the "Cancelling…" intent immediately; the poller flips it to
+      // "cancelled" once the worker stops at the next checkpoint.
+      if (get().analysisJob?.id === job.id) set({ analysisJob: updated });
+    } catch {
+      /* leave the current job state; the poller will keep it in sync */
+    }
+  },
+
+  locateEvents: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) return 0;
+    const { located } = await api.locateEvents(vid);
+    await get().loadEvents();
+    return located;
   },
 
   loadTracks: async () => {
@@ -494,6 +610,20 @@ export const useStore = create<AppState>((set, get) => ({
       set({ segments: await api.getSegments(vid) });
     } catch {
       set({ segments: null });
+    }
+  },
+
+  loadQuality: async () => {
+    const vid = get().currentVideoId;
+    if (!vid) {
+      set({ quality: null });
+      return;
+    }
+    try {
+      const q = await api.getQuality(vid);
+      if (get().currentVideoId === vid) set({ quality: q });
+    } catch {
+      if (get().currentVideoId === vid) set({ quality: null });
     }
   },
 
@@ -598,5 +728,6 @@ export const useStore = create<AppState>((set, get) => ({
 export function useFilteredEvents(): MatchEvent[] {
   const events = useStore((s) => s.events);
   const filter = useStore((s) => s.filter);
-  return useMemo(() => applyFilter(events, filter), [events, filter]);
+  const pitch = useStore((s) => s.pitch);
+  return useMemo(() => applyFilter(events, filter, pitch), [events, filter, pitch]);
 }

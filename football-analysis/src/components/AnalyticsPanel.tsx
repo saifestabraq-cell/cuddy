@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStore } from "../store";
 import { TEAM_COLORS } from "./AnalyzePanel";
+import { fmtClock } from "../lib/time";
 
 /** Possession % + passing network + turnovers (Phase 3a). */
 export default function AnalyticsPanel() {
@@ -8,6 +9,15 @@ export default function AnalyticsPanel() {
   const analytics = useStore((s) => s.analytics);
   const computeAnalytics = useStore((s) => s.computeAnalytics);
   const tagTurnovers = useStore((s) => s.tagTurnovers);
+  const focusMoment = useStore((s) => s.focusMoment);
+
+  // Jump to the first pass of a given combination (evidence from a pass edge).
+  const focusEdge = (team: number, from: number, to: number) => {
+    const p = (analytics?.pass_events ?? []).find(
+      (e) => e.team === team && e.from === from && e.to === to,
+    );
+    if (p) focusMoment(p.t_ms);
+  };
 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -84,9 +94,11 @@ export default function AnalyticsPanel() {
               </div>
               <div className="flex flex-col gap-1">
                 {analytics.pass_edges.slice(0, 5).map((e, i) => (
-                  <div
+                  <button
                     key={i}
-                    className="flex items-center gap-2 text-xs text-mist-200"
+                    onClick={() => focusEdge(e.team, e.from, e.to)}
+                    title="Seek to the first pass of this combination"
+                    className="flex items-center gap-2 text-xs text-mist-200 px-1.5 py-0.5 rounded-md hover:bg-ink-700 transition-colors text-left"
                   >
                     <span
                       className="w-2 h-2 rounded-full shrink-0"
@@ -94,27 +106,45 @@ export default function AnalyticsPanel() {
                     />
                     #{e.from} → #{e.to}
                     <span className="text-mist-400">×{e.count}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
 
+          {/* turnover moments — click to seek (metric -> moment -> video) */}
           {analytics.turnover_events.length > 0 && (
-            <div className="flex items-center gap-2">
-              <button
-                className="btn-accent"
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    const n = await tagTurnovers();
-                    setMsg(`Added ${n} turnover event${n === 1 ? "" : "s"}.`);
-                  })
-                }
-              >
-                Tag turnovers on timeline
-              </button>
-              {msg && <span className="text-xs text-teal-300">{msg}</span>}
+            <div>
+              <div className="text-[11px] uppercase text-mist-400 mb-1">
+                Turnover moments
+              </div>
+              <div className="flex flex-wrap gap-1 mb-2">
+                {analytics.turnover_events.slice(0, 12).map((t, i) => (
+                  <button
+                    key={i}
+                    onClick={() => focusMoment(t.t_ms)}
+                    title={`Team ${t.from_team === 0 ? "A" : "B"} lost the ball`}
+                    className="px-1.5 py-0.5 rounded-md text-[10px] tabular-nums text-teal-200 border border-teal-300/30 hover:bg-teal-300/10 transition-colors"
+                  >
+                    {fmtClock(t.t_ms)}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="btn-accent"
+                  disabled={busy}
+                  onClick={() =>
+                    run(async () => {
+                      const n = await tagTurnovers();
+                      setMsg(`Added ${n} turnover event${n === 1 ? "" : "s"}.`);
+                    })
+                  }
+                >
+                  Tag turnovers on timeline
+                </button>
+                {msg && <span className="text-xs text-teal-300">{msg}</span>}
+              </div>
             </div>
           )}
         </div>

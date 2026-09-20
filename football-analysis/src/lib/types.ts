@@ -61,6 +61,12 @@ export interface MatchEvent {
   confidence: number | null;
   player_track_ids: number[];
   reviewed: boolean;
+  // Pitch position (metres) for the interactive-pitch spatial filter.
+  // coord_source: "cv" = approximate (from the tracked ball), "manual" =
+  // analyst-placed (authoritative), null = unlocated.
+  pitch_x: number | null;
+  pitch_y: number | null;
+  coord_source: "cv" | "manual" | null;
   created_at: string;
 }
 
@@ -77,11 +83,28 @@ export interface CodingTemplate {
   descriptor_groups: { name: string; descriptors: string[] }[];
 }
 
+/** A saved workspace preset: a named Filter snapshot (spec §3). */
+export interface Preset {
+  id: number;
+  project_id: number;
+  name: string;
+  filter: Partial<Filter>;
+  created_at: string;
+}
+
 export interface Filter {
   categoryIds: number[];
   descriptors: string[];
   source: "all" | "manual" | "ai";
   text: string;
+  // Canonical pitch zones (thirds + channels) toggled from the interactive
+  // pitch. Matching is per-dimension: a selected third AND a selected channel
+  // both constrain; empty = no spatial filter.
+  zones: string[];
+  // Filter to events linked to this tracked player (player_track_ids); null =
+  // no player filter. Set by clicking a player on the interactive pitch or in
+  // the Player inspector.
+  playerTrackId: number | null;
 }
 
 // --- Phase 2: CV analysis ---
@@ -112,6 +135,14 @@ export interface TracksData {
   n_tracks: number;
   teams: number;
   frames: TrackFrame[];
+}
+
+/** A time-windowed slice of tracks (§8): metadata + only the frames in
+ *  [window[0], window[1]], served by an indexed query rather than a file scan. */
+export interface TracksWindow extends Partial<TracksData> {
+  frames: TrackFrame[];
+  window: [number, number];
+  n_total: number;
 }
 
 export interface PlayerProfile {
@@ -187,6 +218,25 @@ export interface ShotsData {
   width: number;
 }
 
+/** Runtime tracking-quality diagnostic (§6) — descriptive of the tracking
+ *  signal, not a ground-truth claim. */
+export interface QualityMetric {
+  key: string;
+  label: string;
+  value: number; // 0..1
+  kind: string; // "ratio"
+}
+
+export interface QualityReport {
+  n_frames: number;
+  n_tracks?: number;
+  assessable: boolean;
+  metrics: QualityMetric[];
+  fragment_tracks?: number;
+  overall: { score: number; band: "good" | "fair" | "poor" };
+  note: string;
+}
+
 export interface Segment {
   start_ms: number;
   end_ms: number;
@@ -242,7 +292,7 @@ export interface ValidationResult {
 export interface AnalysisJob {
   id: string;
   kind: string;
-  status: "pending" | "running" | "done" | "error";
+  status: "pending" | "running" | "done" | "error" | "cancelled";
   progress: number;
   message: string;
   result: Record<string, unknown> | null;

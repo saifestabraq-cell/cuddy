@@ -44,7 +44,12 @@ def update_event(
     event = session.get(Event, event_id)
     if not event:
         raise HTTPException(404, "Event not found")
-    for key, value in payload.model_dump(exclude_none=True).items():
+    changes = payload.model_dump(exclude_none=True)
+    # Placing a coordinate by hand is authoritative: default coord_source to
+    # "manual" so the CV backfill never overwrites the analyst's placement.
+    if ("pitch_x" in changes or "pitch_y" in changes) and "coord_source" not in changes:
+        changes["coord_source"] = "manual"
+    for key, value in changes.items():
         setattr(event, key, value)
     session.add(event)
     session.commit()
